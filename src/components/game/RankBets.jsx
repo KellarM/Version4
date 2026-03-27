@@ -1,16 +1,16 @@
 import { motion } from 'framer-motion';
 
+// High Card removed - always at least 1 pair minimum (K/K)
 export const RANK_BET_OPTIONS = [
-  { key: 'Royal Flush',      label: 'Royal Flush',      payout: 'JACKPOT', color: 'purple' },
-  { key: 'Straight Flush',   label: 'Straight Flush',   payout: 'JACKPOT', color: 'orange' },
-  { key: 'Four of a Kind',   label: 'Four of a Kind',   payout: '10:1',    color: 'yellow' },
-  { key: 'Full House',       label: 'Full House',        payout: '2:1',     color: 'green'  },
-  { key: 'Flush',            label: 'Flush',             payout: '9:1',     color: 'blue'   },
-  { key: 'Straight',         label: 'Straight',          payout: '2:1',     color: 'teal'   },
-  { key: 'Three of a Kind',  label: 'Three of a Kind',  payout: '3:1',     color: 'green'  },
-  { key: 'Two Pair',         label: 'Two Pair',          payout: '2:1',     color: 'green'  },
-  { key: 'One Pair',         label: 'One Pair',          payout: '18:1',    color: 'green'  },
-  { key: 'High Card',        label: 'High Card',         payout: '18:1',    color: 'green'  },
+  { key: 'Royal Flush',     label: 'Royal Flush',     payout: 'JACKPOT', color: 'purple' },
+  { key: 'Straight Flush',  label: 'Straight Flush',  payout: 'JACKPOT', color: 'orange' },
+  { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: '10:1',    color: 'yellow' },
+  { key: 'Full House',      label: 'Full House',       payout: '2:1',     color: 'green'  },
+  { key: 'Flush',           label: 'Flush',            payout: '3:1',     color: 'blue'   },
+  { key: 'Straight',        label: 'Straight',         payout: '5:1',     color: 'teal'   },
+  { key: 'Three of a Kind', label: 'Three of a Kind', payout: '3:1',     color: 'green'  },
+  { key: 'Two Pair',        label: 'Two Pair',         payout: '12:1',    color: 'green'  },
+  { key: 'One Pair',        label: 'One Pair',         payout: '15:1',    color: 'green'  },
 ];
 
 const COLOR_STYLES = {
@@ -53,18 +53,14 @@ export default function RankBets({ rankBets, onRankBet, gamePhase, winningRank, 
               <span className="truncate">{opt.label}</span>
               <span className="text-yellow-400/80 ml-1 flex-shrink-0">{opt.payout}</span>
 
-              {/* Bet chip */}
               {bet > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 bg-yellow-500 text-black text-xs font-black rounded-full w-5 h-5 flex items-center justify-center z-10">
                   ${bet}
                 </span>
               )}
-
-              {/* Leading pulse */}
               {isLeading && (
                 <div className="absolute inset-0 rounded-lg bg-white/5 animate-pulse pointer-events-none" />
               )}
-              {/* Winner glow */}
               {isWinner && (
                 <div className="absolute inset-0 rounded-lg bg-yellow-400/10 animate-pulse pointer-events-none" />
               )}

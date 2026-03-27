@@ -7,16 +7,16 @@ export const SUIT_COLORS = { spades: 'black', hearts: 'red', diamonds: 'red', cl
 
 // The 10 fixed carded hands (20 locked cards, never in deck)
 export const FIXED_HANDS = [
-  { id: 1, cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }], payout: 18 },
-  { id: 2, cards: [{ rank: 'K', suit: 'clubs' }, { rank: 'K', suit: 'spades' }], payout: 3 },
-  { id: 3, cards: [{ rank: 'Q', suit: 'clubs' }, { rank: 'J', suit: 'spades' }], payout: 8 },
-  { id: 4, cards: [{ rank: 'Q', suit: 'spades' }, { rank: '10', suit: 'spades' }], payout: 5 },
-  { id: 5, cards: [{ rank: 'J', suit: 'clubs' }, { rank: '9', suit: 'clubs' }], payout: 9 },
-  { id: 6, cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6', suit: 'diamonds' }], payout: 6 },
-  { id: 7, cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7', suit: 'spades' }], payout: 15 },
-  { id: 8, cards: [{ rank: '4', suit: 'hearts' }, { rank: '2', suit: 'hearts' }], payout: 15 },
-  { id: 9, cards: [{ rank: '3', suit: 'clubs' }, { rank: '3', suit: 'hearts' }], payout: 15 },
-  { id: 10, cards: [{ rank: 'A', suit: 'hearts' }, { rank: '5', suit: 'diamonds' }], payout: 18 },
+  { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }], payout: 18 },
+  { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },   { rank: 'K',  suit: 'spades' }], payout: 4  },
+  { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },   { rank: 'J',  suit: 'spades' }], payout: 15 },
+  { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },  { rank: '10', suit: 'spades' }], payout: 8  },
+  { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },   { rank: '9',  suit: 'clubs'  }], payout: 6  },
+  { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6', suit: 'diamonds' }], payout: 5 },
+  { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7', suit: 'spades' }], payout: 6  },
+  { id: 8,  cards: [{ rank: '4', suit: 'hearts' },  { rank: '2',  suit: 'hearts' }], payout: 7  },
+  { id: 9,  cards: [{ rank: '3', suit: 'clubs' },   { rank: '3',  suit: 'hearts' }], payout: 8  },
+  { id: 10, cards: [{ rank: 'A', suit: 'hearts' },  { rank: '5',  suit: 'diamonds' }], payout: 15 },
 ];
 
 // The 32-card dealer deck (52 - 20 fixed)
@@ -204,14 +204,13 @@ export const RB_TABLE = [
 ];
 
 export const HAND_RANK_PAYOUTS = [
-  { name: 'Royal Flush', payout: 'Progressive', special: true },
-  { name: 'Straight Flush', payout: 'Progressive', special: true },
-  { name: 'Four of a Kind', payout: '10 to 1' },
-  { name: 'Full House', payout: '2 to 1' },
-  { name: 'Flush', payout: '9 to 1' },
-  { name: 'Straight', payout: '2 to 1' },
+  { name: 'Royal Flush',     payout: 'Progressive', special: true },
+  { name: 'Straight Flush',  payout: 'Progressive', special: true },
+  { name: 'Four of a Kind',  payout: '10 to 1' },
+  { name: 'Full House',      payout: '2 to 1' },
+  { name: 'Flush',           payout: '3 to 1' },
+  { name: 'Straight',        payout: '5 to 1' },
   { name: 'Three of a Kind', payout: '3 to 1' },
-  { name: 'Two Pair', payout: '2 to 1' },
-  { name: 'One Pair', payout: '18 to 1' },
-  { name: 'High Card', payout: '18 to 1' },
+  { name: 'Two Pair',        payout: '12 to 1' },
+  { name: 'One Pair',        payout: '15 to 1' },
 ];

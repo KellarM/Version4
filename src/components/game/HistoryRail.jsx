@@ -1,6 +1,23 @@
 import { SUITS } from '@/lib/gameEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Abbreviate hand rank for compact display
+function shortRank(rank) {
+  const map = {
+    'Royal Flush': 'R.FLUSH',
+    'Straight Flush': 'STR.FL',
+    'Four of a Kind': '4OAK',
+    'Full House': 'FULL H',
+    'Flush': 'FLUSH',
+    'Straight': 'STRA.',
+    'Three of a Kind': 'TRIPS',
+    'Two Pair': '2 PAIR',
+    'One Pair': '1 PAIR',
+    'High Card': 'HI CRD',
+  };
+  return map[rank] || rank;
+}
+
 export default function HistoryRail({ history, royalFlushJackpot, straightFlushJackpot }) {
   return (
     <div className="flex flex-col gap-1.5 h-full overflow-hidden">
@@ -20,43 +37,71 @@ export default function HistoryRail({ history, royalFlushJackpot, straightFlushJ
       </div>
 
       {/* History Rail */}
-      <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-1 min-h-0 flex flex-col">
-        <div className="text-yellow-400 text-xs font-bold tracking-wider uppercase mb-1 text-center">History</div>
-        <div className="flex flex-col gap-1 overflow-y-auto flex-1">
+      <div className="border border-yellow-700/40 rounded-xl bg-black/30 flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="text-yellow-400 text-xs font-bold tracking-wider uppercase py-1.5 text-center border-b border-yellow-700/30">
+          Previous Hands
+        </div>
+        {/* Column headers */}
+        <div className="grid grid-cols-4 gap-0 px-1 py-0.5 border-b border-yellow-700/20">
+          <span className="text-yellow-400/60 text-xs font-semibold">HAND</span>
+          <span className="text-yellow-400/60 text-xs font-semibold">TYPE</span>
+          <span className="text-yellow-400/60 text-xs font-semibold text-center">R/B</span>
+          <span className="text-yellow-400/60 text-xs font-semibold text-right">L/H</span>
+        </div>
+        <div className="flex flex-col overflow-y-auto flex-1">
           <AnimatePresence>
             {history.length === 0 && (
-              <div className="text-green-400/30 text-xs text-center py-2">No hands yet</div>
+              <div className="text-green-400/30 text-xs text-center py-4">No hands yet</div>
             )}
-            {history.map((entry) => (
-              <motion.div
-                key={entry.roundId}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="border border-green-700/30 rounded-lg p-1.5 bg-green-900/20"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-yellow-400 text-xs font-bold">H{entry.winningHandId}</span>
-                  <span className={`text-xs font-semibold truncate ml-1
-                    ${entry.handRank === 'Royal Flush' ? 'text-purple-400' :
-                      entry.handRank === 'Straight Flush' ? 'text-orange-400' :
-                      entry.handRank === 'Four of a Kind' ? 'text-yellow-400' :
-                      'text-green-300'}`}>
-                    {entry.handRank}
-                  </span>
-                </div>
-                <div className="flex gap-0.5 mt-0.5 flex-wrap">
-                  {entry.cards.map((c, i) => (
-                    <span key={i} className={`text-xs font-mono ${c.suit === 'hearts' || c.suit === 'diamonds' ? 'text-red-400' : 'text-gray-300'}`}>
-                      {c.rank}{SUITS[c.suit]}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex justify-between mt-0.5">
-                  <span className={`text-xs ${entry.colorResult?.includes('R') ? 'text-red-400' : 'text-gray-400'}`}>{entry.colorResult}</span>
-                  <span className={`text-xs ${entry.lowHighResult === 'HIGH' ? 'text-blue-400' : 'text-green-400'}`}>{entry.lowHighResult}</span>
-                </div>
-              </motion.div>
-            ))}
+            {history.map((entry, idx) => {
+              const isRecent = idx === 0;
+              const isRed = entry.colorResult?.includes('R');
+              const rankColor =
+                entry.handRank === 'Royal Flush' ? 'text-purple-400' :
+                entry.handRank === 'Straight Flush' ? 'text-orange-400' :
+                entry.handRank === 'Four of a Kind' ? 'text-yellow-400' :
+                entry.handRank === 'Full House' ? 'text-green-300' :
+                'text-gray-400';
+
+              const handColor0 = entry.cards[0]?.suit === 'hearts' || entry.cards[0]?.suit === 'diamonds' ? 'text-red-400' : 'text-gray-200';
+              const handColor1 = entry.cards[1]?.suit === 'hearts' || entry.cards[1]?.suit === 'diamonds' ? 'text-red-400' : 'text-gray-200';
+
+              const handStr = entry.cards.length >= 2
+                ? `${entry.cards[0].rank}${SUITS[entry.cards[0].suit]}/${entry.cards[1].rank}${SUITS[entry.cards[1].suit]}`
+                : '';
+
+              return (
+                <motion.div
+                  key={entry.roundId}
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`grid grid-cols-4 gap-0 px-1 py-0.5 border-b border-green-900/30 ${isRecent ? 'bg-green-900/20' : ''}`}
+                >
+                  {/* Winning Hand cards - colored by suit */}
+                  <div className="flex items-center">
+                    {entry.cards.length >= 2 ? (
+                      <span className="text-xs font-mono leading-none">
+                        <span className={handColor0}>{entry.cards[0].rank}{SUITS[entry.cards[0].suit]}</span>
+                        <span className="text-gray-500">/</span>
+                        <span className={handColor1}>{entry.cards[1].rank}{SUITS[entry.cards[1].suit]}</span>
+                      </span>
+                    ) : null}
+                  </div>
+                  {/* Type */}
+                  <div className={`text-xs font-semibold leading-none flex items-center ${rankColor}`}>
+                    {shortRank(entry.handRank)}
+                  </div>
+                  {/* R/B */}
+                  <div className={`text-xs font-bold leading-none flex items-center justify-center ${isRed ? 'text-red-400' : 'text-gray-300'}`}>
+                    {entry.colorResult}
+                  </div>
+                  {/* L/H */}
+                  <div className={`text-xs font-bold leading-none flex items-center justify-end ${entry.lowHighResult === 'HIGH' ? 'text-blue-400' : 'text-green-400'}`}>
+                    {entry.lowHighResult === 'HIGH' ? 'H' : entry.lowHighResult === 'LOW' ? 'L' : '-'}
+                  </div>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
       </div>

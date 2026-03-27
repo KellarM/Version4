@@ -2,12 +2,12 @@ import { motion } from 'framer-motion';
 import { cardColor, isLowCard } from '@/lib/gameEngine';
 
 const RED_BLACK_OPTIONS = [
-  { key: '3R', label: '3 Red',   payout: '1.5:1', color: 'red' },
-  { key: '3B', label: '3 Black', payout: '1.5:1', color: 'black' },
-  { key: '4R', label: '4 Red',   payout: '4:1',   color: 'red' },
-  { key: '4B', label: '4 Black', payout: '4:1',   color: 'black' },
-  { key: '5R', label: '5 Red',   payout: '40:1',  color: 'red' },
-  { key: '5B', label: '5 Black', payout: '40:1',  color: 'black' },
+  { key: '5R', label: '5 Red',   payout: '40:1', color: 'red' },
+  { key: '4R', label: '4 Red',   payout: '4:1',  color: 'red' },
+  { key: '3R', label: '3 Red',   payout: '1:1',  color: 'red' },
+  { key: '3B', label: '3 Black', payout: '1:1',  color: 'black' },
+  { key: '4B', label: '4 Black', payout: '4:1',  color: 'black' },
+  { key: '5B', label: '5 Black', payout: '40:1', color: 'black' },
 ];
 
 export default function SideBets({

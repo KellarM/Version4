@@ -15,6 +15,7 @@ import RankBets from '@/components/game/RankBets';
 const STARTING_BALANCE = 500;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
 const DEFAULT_CHIP = 10;
+const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4, 5];
 
 // Phases: 'betting' | 'flop' | 'turn' | 'lowHighBetting' | 'river' | 'settlement' | 'winner'
 const PHASE_LABELS = {
@@ -28,11 +29,16 @@ const PHASE_LABELS = {
 };
 
 export default function RapidFireGame() {
-  const [balance, setBalance] = useState(STARTING_BALANCE);
+  const [playerCount, setPlayerCount] = useState(1);
+  // balances[i] = balance for player i+1
+  const [balances, setBalances] = useState(Array(5).fill(STARTING_BALANCE));
   const [selectedChip, setSelectedChip] = useState(DEFAULT_CHIP);
-  const [handBets, setHandBets] = useState({}); // { handId: amount }
-  const [redBlackBets, setRedBlackBets] = useState({}); // { '3R': amount, ... }
-  const [lowHighBet, setLowHighBet] = useState(null); // { type: 'LOW'|'HIGH', amount }
+  // handBets[playerId][handId], redBlackBets[playerId][key], rankBets[playerId][key]
+  const [handBets, setHandBets] = useState({}); // { [pid]: { handId: amount } }
+  const [redBlackBets, setRedBlackBets] = useState({}); // { [pid]: { key: amount } }
+  const [rankBets, setRankBets] = useState({}); // { [pid]: { key: amount } }
+  const [lowHighBets, setLowHighBets] = useState({}); // { [pid]: { type, amount } }
+  const [activePlayer, setActivePlayer] = useState(0); // which player is placing bets
   const [communityCards, setCommunityCards] = useState([]);
   const [gamePhase, setGamePhase] = useState('betting');
   const [deck, setDeck] = useState(() => shuffleDeck(DEALER_DECK));
@@ -47,54 +53,76 @@ export default function RapidFireGame() {
   const [royalFlushJackpot, setRoyalFlushJackpot] = useState(12595);
   const [straightFlushJackpot, setStraightFlushJackpot] = useState(2845);
   const [lastWinInfo, setLastWinInfo] = useState(null);
-  const [rankBets, setRankBets] = useState({}); // { 'Royal Flush': amount, ... }
   const [winningRank, setWinningRank] = useState(null);
   const [leadingRank, setLeadingRank] = useState(null);
+  // Casino profit tracking
+  const [casinoProfit, setCasinoProfit] = useState(0);
+  const [roundsPlayed, setRoundsPlayed] = useState(0);
+
+  // Active player helpers
+  const pid = activePlayer;
+  const balance = balances[pid] ?? STARTING_BALANCE;
+  const pHandBets = handBets[pid] || {};
+  const pRedBlackBets = redBlackBets[pid] || {};
+  const pRankBets = rankBets[pid] || {};
+  const pLowHighBet = lowHighBets[pid] || null;
 
 
-  const totalBet = Object.values(handBets).reduce((s, v) => s + v, 0) +
-    Object.values(redBlackBets).reduce((s, v) => s + v, 0) +
-    Object.values(rankBets).reduce((s, v) => s + v, 0) +
-    (lowHighBet ? lowHighBet.amount : 0);
+  const totalBet = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
+    Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
+    Object.values(pRankBets).reduce((s, v) => s + v, 0) +
+    (pLowHighBet ? pLowHighBet.amount : 0);
+
+  // Total bets across ALL players this round (for casino profit calc)
+  const totalAllBets = () => {
+    let t = 0;
+    for (let i = 0; i < playerCount; i++) {
+      t += Object.values(handBets[i] || {}).reduce((s, v) => s + v, 0);
+      t += Object.values(redBlackBets[i] || {}).reduce((s, v) => s + v, 0);
+      t += Object.values(rankBets[i] || {}).reduce((s, v) => s + v, 0);
+      t += (lowHighBets[i]?.amount || 0);
+    }
+    return t;
+  };
 
   // ---- BETTING ----
   const handleHandBet = useCallback((handId) => {
     if (gamePhase !== 'betting' || balance < selectedChip) return;
-    setHandBets(prev => ({ ...prev, [handId]: (prev[handId] || 0) + selectedChip }));
-    setBalance(b => b - selectedChip);
-  }, [gamePhase, balance, selectedChip]);
+    setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: ((prev[pid] || {})[handId] || 0) + selectedChip } }));
+    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+  }, [gamePhase, balance, selectedChip, pid]);
 
   const handleRankBet = useCallback((key) => {
     if (gamePhase !== 'betting' || balance < selectedChip) return;
-    setRankBets(prev => ({ ...prev, [key]: (prev[key] || 0) + selectedChip }));
-    setBalance(b => b - selectedChip);
-  }, [gamePhase, balance, selectedChip]);
+    setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: ((prev[pid] || {})[key] || 0) + selectedChip } }));
+    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+  }, [gamePhase, balance, selectedChip, pid]);
 
   const handleRedBlackBet = useCallback((key) => {
     if (gamePhase !== 'betting' || balance < selectedChip) return;
-    setRedBlackBets(prev => ({ ...prev, [key]: (prev[key] || 0) + selectedChip }));
-    setBalance(b => b - selectedChip);
-  }, [gamePhase, balance, selectedChip]);
+    setRedBlackBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: ((prev[pid] || {})[key] || 0) + selectedChip } }));
+    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+  }, [gamePhase, balance, selectedChip, pid]);
 
   const handleLowHighBet = useCallback((type) => {
     if (gamePhase !== 'lowHighBetting' || balance < selectedChip) return;
     const maxBet = totalBet;
-    const current = lowHighBet && lowHighBet.type === type ? lowHighBet.amount : 0;
+    const current = pLowHighBet && pLowHighBet.type === type ? pLowHighBet.amount : 0;
     if (current >= maxBet) return;
     const addAmount = Math.min(selectedChip, maxBet - current);
     if (balance < addAmount) return;
-    setLowHighBet({ type, amount: (lowHighBet?.type === type ? lowHighBet.amount : 0) + addAmount });
-    setBalance(b => b - addAmount);
-  }, [gamePhase, balance, selectedChip, totalBet, lowHighBet]);
+    setLowHighBets(prev => ({ ...prev, [pid]: { type, amount: (prev[pid]?.type === type ? prev[pid].amount : 0) + addAmount } }));
+    setBalances(b => { const n = [...b]; n[pid] -= addAmount; return n; });
+  }, [gamePhase, balance, selectedChip, totalBet, pLowHighBet, pid]);
 
   const clearBets = () => {
-    const refund = Object.values(handBets).reduce((s, v) => s + v, 0) +
-      Object.values(redBlackBets).reduce((s, v) => s + v, 0) +
-      Object.values(rankBets).reduce((s, v) => s + v, 0);
-    setBalance(b => b + refund);
-    setHandBets({});
-    setRedBlackBets({});
-    setRankBets({});
+    const refund = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
+      Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
+      Object.values(pRankBets).reduce((s, v) => s + v, 0);
+    setBalances(b => { const n = [...b]; n[pid] += refund; return n; });
+    setHandBets(prev => ({ ...prev, [pid]: {} }));
+    setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
+    setRankBets(prev => ({ ...prev, [pid]: {} }));
   };
 
   // ---- GAME FLOW ----
@@ -173,93 +201,128 @@ export default function RapidFireGame() {
     setGamePhase('river');
 
     const leaderResult = leader?.handResult;
-    setTimeout(() => settle(newComm, leader, winRB, winLH, leaderHand, leaderResult), 900);
+    // Capture current bet snapshots for settlement
+    const snapHandBets = { ...handBets };
+    const snapRedBlackBets = { ...redBlackBets };
+    const snapRankBets = { ...rankBets };
+    const snapLowHighBets = { ...lowHighBets };
+    setTimeout(() => settle(newComm, leader, winRB, winLH, leaderHand, leaderResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets), 900);
   };
 
-  const settle = (finalComm, leader, winRB, winLH, leaderHand, handResult) => {
-    let winnings = 0;
+  const settle = (finalComm, leader, winRB, winLH, leaderHand, handResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets) => {
+    const rankPayoutMap = {
+      'Royal Flush': null,
+      'Straight Flush': null,
+      'Four of a Kind': 10,
+      'Full House': 2,
+      'Flush': 3,
+      'Straight': 5,
+      'Three of a Kind': 3,
+      'Two Pair': 12,
+      'One Pair': 15,
+    };
+    const rbPayoutMap = { '3R': 1, '3B': 1, '4R': 4, '4B': 4, '5R': 40, '5B': 40 };
 
-    // Carded hand bets
-    if (leader) {
-      leader.handIds.forEach(wid => {
-        const bet = handBets[wid] || 0;
-        if (bet > 0) {
-          const hand = FIXED_HANDS.find(h => h.id === wid);
-          winnings += bet + bet * hand.payout;
-        }
-      });
-    }
+    let totalBetsAllPlayers = 0;
+    let totalWinningsAllPlayers = 0;
+    const playerWinnings = [];
 
-    // Red/Black bets
-    winRB.forEach(key => {
-      const bet = redBlackBets[key] || 0;
-      if (bet > 0) {
-        const payoutMap = { '3R': 1.5, '3B': 1.5, '4R': 4, '4B': 4, '5R': 40, '5B': 40 };
-        winnings += bet + bet * (payoutMap[key] || 1);
-      }
-    });
-
-    // Low/High bet
-    if (lowHighBet && winLH === lowHighBet.type) {
-      winnings += lowHighBet.amount + lowHighBet.amount * 1;
-    }
-
-    // Rank bets
-    if (handResult) {
-      const rankPayoutMap = {
-        'Royal Flush': null,     // handled via jackpot below
-        'Straight Flush': null,  // handled via jackpot below
-        'Four of a Kind': 10,
-        'Full House': 2,
-        'Flush': 9,
-        'Straight': 2,
-        'Three of a Kind': 3,
-        'Two Pair': 2,
-        'One Pair': 18,
-        'High Card': 18,
-      };
-      const rankBetAmt = rankBets[handResult.name] || 0;
-      if (rankBetAmt > 0) {
-        const multiplier = rankPayoutMap[handResult.name];
-        if (multiplier !== null && multiplier !== undefined) {
-          winnings += rankBetAmt + rankBetAmt * multiplier;
-        }
-      }
-    }
-
-    // Progressive jackpot logic
     let newRF = royalFlushJackpot;
     let newSF = straightFlushJackpot;
-    if (handResult?.name === 'Royal Flush' && leaderHand) {
-      winnings += royalFlushJackpot;
-      if (rankBets['Royal Flush']) winnings += rankBets['Royal Flush'] + rankBets['Royal Flush'] * 100;
-      newRF = 500;
+
+    for (let i = 0; i < playerCount; i++) {
+      const ph = snapHandBets[i] || {};
+      const prb = snapRedBlackBets[i] || {};
+      const prk = snapRankBets[i] || {};
+      const plh = snapLowHighBets[i] || null;
+
+      let w = 0;
+
+      // Carded hand bets
+      if (leader) {
+        leader.handIds.forEach(wid => {
+          const bet = ph[wid] || 0;
+          if (bet > 0) {
+            const hand = FIXED_HANDS.find(h => h.id === wid);
+            w += bet + bet * hand.payout;
+          }
+        });
+      }
+
+      // Red/Black
+      winRB.forEach(key => {
+        const bet = prb[key] || 0;
+        if (bet > 0) w += bet + bet * (rbPayoutMap[key] || 1);
+      });
+
+      // Low/High
+      if (plh && winLH === plh.type) w += plh.amount * 2;
+
+      // Rank bets
+      if (handResult) {
+        const rankBetAmt = prk[handResult.name] || 0;
+        if (rankBetAmt > 0) {
+          const multiplier = rankPayoutMap[handResult.name];
+          if (multiplier !== null && multiplier !== undefined) w += rankBetAmt + rankBetAmt * multiplier;
+        }
+        // Jackpots
+        if (handResult.name === 'Royal Flush') {
+          w += royalFlushJackpot;
+          if (prk['Royal Flush']) w += prk['Royal Flush'] + prk['Royal Flush'] * 100;
+          newRF = 500;
+        }
+        if (handResult.name === 'Straight Flush') {
+          w += straightFlushJackpot;
+          if (prk['Straight Flush']) w += prk['Straight Flush'] + prk['Straight Flush'] * 50;
+          newSF = 200;
+        }
+      }
+
+      // Total bets for this player
+      const playerTotalBet =
+        Object.values(ph).reduce((s, v) => s + v, 0) +
+        Object.values(prb).reduce((s, v) => s + v, 0) +
+        Object.values(prk).reduce((s, v) => s + v, 0) +
+        (plh?.amount || 0);
+
+      totalBetsAllPlayers += playerTotalBet;
+      totalWinningsAllPlayers += w;
+      playerWinnings.push(w);
     }
-    if (handResult?.name === 'Straight Flush' && leaderHand) {
-      winnings += straightFlushJackpot;
-      if (rankBets['Straight Flush']) winnings += rankBets['Straight Flush'] + rankBets['Straight Flush'] * 50;
-      newSF = 200;
-    }
+
     setRoyalFlushJackpot(newRF);
     setStraightFlushJackpot(newSF);
 
-    setBalance(b => b + winnings);
-    setLastWinInfo(winnings > 0 ? { amount: winnings } : null);
+    // Update all player balances
+    setBalances(prev => {
+      const n = [...prev];
+      for (let i = 0; i < playerCount; i++) n[i] = (n[i] || STARTING_BALANCE) + playerWinnings[i];
+      return n;
+    });
+
+    // Casino profit = total bets - total winnings paid out
+    const roundProfit = totalBetsAllPlayers - totalWinningsAllPlayers;
+    setCasinoProfit(p => p + roundProfit);
+    setRoundsPlayed(r => r + 1);
+
+    // Show win info for active player
+    const activeWin = playerWinnings[pid] || 0;
+    setLastWinInfo(activeWin > 0 ? { amount: activeWin, allWinnings: playerWinnings } : null);
     setGamePhase('winner');
 
-    // Add to history
+    // History
     const reds = finalComm.filter(c => cardColor(c) === 'red').length;
     const blacks = finalComm.length - reds;
     const colorResult = reds >= blacks ? `${reds}R` : `${blacks}B`;
     if (leaderHand) {
       setHistory(prev => [{
-        roundId: roundId,
+        roundId,
         winningHandId: leaderHand.id,
         handRank: handResult?.name || 'Unknown',
         cards: leaderHand.cards,
         colorResult,
         lowHighResult: winLH || '-',
-      }, ...prev].slice(0, 12));
+      }, ...prev].slice(0, 20));
     }
   };
 
@@ -267,7 +330,7 @@ export default function RapidFireGame() {
     setHandBets({});
     setRedBlackBets({});
     setRankBets({});
-    setLowHighBet(null);
+    setLowHighBets({});
     setCommunityCards([]);
     setLeadingHandIds([]);
     setWinnerHandIds([]);
@@ -276,13 +339,12 @@ export default function RapidFireGame() {
     setWinningRank(null);
     setLeadingRank(null);
     setLastWinInfo(null);
-
     setDeck(shuffleDeck(DEALER_DECK));
     setDeckIndex(0);
     setRoundId(r => r + 1);
     setDealerMessage("Texas Hold'em is open for play. Players, please place your bets.");
     setGamePhase('betting');
-    // Accumulate jackpots a bit each round
+    setActivePlayer(0);
     setRoyalFlushJackpot(p => p + 12.5);
     setStraightFlushJackpot(p => p + 5);
   };
@@ -304,11 +366,41 @@ export default function RapidFireGame() {
 
       {/* Header */}
       <div className="w-full bg-black/60 border-b border-yellow-700/30 px-3 py-1.5 flex items-center justify-between flex-shrink-0">
-        <div>
-          <div className="text-yellow-400 font-black text-base tracking-wider leading-none">RAPID FIRE</div>
-          <div className="text-green-400 font-bold text-xs tracking-widest">TEXAS 10</div>
+        <div className="flex items-center gap-3">
+          <div>
+            <div className="text-yellow-400 font-black text-base tracking-wider leading-none">RAPID FIRE</div>
+            <div className="text-green-400 font-bold text-xs tracking-widest">TEXAS 10</div>
+          </div>
+          {/* Player count selector */}
+          {gamePhase === 'betting' && roundId === 1 && Object.values(handBets).every(b => Object.keys(b || {}).length === 0) && (
+            <div className="flex items-center gap-1 ml-2">
+              <span className="text-yellow-400/60 text-xs">Players:</span>
+              {PLAYER_COUNT_OPTIONS.map(n => (
+                <button key={n} onClick={() => { setPlayerCount(n); setActivePlayer(0); }}
+                  className={`w-6 h-6 rounded-full text-xs font-bold border transition-all
+                    ${playerCount === n ? 'border-yellow-400 bg-yellow-600 text-black' : 'border-yellow-700/40 bg-yellow-900/20 text-yellow-400 hover:border-yellow-500'}`}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Player tabs */}
+          {playerCount > 1 && (
+            <div className="flex items-center gap-1">
+              {Array.from({ length: playerCount }, (_, i) => (
+                <button key={i}
+                  onClick={() => gamePhase === 'betting' || gamePhase === 'lowHighBetting' ? setActivePlayer(i) : null}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-all
+                    ${activePlayer === i
+                      ? 'border-yellow-400 bg-yellow-600 text-black'
+                      : 'border-yellow-700/40 bg-yellow-900/20 text-yellow-400'}`}>
+                  P{i + 1} <span className="opacity-70">${(balances[i] || STARTING_BALANCE).toFixed(0)}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <div className="text-center">
             <div className="text-yellow-400/60 text-xs">ROUND</div>
             <div className="text-white font-bold text-sm">#{roundId}</div>
@@ -317,14 +409,26 @@ export default function RapidFireGame() {
             <div className="text-yellow-400/60 text-xs">PHASE</div>
             <div className="text-green-300 font-bold text-xs">{PHASE_LABELS[gamePhase]}</div>
           </div>
-          <div className="text-center">
-            <div className="text-yellow-400/60 text-xs">BALANCE</div>
-            <div className="text-yellow-300 font-black text-base">${balance.toFixed(2)}</div>
-          </div>
+          {playerCount === 1 && (
+            <div className="text-center">
+              <div className="text-yellow-400/60 text-xs">BALANCE</div>
+              <div className="text-yellow-300 font-black text-base">${balance.toFixed(2)}</div>
+            </div>
+          )}
           {totalBet > 0 && (
             <div className="text-center">
               <div className="text-yellow-400/60 text-xs">BET</div>
               <div className="text-white font-bold text-sm">${totalBet}</div>
+            </div>
+          )}
+          {/* Casino Profit */}
+          {roundsPlayed > 0 && (
+            <div className="text-center border-l border-yellow-700/30 pl-3">
+              <div className="text-yellow-400/60 text-xs">CASINO P/L</div>
+              <div className={`font-black text-sm ${casinoProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {casinoProfit >= 0 ? '+' : ''}${casinoProfit.toFixed(2)}
+              </div>
+              <div className="text-yellow-400/40 text-xs">{roundsPlayed} rounds</div>
             </div>
           )}
         </div>
@@ -365,6 +469,16 @@ export default function RapidFireGame() {
                 <div className="bg-yellow-900/90 border-2 border-yellow-400 rounded-2xl px-8 py-4 shadow-yellow-400/50 shadow-2xl text-center">
                   <div className="text-yellow-300 text-2xl font-black">🏆 YOU WIN!</div>
                   <div className="text-yellow-400 text-3xl font-black">${lastWinInfo.amount.toFixed(2)}</div>
+                  {playerCount > 1 && lastWinInfo.allWinnings && (
+                    <div className="flex gap-3 mt-2 justify-center">
+                      {lastWinInfo.allWinnings.slice(0, playerCount).map((w, i) => (
+                        <div key={i} className="text-center">
+                          <div className="text-yellow-400/60 text-xs">P{i+1}</div>
+                          <div className={`text-sm font-bold ${w > 0 ? 'text-green-300' : 'text-gray-400'}`}>${w.toFixed(0)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -380,10 +494,10 @@ export default function RapidFireGame() {
                   isLeading={leadingHandIds.includes(hand.id)}
                   isWinner={winnerHandIds.includes(hand.id)}
                   communityCards={communityCards}
-                  betAmount={handBets[hand.id] || 0}
+                  betAmount={pHandBets[hand.id] || 0}
                   onBet={handleHandBet}
                   gamePhase={gamePhase}
-                  disabled={balance < selectedChip && !handBets[hand.id]}
+                  disabled={balance < selectedChip && !pHandBets[hand.id]}
                 />
               ))}
             </div>
@@ -437,7 +551,7 @@ export default function RapidFireGame() {
           {/* Rank Bets panel */}
           <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-shrink-0">
             <RankBets
-              rankBets={rankBets}
+              rankBets={pRankBets}
               onRankBet={handleRankBet}
               gamePhase={gamePhase}
               winningRank={winningRank}
@@ -449,8 +563,8 @@ export default function RapidFireGame() {
           <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-1 overflow-hidden">
             <SideBets
               communityCards={communityCards}
-              redBlackBets={redBlackBets}
-              lowHighBet={lowHighBet}
+              redBlackBets={pRedBlackBets}
+              lowHighBet={pLowHighBet}
               onRedBlackBet={handleRedBlackBet}
               onLowHighBet={handleLowHighBet}
               gamePhase={gamePhase}
