@@ -14,6 +14,7 @@ import DealerAnnouncement from '@/components/game/DealerAnnouncement';
 import RankBets from '@/components/game/RankBets';
 import PayoutTable from '@/components/game/PayoutTable';
 import NewPlayerButton from '@/components/game/NewPlayerButton';
+import PlayerStatsPanel from '@/components/game/PlayerStatsPanel';
 
 const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -61,6 +62,8 @@ export default function RapidFireGame() {
   const [winningRedBlack, setWinningRedBlack] = useState([]);
   const [winningLowHigh, setWinningLowHigh] = useState(null);
   const [history, setHistory] = useState([]);
+  const [playerStats, setPlayerStats] = useState({});
+  const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [roundId, setRoundId] = useState(1);
   const [royalFlushJackpot, setRoyalFlushJackpot] = useState(10000);
   const [straightFlushJackpot, setStraightFlushJackpot] = useState(2000);
@@ -463,6 +466,27 @@ export default function RapidFireGame() {
       return n;
     });
 
+    // Update player stats
+    setPlayerStats(prev => {
+      const updated = { ...prev };
+      for (let i = 0; i < playerCount; i++) {
+        const playerBet = Object.values(snapHandBets[i] || {}).reduce((s, v) => s + v, 0) +
+                         Object.values(snapRedBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+                         Object.values(snapRankBets[i] || {}).reduce((s, v) => s + v, 0) +
+                         (snapLowHighBets[i]?.amount || 0);
+        
+        const playerWin = playerWinnings[i] || 0;
+        const multiplier = playerBet > 0 ? playerWin / playerBet : 0;
+
+        updated[i] = updated[i] || { totalBets: 0, totalWins: 0, roundsWon: 0, highestMultiplier: 0 };
+        updated[i].totalBets += playerBet;
+        updated[i].totalWins += playerWin;
+        if (playerWin > playerBet) updated[i].roundsWon += 1;
+        if (multiplier > updated[i].highestMultiplier) updated[i].highestMultiplier = multiplier;
+      }
+      return updated;
+    });
+
     // Casino profit = total bets - total winnings paid out
     const roundProfit = totalBetsAllPlayers - totalWinningsAllPlayers;
     setCasinoProfit(p => p + roundProfit);
@@ -560,6 +584,14 @@ export default function RapidFireGame() {
   return (
     <div className="h-screen w-screen overflow-hidden text-white flex flex-col"
       style={{ background: 'radial-gradient(ellipse at top, #0a1628 0%, #050d1a 100%)' }}>
+
+      {/* Player Stats Panel */}
+      <PlayerStatsPanel 
+        isOpen={showStatsPanel} 
+        onClose={() => setShowStatsPanel(false)} 
+        playerStats={playerStats}
+        playerCount={playerCount}
+      />
 
       {/* Header */}
       <div className="w-full bg-black/60 border-b border-yellow-700/30 px-3 py-1.5 flex items-center justify-between flex-shrink-0">
@@ -661,6 +693,13 @@ export default function RapidFireGame() {
               <div className="text-yellow-400/40 text-xs">{roundsPlayed} rounds</div>
             </div>
           )}
+          <button
+            onClick={() => setShowStatsPanel(!showStatsPanel)}
+            className="ml-2 px-2 py-1 rounded-lg border border-purple-700/60 bg-purple-900/30 text-purple-300 text-xs font-bold hover:bg-purple-800/50 transition-all"
+            title="View player statistics"
+          >
+            📊 Stats
+          </button>
           <Link
             to="/simulation"
             className="ml-2 px-2 py-1 rounded-lg border border-blue-700/60 bg-blue-900/30 text-blue-300 text-xs font-bold hover:bg-blue-800/50 transition-all"
