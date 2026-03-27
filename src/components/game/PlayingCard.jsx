@@ -3,7 +3,7 @@ import { SUITS, SUIT_COLORS } from '@/lib/gameEngine';
 export default function PlayingCard({ card, size = 'md', faceDown = false, glow = false }) {
   const sizeClasses = {
     xs: 'w-8 h-11 text-xs',
-    sm: 'w-[3.9rem] h-[5.5rem] text-lg',
+    sm: 'w-[3.9rem] h-[5.5rem] text-xl',
     md: 'w-14 h-20 text-sm',
     lg: 'w-16 h-24 text-base',
     xl: 'w-20 h-28 text-lg',
