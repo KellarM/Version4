@@ -22,9 +22,10 @@ export default function FixedHandCard({
   activePlayerId,
   onBet,
   onRemoveBet,
-  onDropChip,      // (fromHandId | 'bank', toHandId | 'bank', pid) — drag-drop handler
+  onDropChip,
   gamePhase,
   disabled,
+  disabledByConstraint,
 }) {
   const allBets = [];
   for (let i = 0; i < (playerCount || 1); i++) {
@@ -34,7 +35,7 @@ export default function FixedHandCard({
 
   const [hovered, setHovered] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const canBet = gamePhase === 'betting' && !disabled;
+  const canBet = gamePhase === 'betting' && !disabled && !disabledByConstraint;
   const isBettingPhase = gamePhase === 'betting';
 
   let currentEval = null;
@@ -48,6 +49,7 @@ export default function FixedHandCard({
   let borderCls;
   if (isWinner) borderCls = 'border-yellow-400 bg-yellow-900/40 shadow-yellow-400/60 shadow-xl winner-flash';
   else if (isLeading) borderCls = 'border-yellow-300 bg-yellow-900/20 shadow-yellow-300/40 shadow-lg';
+  else if (disabledByConstraint) borderCls = 'border-red-600/40 bg-red-900/20 opacity-60';
   else if (dragOver && isBettingPhase) borderCls = 'border-green-300 bg-green-800/60';
   else if (hovered && canBet) borderCls = 'border-yellow-600/70 bg-green-900/60';
   else borderCls = 'border-green-700/60 bg-green-900/40';

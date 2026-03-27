@@ -109,6 +109,17 @@ export default function RapidFireGame() {
   const pRankBets = rankBets[pid] || {};
   const pLowHighBet = lowHighBets[pid] || null;
 
+  // Count bets in each category
+  const handBetCount = Object.keys(pHandBets).length;
+  const rankBetCount = Object.keys(pRankBets).length;
+
+  // Betting constraints
+  const canBetRank = handBetCount === 0 || handBetCount === 1;
+  const canBetHand = rankBetCount === 0 || rankBetCount === 1;
+  const canBetMultipleRanks = handBetCount !== 1;
+  const canBetMultipleHands = rankBetCount !== 1;
+  const maxRankBets = handBetCount === 1 ? 1 : Infinity;
+  const maxHandBets = rankBetCount === 1 ? 1 : Infinity;
 
   const totalBet = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
     Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
@@ -131,9 +142,20 @@ export default function RapidFireGame() {
   const handleHandBet = useCallback((handId) => {
     if (gamePhase !== 'betting') return;
     const existing = (handBets[pid] || {})[handId] || 0;
+    const currentCount = Object.keys(handBets[pid] || {}).length;
+    
+    // Check constraints
+    if (existing === 0 && currentCount > 0 && rankBetCount === 1) {
+      // Can only bet 1 hand if 1 rank is already bet
+      return;
+    }
+    if (existing === 0 && rankBetCount > 1) {
+      // Cannot bet on hands if multiple ranks are bet
+      return;
+    }
+
     // Right-click / if already bet: remove it
     if (existing > 0 && balance < selectedChip) {
-      // remove bet on this hand
       setHandBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[handId]; return { ...prev, [pid]: n }; });
       setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
       return;
@@ -141,7 +163,7 @@ export default function RapidFireGame() {
     if (balance < selectedChip) return;
     setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid, handBets]);
+  }, [gamePhase, balance, selectedChip, pid, handBets, rankBetCount]);
 
   const handleRemoveHandBet = useCallback((handId) => {
     if (gamePhase !== 'betting') return;
@@ -154,6 +176,18 @@ export default function RapidFireGame() {
   const handleRankBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
     const existing = (rankBets[pid] || {})[key] || 0;
+    const currentCount = Object.keys(rankBets[pid] || {}).length;
+    
+    // Check constraints
+    if (existing === 0 && currentCount > 0 && handBetCount === 1) {
+      // Can only bet 1 rank if 1 hand is already bet
+      return;
+    }
+    if (existing === 0 && handBetCount > 1) {
+      // Cannot bet on ranks if multiple hands are bet
+      return;
+    }
+
     if (existing > 0 && balance < selectedChip) {
       setRankBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
       setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
@@ -162,7 +196,7 @@ export default function RapidFireGame() {
     if (balance < selectedChip) return;
     setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid, rankBets]);
+  }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount]);
 
   const handleRemoveRankBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
@@ -738,6 +772,7 @@ export default function RapidFireGame() {
                   onDropChip={handleDropChip}
                   gamePhase={gamePhase}
                   disabled={balance < selectedChip && !pHandBets[hand.id]}
+                  disabledByConstraint={rankBetCount > 1}
                 />
               ))}
             </div>
@@ -822,6 +857,7 @@ export default function RapidFireGame() {
               winningRank={winningRank}
               leadingRank={leadingRank}
               disabled={balance < selectedChip}
+              disabledByConstraint={handBetCount > 1}
             />
           </div>
           {/* Side Bets panel */}

@@ -33,8 +33,8 @@ const COLOR_STYLES = {
   green:  { active: 'border-green-500 bg-green-900/50 text-green-200',    inactive: 'border-green-800/40 bg-green-950/20 text-green-400/60',    winner: WINNER_STYLE },
 };
 
-export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled }) {
-  const canBet = gamePhase === 'betting' && !disabled;
+export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled, disabledByConstraint }) {
+  const canBet = gamePhase === 'betting' && !disabled && !disabledByConstraint;
 
   return (
     <div>
@@ -48,7 +48,8 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const qualifies = !opt.minBet || bet >= opt.minBet;
 
           let cls = styles.inactive;
-          if (isWinner) cls = styles.winner;
+          if (disabledByConstraint) cls = 'border-red-600/40 bg-red-900/20 text-red-400/50 opacity-60';
+          else if (isWinner) cls = styles.winner;
           else if (isLeading) cls = styles.active;
           else if (bet > 0) cls = styles.active;
 
