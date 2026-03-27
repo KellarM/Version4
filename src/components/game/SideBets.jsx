@@ -127,9 +127,6 @@ export default function SideBets({
             {BLACK_OPTIONS.map(opt => renderRBCell(opt, false))}
           </div>
         </div>
-        {communityCards.length > 0 && (
-          <div className="mt-0.5 text-center text-xs text-green-400/70">{reds}R / {blacks}B showing</div>
-        )}
       </div>
 
       {/* Low/High Bets */}
@@ -190,9 +187,6 @@ export default function SideBets({
             );
           })}
         </div>
-        {communityCards.length >= 4 && (
-          <div className="mt-0.5 text-center text-xs text-green-400/70">{lows} Low / {highs} High (of 4)</div>
-        )}
       </div>
     </div>
   );
