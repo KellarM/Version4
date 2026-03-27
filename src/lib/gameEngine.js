@@ -196,22 +196,22 @@ export const LOW_HIGH_PAYOUT = 1; // 1:1 (even money)
 
 // Red/Black display payouts for the table
 export const RB_TABLE = [
-  { key: '5R', label: '5 Red', payout: '40 to 1' },
-  { key: '5B', label: '5 Black', payout: '40 to 1' },
-  { key: '4R', label: '4 Red', payout: '4 to 1' },
-  { key: '4B', label: '4 Black', payout: '4 to 1' },
-  { key: '3R', label: '3 Red', payout: '1 to 1' },
-  { key: '3B', label: '3 Black', payout: '1 to 1' },
+  { key: '5R', label: '5 Red', payout: '5.1 to 1' },
+  { key: '5B', label: '5 Black', payout: '5.1 to 1' },
+  { key: '4R', label: '4 Red', payout: '1.3 to 1' },
+  { key: '4B', label: '4 Black', payout: '1.3 to 1' },
+  { key: '3R', label: '3 Red', payout: '0.33 to 1' },
+  { key: '3B', label: '3 Black', payout: '0.33 to 1' },
 ];
 
 export const HAND_RANK_PAYOUTS = [
   { name: 'Royal Flush',     payout: 'Progressive', special: true },
   { name: 'Straight Flush',  payout: 'Progressive', special: true },
-  { name: 'Four of a Kind',  payout: '10 to 1' },
-  { name: 'Full House',      payout: '2 to 1' },
-  { name: 'Flush',           payout: '3 to 1' },
-  { name: 'Straight',        payout: '5 to 1' },
-  { name: 'Three of a Kind', payout: '3 to 1' },
-  { name: 'Two Pair',        payout: '12 to 1' },
-  { name: 'One Pair',        payout: '15 to 1' },
+  { name: 'Four of a Kind',  payout: '10.2 to 1' },
+  { name: 'Full House',      payout: '2.6 to 1' },
+  { name: 'Flush',           payout: '3.5 to 1' },
+  { name: 'Straight',        payout: '5.1 to 1' },
+  { name: 'Three of a Kind', payout: '2.6 to 1' },
+  { name: 'Two Pair',        payout: '13 to 1' },
+  { name: 'One Pair',        payout: '15.8 to 1' },
 ];
