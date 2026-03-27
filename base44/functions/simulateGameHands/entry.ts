@@ -11,30 +11,17 @@ Deno.serve(async (req) => {
 
     const { handsToSimulate = 2000000 } = await req.json();
 
-    // Game logic (inlined from gameEngine)
+    // Simulate realistic rounds where a player bets on:
+    // 1. A carded hand (wins hand payout + hand rank payout)
+    // 2. Color board (3R/3B/4R/4B/5R/5B — cumulative wins)
+    // 3. Low/High (50/50 on river card)
+
     const FIXED_HANDS = [
-      { id: 1,  payout: 0.0008 }, { id: 2,  payout: 0.00025 }, { id: 3,  payout: 0.0007 },
-      { id: 4,  payout: 0.00045 }, { id: 5,  payout: 0.00035 }, { id: 6,  payout: 0.0003 },
-      { id: 7,  payout: 0.00035 }, { id: 8,  payout: 0.00035 }, { id: 9,  payout: 0.00045 },
-      { id: 10, payout: 0.0007 },
+      { id: 1,  payout: 0.08 }, { id: 2,  payout: 0.025 }, { id: 3,  payout: 0.07 },
+      { id: 4,  payout: 0.045 }, { id: 5,  payout: 0.035 }, { id: 6,  payout: 0.03 },
+      { id: 7,  payout: 0.035 }, { id: 8,  payout: 0.035 }, { id: 9,  payout: 0.045 },
+      { id: 10, payout: 0.07 },
     ];
-
-    // Statistics tracking
-    const stats = {
-      totalHands: handsToSimulate,
-      handWins: {},
-      colorWins: { '3R': 0, '3B': 0, '4R': 0, '4B': 0, '5R': 0, '5B': 0 },
-      rankWins: {},
-      lowHighWins: { LOW: 0, HIGH: 0 },
-      totalBetByType: { hand: 0, color: 0, rank: 0, lowHigh: 0 },
-      totalPayoutByType: { hand: 0, color: 0, rank: 0, lowHigh: 0 },
-      payoutPercentages: {},
-    };
-
-    // Initialize hand tracking
-    for (let i = 1; i <= 10; i++) {
-      stats.handWins[i] = 0;
-    }
 
     const rankPayoutMap = {
       'Royal Flush': 0.005,
@@ -49,97 +36,88 @@ Deno.serve(async (req) => {
     };
 
     const rbPayoutMap = { '3R': 0.008, '3B': 0.008, '4R': 0.025, '4B': 0.025, '5R': 0.2, '5B': 0.2 };
+    const lowHighPayout = 1; // 1:1 even money
 
-    // Initialize rank tracking
-    Object.keys(rankPayoutMap).forEach(rank => {
-      stats.rankWins[rank] = 0;
-    });
-
-    // Simple random simulation (each hand has equal winning probability)
-    for (let hand = 0; hand < handsToSimulate; hand++) {
-      // Randomly pick a winning hand (1-10)
-      const winningHandId = Math.floor(Math.random() * 10) + 1;
-      stats.handWins[winningHandId]++;
-
-      const winningHand = FIXED_HANDS.find(h => h.id === winningHandId);
-      if (winningHand) {
-        stats.totalBetByType.hand += 1;
-        stats.totalPayoutByType.hand += 1 + winningHand.payout;
-      }
-
-      // Rank wins (random distribution based on payout weights)
-      const rankKeys = Object.keys(rankPayoutMap);
-      const randomRank = rankKeys[Math.floor(Math.random() * rankKeys.length)];
-      stats.rankWins[randomRank]++;
-      stats.totalBetByType.rank += 1;
-      const mult = rankPayoutMap[randomRank];
-      stats.totalPayoutByType.rank += 1 + mult;
-
-      // Color board (roughly 50/50 red/black, with distribution)
-      const reds = Math.floor(Math.random() * 6); // 0-5 reds
-      const blacks = 5 - reds;
-      if (reds >= 3) for (let i = 3; i <= reds; i++) {
-        stats.colorWins[`${i}R`]++;
-        stats.totalBetByType.color += 1;
-        stats.totalPayoutByType.color += 1 + (rbPayoutMap[`${i}R`] || 1);
-      }
-      if (blacks >= 3) for (let i = 3; i <= blacks; i++) {
-        stats.colorWins[`${i}B`]++;
-        stats.totalBetByType.color += 1;
-        stats.totalPayoutByType.color += 1 + (rbPayoutMap[`${i}B`] || 1);
-      }
-
-      // Low/High (roughly 50/50)
-      const isLow = Math.random() > 0.5;
-      const winLH = isLow ? 'LOW' : 'HIGH';
-      stats.lowHighWins[winLH]++;
-      stats.totalBetByType.lowHigh += 1;
-      stats.totalPayoutByType.lowHigh += 1.8; // ~90% payout
-    }
-
-    // Calculate payout percentages
-    stats.payoutPercentages = {
-      hand: stats.totalBetByType.hand > 0 ? (stats.totalPayoutByType.hand / stats.totalBetByType.hand * 100).toFixed(2) : 0,
-      color: stats.totalBetByType.color > 0 ? (stats.totalPayoutByType.color / stats.totalBetByType.color * 100).toFixed(2) : 0,
-      rank: stats.totalBetByType.rank > 0 ? (stats.totalPayoutByType.rank / stats.totalBetByType.rank * 100).toFixed(2) : 0,
-      lowHigh: stats.totalBetByType.lowHigh > 0 ? (stats.totalPayoutByType.lowHigh / stats.totalBetByType.lowHigh * 100).toFixed(2) : 0,
+    const stats = {
+      totalHands: handsToSimulate,
+      totalBets: 0,
+      totalPayouts: 0,
+      roundResults: [],
     };
 
-    // Hand frequency analysis
-    const handFrequency = {};
-    for (let i = 1; i <= 10; i++) {
-      handFrequency[i] = (stats.handWins[i] / handsToSimulate * 100).toFixed(3);
+    // Simulate 2M rounds where a typical player makes bets on ALL categories
+    for (let round = 0; round < handsToSimulate; round++) {
+      // Player bets: $10 on a hand, $10 on color, $10 on rank, $10 on low/high = $40 total
+      const betPerCategory = 10;
+      let roundBets = betPerCategory * 4; // $40 per round
+      let roundPayouts = 0;
+
+      // 1. Random winning hand (1-10)
+      const winningHandId = Math.floor(Math.random() * 10) + 1;
+      const hand = FIXED_HANDS.find(h => h.id === winningHandId);
+      
+      // Hand payout: $10 bet * payout multiplier
+      roundPayouts += betPerCategory * (1 + hand.payout);
+
+      // 2. Random hand rank (determines rank payout)
+      const rankKeys = Object.keys(rankPayoutMap);
+      const winningRank = rankKeys[Math.floor(Math.random() * rankKeys.length)];
+      const rankMult = rankPayoutMap[winningRank];
+      roundPayouts += betPerCategory * (1 + rankMult);
+
+      // 3. Color board (reds vs blacks distribution)
+      const reds = Math.floor(Math.random() * 6); // 0-5 reds
+      const blacks = 5 - reds;
+      let colorPayouts = 0;
+      // Cumulative wins: if 4 reds, both 3R and 4R win
+      if (reds >= 3) {
+        for (let i = 3; i <= reds; i++) {
+          colorPayouts += betPerCategory * (1 + (rbPayoutMap[`${i}R`] || 1));
+        }
+      }
+      if (blacks >= 3) {
+        for (let i = 3; i <= blacks; i++) {
+          colorPayouts += betPerCategory * (1 + (rbPayoutMap[`${i}B`] || 1));
+        }
+      }
+      // If no color win, player loses that bet (roundPayouts unchanged)
+      roundPayouts += colorPayouts;
+
+      // 4. Low/High (50/50 on river)
+      const isLow = Math.random() > 0.5;
+      roundPayouts += betPerCategory * 2; // 1:1 payout means double the bet
+
+      stats.totalBets += roundBets;
+      stats.totalPayouts += roundPayouts;
+      
+      stats.roundResults.push({
+        round,
+        bets: roundBets,
+        payouts: roundPayouts,
+        profit: roundPayouts - roundBets,
+      });
     }
 
-    // Color frequency analysis
-    const colorFrequency = {};
-    Object.keys(stats.colorWins).forEach(key => {
-      colorFrequency[key] = (stats.colorWins[key] / handsToSimulate * 100).toFixed(3);
-    });
-
-    // Calculate compliance
-    const h = parseFloat(stats.payoutPercentages.hand);
-    const c = parseFloat(stats.payoutPercentages.color);
-    const r = parseFloat(stats.payoutPercentages.rank);
-    const l = parseFloat(stats.payoutPercentages.lowHigh);
-    const avg = (h + c + r + l) / 4;
+    const overallRTP = (stats.totalPayouts / stats.totalBets * 100).toFixed(2);
+    const avgProfitPerRound = ((stats.totalPayouts - stats.totalBets) / handsToSimulate).toFixed(2);
 
     return Response.json({
       success: true,
-      stats,
-      analysis: {
-        handFrequency,
-        colorFrequency,
-        conclusion: {
-          averagePayout: avg.toFixed(2),
-          isCompliant: avg >= 85 && avg <= 98,
-          recommendation: avg >= 85 && avg <= 98
-            ? 'Game meets typical casino RTP standards (85-98%)'
-            : avg < 85
-              ? 'WARNING: Game heavily favors casino (below 85% RTP)'
-              : 'WARNING: Game heavily favors players (above 98% RTP)',
-        },
+      summary: {
+        totalHandsSimulated: handsToSimulate,
+        totalBets: stats.totalBets,
+        totalPayouts: stats.totalPayouts,
+        casinoProfit: (stats.totalBets - stats.totalPayouts).toFixed(2),
+        overallRTP: overallRTP + '%',
+        avgProfitPerRound,
+        isCompliant: parseFloat(overallRTP) >= 85 && parseFloat(overallRTP) <= 98,
+        recommendation: parseFloat(overallRTP) >= 85 && parseFloat(overallRTP) <= 98
+          ? '✓ Game meets compliance (85-98% RTP)'
+          : parseFloat(overallRTP) < 85
+            ? '⚠️ Game favors casino (below 85%)'
+            : '⚠️ Game favors players (above 98%)',
       },
+      sampleRounds: stats.roundResults.slice(0, 10), // Show first 10 rounds as example
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
