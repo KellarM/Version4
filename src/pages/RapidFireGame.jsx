@@ -522,7 +522,23 @@ export default function RapidFireGame() {
                 🔥FIRE
               </span>
             </div>
-            <div className="text-green-400 font-bold text-xs tracking-widest mt-0.5">TEXAS 10</div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-yellow-500/60 text-xs">—</span>
+              <span
+                className="font-black italic text-xs tracking-widest"
+                style={{
+                  fontFamily: 'Oswald, sans-serif',
+                  transform: 'skewX(-12deg)',
+                  background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))',
+                }}
+              >
+                TEXAS 10
+              </span>
+              <span className="text-yellow-500/60 text-xs">—</span>
+            </div>
           </div>
           {/* Player count selector */}
           {gamePhase === 'betting' && roundId === 1 && Object.values(handBets).every(b => Object.keys(b || {}).length === 0) && (
