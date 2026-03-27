@@ -10,8 +10,8 @@ const PLAYER_CHIP_COLORS = [
 
 // High Card removed - always at least 1 pair minimum (K/K)
 export const RANK_BET_OPTIONS = [
-  { key: 'Royal Flush',     label: 'Royal Flush',     payout: 'JACKPOT', color: 'purple' },
-  { key: 'Straight Flush',  label: 'Straight Flush',  payout: 'JACKPOT', color: 'orange' },
+  { key: 'Royal Flush',     label: 'Royal Flush',     payout: 'JACKPOT', color: 'purple', minBet: 25 },
+  { key: 'Straight Flush',  label: 'Straight Flush',  payout: 'JACKPOT', color: 'orange', minBet: 15 },
   { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: '10:1',    color: 'yellow' },
   { key: 'Full House',      label: 'Full House',       payout: '2:1',     color: 'green'  },
   { key: 'Flush',           label: 'Flush',            payout: '3:1',     color: 'blue'   },
@@ -45,6 +45,7 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const isWinner = winningRank === opt.key;
           const isLeading = leadingRank === opt.key && !isWinner;
           const styles = COLOR_STYLES[opt.color];
+          const qualifies = !opt.minBet || bet >= opt.minBet;
 
           let cls = styles.inactive;
           if (isWinner) cls = styles.winner;
@@ -69,7 +70,14 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
                 ${canBet ? 'cursor-pointer hover:brightness-125' : 'cursor-default'}
               `}
             >
-              <span className="truncate">{opt.label}</span>
+              <div className="flex flex-col items-start leading-tight min-w-0">
+                <span className="truncate">{opt.label}</span>
+                {opt.minBet && (
+                  <span className={`text-xs font-normal leading-none mt-0.5 ${bet > 0 && !qualifies ? 'text-red-400' : bet >= opt.minBet ? 'text-green-400' : 'text-yellow-400/50'}`}>
+                    {bet >= opt.minBet ? '✓ qualifies' : `min $${opt.minBet}`}
+                  </span>
+                )}
+              </div>
               <span className="text-yellow-400/80 ml-1 flex-shrink-0">{opt.payout}</span>
 
               {chipsHere.length > 0 && (

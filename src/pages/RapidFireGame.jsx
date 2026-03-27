@@ -59,8 +59,8 @@ export default function RapidFireGame() {
   const [winningLowHigh, setWinningLowHigh] = useState(null);
   const [history, setHistory] = useState([]);
   const [roundId, setRoundId] = useState(1);
-  const [royalFlushJackpot, setRoyalFlushJackpot] = useState(0);
-  const [straightFlushJackpot, setStraightFlushJackpot] = useState(0);
+  const [royalFlushJackpot, setRoyalFlushJackpot] = useState(500);
+  const [straightFlushJackpot, setStraightFlushJackpot] = useState(200);
   const [lastWinInfo, setLastWinInfo] = useState(null);
   const [winningRank, setWinningRank] = useState(null);
   const [leadingRank, setLeadingRank] = useState(null);
@@ -355,15 +355,19 @@ export default function RapidFireGame() {
           const multiplier = rankPayoutMap[handResult.name];
           if (multiplier !== null && multiplier !== undefined) w += rankBetAmt + rankBetAmt * multiplier;
         }
-        // Jackpots
+        // Jackpots — require minimum qualifying bet
         if (handResult.name === 'Royal Flush') {
-          w += royalFlushJackpot;
-          if (prk['Royal Flush']) w += prk['Royal Flush'] + prk['Royal Flush'] * 100;
+          const rfBet = prk['Royal Flush'] || 0;
+          if (rfBet >= 25) {
+            w += royalFlushJackpot + rfBet + rfBet * 100;
+          }
           newRF = 500;
         }
         if (handResult.name === 'Straight Flush') {
-          w += straightFlushJackpot;
-          if (prk['Straight Flush']) w += prk['Straight Flush'] + prk['Straight Flush'] * 50;
+          const sfBet = prk['Straight Flush'] || 0;
+          if (sfBet >= 15) {
+            w += straightFlushJackpot + sfBet + sfBet * 50;
+          }
           newSF = 200;
         }
       }
@@ -435,8 +439,8 @@ export default function RapidFireGame() {
     setDealerMessage("Texas Hold'em is open for play. Players, please place your bets.");
     setGamePhase('betting');
     setActivePlayer(0);
-    setRoyalFlushJackpot(p => p + 12.5);
-    setStraightFlushJackpot(p => p + 5);
+    setRoyalFlushJackpot(p => Math.max(500, p + 12.5));
+    setStraightFlushJackpot(p => Math.max(200, p + 5));
   };
 
   const actionButton = () => {
