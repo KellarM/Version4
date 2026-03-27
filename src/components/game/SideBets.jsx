@@ -160,12 +160,11 @@ export default function SideBets({
                 onClick={() => canBetLH && onLowHighBet(type)}
                 onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'lowHighBetting') onRemoveLowHighBet(); }}
                 whileTap={canBetLH ? { scale: 0.95 } : {}}
-                className={`relative rounded-lg px-1 py-2 text-xs font-bold border-2 transition-all duration-200 ${cls} ${canBetLH ? 'cursor-pointer' : 'cursor-default'}`}
+                className={`relative rounded-lg px-1 py-0.5 text-xs font-bold border-2 transition-all duration-200 ${cls} ${canBetLH ? 'cursor-pointer' : 'cursor-default'}`}
               >
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="font-black text-sm">{type}</span>
-                  <span className="text-yellow-400/80 text-xs">{isLow ? '2–7' : '8–A'}</span>
-                  <span className="text-yellow-400/60 text-xs">1:1</span>
+                <div className="flex flex-col items-center">
+                  <span className="font-black text-sm leading-tight">{type}</span>
+                  <span className="text-yellow-400/80 text-xs leading-tight">{isLow ? '2–7' : '8–A'} · 1:1</span>
                 </div>
                 {chipsHere.length > 0 && (
                   <div className="absolute -top-1.5 -right-1.5 flex flex-row-reverse gap-0.5">
