@@ -17,6 +17,15 @@ const CHIP_VALUES = [5, 10, 25, 50, 100];
 const DEFAULT_CHIP = 10;
 const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4, 5];
 
+// Must match PLAYER_CHIP_COLORS in child components
+const PLAYER_TAB_STYLES = [
+  { active: 'border-yellow-400 bg-yellow-500 text-black',   inactive: 'border-yellow-700/40 bg-yellow-900/20 text-yellow-400' },
+  { active: 'border-blue-400 bg-blue-500 text-white',       inactive: 'border-blue-700/40 bg-blue-900/20 text-blue-400'       },
+  { active: 'border-pink-400 bg-pink-500 text-white',       inactive: 'border-pink-700/40 bg-pink-900/20 text-pink-400'       },
+  { active: 'border-green-400 bg-green-500 text-black',     inactive: 'border-green-700/40 bg-green-900/20 text-green-400'    },
+  { active: 'border-orange-400 bg-orange-500 text-black',   inactive: 'border-orange-700/40 bg-orange-900/20 text-orange-400' },
+];
+
 // Phases: 'betting' | 'flop' | 'turn' | 'lowHighBetting' | 'river' | 'settlement' | 'winner'
 const PHASE_LABELS = {
   betting: 'Place Your Bets',
@@ -87,33 +96,92 @@ export default function RapidFireGame() {
 
   // ---- BETTING ----
   const handleHandBet = useCallback((handId) => {
-    if (gamePhase !== 'betting' || balance < selectedChip) return;
-    setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: ((prev[pid] || {})[handId] || 0) + selectedChip } }));
+    if (gamePhase !== 'betting') return;
+    const existing = (handBets[pid] || {})[handId] || 0;
+    // Right-click / if already bet: remove it
+    if (existing > 0 && balance < selectedChip) {
+      // remove bet on this hand
+      setHandBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[handId]; return { ...prev, [pid]: n }; });
+      setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+      return;
+    }
+    if (balance < selectedChip) return;
+    setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid]);
+  }, [gamePhase, balance, selectedChip, pid, handBets]);
+
+  const handleRemoveHandBet = useCallback((handId) => {
+    if (gamePhase !== 'betting') return;
+    const existing = (handBets[pid] || {})[handId] || 0;
+    if (existing <= 0) return;
+    setHandBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[handId]; return { ...prev, [pid]: n }; });
+    setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+  }, [gamePhase, pid, handBets]);
 
   const handleRankBet = useCallback((key) => {
-    if (gamePhase !== 'betting' || balance < selectedChip) return;
-    setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: ((prev[pid] || {})[key] || 0) + selectedChip } }));
+    if (gamePhase !== 'betting') return;
+    const existing = (rankBets[pid] || {})[key] || 0;
+    if (existing > 0 && balance < selectedChip) {
+      setRankBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
+      setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+      return;
+    }
+    if (balance < selectedChip) return;
+    setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid]);
+  }, [gamePhase, balance, selectedChip, pid, rankBets]);
+
+  const handleRemoveRankBet = useCallback((key) => {
+    if (gamePhase !== 'betting') return;
+    const existing = (rankBets[pid] || {})[key] || 0;
+    if (existing <= 0) return;
+    setRankBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
+    setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+  }, [gamePhase, pid, rankBets]);
 
   const handleRedBlackBet = useCallback((key) => {
-    if (gamePhase !== 'betting' || balance < selectedChip) return;
-    setRedBlackBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: ((prev[pid] || {})[key] || 0) + selectedChip } }));
+    if (gamePhase !== 'betting') return;
+    const existing = (redBlackBets[pid] || {})[key] || 0;
+    if (existing > 0 && balance < selectedChip) {
+      setRedBlackBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
+      setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+      return;
+    }
+    if (balance < selectedChip) return;
+    setRedBlackBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid]);
+  }, [gamePhase, balance, selectedChip, pid, redBlackBets]);
+
+  const handleRemoveRedBlackBet = useCallback((key) => {
+    if (gamePhase !== 'betting') return;
+    const existing = (redBlackBets[pid] || {})[key] || 0;
+    if (existing <= 0) return;
+    setRedBlackBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
+    setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+  }, [gamePhase, pid, redBlackBets]);
 
   const handleLowHighBet = useCallback((type) => {
-    if (gamePhase !== 'lowHighBetting' || balance < selectedChip) return;
-    const maxBet = totalBet;
+    if (gamePhase !== 'lowHighBetting') return;
+    // Max bet = total already on board (hand + rank + rb bets), excluding low/high itself
+    const boardBet = Object.values(handBets[pid] || {}).reduce((s, v) => s + v, 0) +
+      Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0) +
+      Object.values(rankBets[pid] || {}).reduce((s, v) => s + v, 0);
     const current = pLowHighBet && pLowHighBet.type === type ? pLowHighBet.amount : 0;
-    if (current >= maxBet) return;
-    const addAmount = Math.min(selectedChip, maxBet - current);
+    const remaining = boardBet - current;
+    if (remaining <= 0) return;
+    // Substitute: use min of chip and remaining (don't exceed table total)
+    const addAmount = Math.min(selectedChip, remaining);
     if (balance < addAmount) return;
     setLowHighBets(prev => ({ ...prev, [pid]: { type, amount: (prev[pid]?.type === type ? prev[pid].amount : 0) + addAmount } }));
     setBalances(b => { const n = [...b]; n[pid] -= addAmount; return n; });
-  }, [gamePhase, balance, selectedChip, totalBet, pLowHighBet, pid]);
+  }, [gamePhase, balance, selectedChip, handBets, redBlackBets, rankBets, pLowHighBet, pid]);
+
+  const handleRemoveLowHighBet = useCallback(() => {
+    if (gamePhase !== 'lowHighBetting') return;
+    if (!pLowHighBet || pLowHighBet.amount <= 0) return;
+    setBalances(b => { const n = [...b]; n[pid] += pLowHighBet.amount; return n; });
+    setLowHighBets(prev => ({ ...prev, [pid]: null }));
+  }, [gamePhase, pid, pLowHighBet]);
 
   const clearBets = () => {
     const refund = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
@@ -386,19 +454,20 @@ export default function RapidFireGame() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          {/* Player tabs */}
+          {/* Player tabs — colored to match chip color */}
           {playerCount > 1 && (
             <div className="flex items-center gap-1">
-              {Array.from({ length: playerCount }, (_, i) => (
-                <button key={i}
-                  onClick={() => gamePhase === 'betting' || gamePhase === 'lowHighBetting' ? setActivePlayer(i) : null}
-                  className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-all
-                    ${activePlayer === i
-                      ? 'border-yellow-400 bg-yellow-600 text-black'
-                      : 'border-yellow-700/40 bg-yellow-900/20 text-yellow-400'}`}>
-                  P{i + 1} <span className="opacity-70">${(balances[i] || STARTING_BALANCE).toFixed(0)}</span>
-                </button>
-              ))}
+              {Array.from({ length: playerCount }, (_, i) => {
+                const style = PLAYER_TAB_STYLES[i % PLAYER_TAB_STYLES.length];
+                return (
+                  <button key={i}
+                    onClick={() => gamePhase === 'betting' || gamePhase === 'lowHighBetting' ? setActivePlayer(i) : null}
+                    className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-all
+                      ${activePlayer === i ? style.active : style.inactive}`}>
+                    P{i + 1} <span className="opacity-70">${(balances[i] || STARTING_BALANCE).toFixed(0)}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
           <div className="text-center">
@@ -498,6 +567,7 @@ export default function RapidFireGame() {
                   allHandBets={handBets}
                   playerCount={playerCount}
                   onBet={handleHandBet}
+                  onRemoveBet={handleRemoveHandBet}
                   gamePhase={gamePhase}
                   disabled={balance < selectedChip && !pHandBets[hand.id]}
                 />
@@ -557,6 +627,7 @@ export default function RapidFireGame() {
               allRankBets={rankBets}
               playerCount={playerCount}
               onRankBet={handleRankBet}
+              onRemoveRankBet={handleRemoveRankBet}
               gamePhase={gamePhase}
               winningRank={winningRank}
               leadingRank={leadingRank}
@@ -572,7 +643,9 @@ export default function RapidFireGame() {
               redBlackBets={pRedBlackBets}
               lowHighBet={pLowHighBet}
               onRedBlackBet={handleRedBlackBet}
+              onRemoveRedBlackBet={handleRemoveRedBlackBet}
               onLowHighBet={handleLowHighBet}
+              onRemoveLowHighBet={handleRemoveLowHighBet}
               gamePhase={gamePhase}
               winningRedBlack={winningRedBlack}
               winningLowHigh={winningLowHigh}

@@ -21,16 +21,19 @@ export const RANK_BET_OPTIONS = [
   { key: 'One Pair',        label: 'One Pair',         payout: '15:1',    color: 'green'  },
 ];
 
+// Winner always highlights in gold/yellow (same as carded hand, R/B, L/H winners)
+const WINNER_STYLE = 'border-yellow-400 bg-yellow-900/50 text-yellow-200 shadow-yellow-400/50 shadow-lg';
+
 const COLOR_STYLES = {
-  purple: { active: 'border-purple-400 bg-purple-900/50 text-purple-200', inactive: 'border-purple-800/40 bg-purple-950/20 text-purple-400/60', winner: 'border-purple-300 bg-purple-800/60 text-purple-100 shadow-purple-400/60 shadow-lg' },
-  orange: { active: 'border-orange-400 bg-orange-900/50 text-orange-200', inactive: 'border-orange-800/40 bg-orange-950/20 text-orange-400/60', winner: 'border-orange-300 bg-orange-800/60 text-orange-100 shadow-orange-400/60 shadow-lg' },
-  yellow: { active: 'border-yellow-400 bg-yellow-900/50 text-yellow-200', inactive: 'border-yellow-800/40 bg-yellow-950/20 text-yellow-400/60', winner: 'border-yellow-300 bg-yellow-700/60 text-yellow-100 shadow-yellow-400/60 shadow-lg' },
-  blue:   { active: 'border-blue-400 bg-blue-900/50 text-blue-200',       inactive: 'border-blue-800/40 bg-blue-950/20 text-blue-400/60',       winner: 'border-blue-300 bg-blue-800/60 text-blue-100 shadow-blue-400/60 shadow-lg' },
-  teal:   { active: 'border-teal-400 bg-teal-900/50 text-teal-200',       inactive: 'border-teal-800/40 bg-teal-950/20 text-teal-400/60',       winner: 'border-teal-300 bg-teal-800/60 text-teal-100 shadow-teal-400/60 shadow-lg' },
-  green:  { active: 'border-green-500 bg-green-900/50 text-green-200',    inactive: 'border-green-800/40 bg-green-950/20 text-green-400/60',    winner: 'border-green-300 bg-green-800/60 text-green-100 shadow-green-400/60 shadow-lg' },
+  purple: { active: 'border-purple-400 bg-purple-900/50 text-purple-200', inactive: 'border-purple-800/40 bg-purple-950/20 text-purple-400/60', winner: WINNER_STYLE },
+  orange: { active: 'border-orange-400 bg-orange-900/50 text-orange-200', inactive: 'border-orange-800/40 bg-orange-950/20 text-orange-400/60', winner: WINNER_STYLE },
+  yellow: { active: 'border-yellow-400 bg-yellow-900/50 text-yellow-200', inactive: 'border-yellow-800/40 bg-yellow-950/20 text-yellow-400/60', winner: WINNER_STYLE },
+  blue:   { active: 'border-blue-400 bg-blue-900/50 text-blue-200',       inactive: 'border-blue-800/40 bg-blue-950/20 text-blue-400/60',       winner: WINNER_STYLE },
+  teal:   { active: 'border-teal-400 bg-teal-900/50 text-teal-200',       inactive: 'border-teal-800/40 bg-teal-950/20 text-teal-400/60',       winner: WINNER_STYLE },
+  green:  { active: 'border-green-500 bg-green-900/50 text-green-200',    inactive: 'border-green-800/40 bg-green-950/20 text-green-400/60',    winner: WINNER_STYLE },
 };
 
-export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, gamePhase, winningRank, leadingRank, disabled }) {
+export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled }) {
   const canBet = gamePhase === 'betting' && !disabled;
 
   return (
@@ -59,6 +62,7 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
             <motion.button
               key={opt.key}
               onClick={() => canBet && onRankBet(opt.key)}
+              onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveRankBet(opt.key); }}
               whileTap={canBet ? { scale: 0.97 } : {}}
               className={`relative flex items-center justify-between px-2 py-1 rounded-lg border-2 text-xs font-bold transition-all duration-200
                 ${cls}

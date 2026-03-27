@@ -20,6 +20,7 @@ export default function FixedHandCard({
   allHandBets,     // { [pid]: amount } for all players on this hand
   playerCount,
   onBet,
+  onRemoveBet,
   gamePhase,
   disabled,
 }) {
@@ -51,6 +52,7 @@ export default function FixedHandCard({
       animate={isLeading || isWinner ? { scale: [1, 1.02, 1] } : { scale: 1 }}
       transition={{ duration: 0.5, repeat: isLeading && !isWinner ? Infinity : 0, repeatDelay: 1.5 }}
       onClick={() => canBet && onBet(hand.id)}
+      onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveBet(hand.id); }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
