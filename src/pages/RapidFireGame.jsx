@@ -764,43 +764,33 @@ export default function RapidFireGame() {
           </AnimatePresence>
 
           {/* 10 Fixed Hands Grid */}
-          <div className="flex-1 min-h-0 flex flex-col">
-            <div className="grid grid-cols-5 gap-1.5 flex-1 auto-rows-fr">
+          <div className="flex-1 min-h-0">
+            <div className="grid grid-cols-5 gap-1.5 h-full auto-rows-fr">
               {FIXED_HANDS.map(hand => (
-                <div key={hand.id} className="flex flex-col">
-                  <FixedHandCard
-                    hand={hand}
-                    isLeading={leadingHandIds.includes(hand.id)}
-                    isWinner={winnerHandIds.includes(hand.id)}
-                    communityCards={communityCards}
-                    betAmount={pHandBets[hand.id] || 0}
-                    allHandBets={handBets}
-                    playerCount={playerCount}
-                    activePlayerId={pid}
-                    onBet={handleHandBet}
-                    onRemoveBet={handleRemoveHandBet}
-                    onDropChip={handleDropChip}
-                    gamePhase={gamePhase}
-                    disabled={balance < selectedChip && !pHandBets[hand.id]}
-                    disabledByConstraint={rankBetCount > 1}
-                  />
-                  {(hand.id === 8 || hand.id === 9) && (
-                    <div className="flex justify-center mt-1">
-                      <NewPlayerButton 
-                        playerCount={playerCount} 
-                        onAddPlayer={handleAddPlayer}
-                        gamePhase={gamePhase}
-                      />
-                    </div>
-                  )}
-                </div>
+                <FixedHandCard
+                  key={hand.id}
+                  hand={hand}
+                  isLeading={leadingHandIds.includes(hand.id)}
+                  isWinner={winnerHandIds.includes(hand.id)}
+                  communityCards={communityCards}
+                  betAmount={pHandBets[hand.id] || 0}
+                  allHandBets={handBets}
+                  playerCount={playerCount}
+                  activePlayerId={pid}
+                  onBet={handleHandBet}
+                  onRemoveBet={handleRemoveHandBet}
+                  onDropChip={handleDropChip}
+                  gamePhase={gamePhase}
+                  disabled={balance < selectedChip && !pHandBets[hand.id]}
+                  disabledByConstraint={rankBetCount > 1}
+                />
               ))}
             </div>
           </div>
 
           {/* Bottom controls: chips + action button */}
           <div className="flex items-center justify-between gap-2 border-t border-yellow-700/20 pt-1.5 flex-shrink-0">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               {/* Bank drop zone — drag chips here to refund */}
               {gamePhase === 'betting' && (
                 <div
@@ -813,13 +803,13 @@ export default function RapidFireGame() {
                     const { from, pid: dragPid } = JSON.parse(data);
                     handleDropChip(from, 'bank', dragPid);
                   }}
-                  className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-dashed border-yellow-600/50 bg-yellow-900/20 text-yellow-500/60 text-xs font-bold transition-all hover:border-yellow-400 hover:bg-yellow-900/40 mr-1"
+                  className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-dashed border-yellow-600/50 bg-yellow-900/20 text-yellow-500/60 text-xs font-bold transition-all hover:border-yellow-400 hover:bg-yellow-900/40"
                   title="Drag chip here to refund to bank"
                 >
                   💰
                 </div>
               )}
-              <span className="text-yellow-400/60 text-xs mr-1">Chip:</span>
+              <span className="text-yellow-400/60 text-xs">Chip:</span>
               {CHIP_VALUES.map(v => (
                 <button
                   key={v}
@@ -832,6 +822,13 @@ export default function RapidFireGame() {
                   ${v}
                 </button>
               ))}
+              <div className="border-l border-yellow-700/20 pl-2 ml-1">
+                <NewPlayerButton 
+                  playerCount={playerCount} 
+                  onAddPlayer={handleAddPlayer}
+                  gamePhase={gamePhase}
+                />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {gamePhase === 'betting' && totalBet > 0 && (
