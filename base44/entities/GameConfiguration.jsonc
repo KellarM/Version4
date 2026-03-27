@@ -1,0 +1,113 @@
+{
+  "name": "GameConfiguration",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Configuration name (e.g., Rapid Fire Texas 10 Version 1, Version 2)"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version identifier"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of this configuration"
+    },
+    "rtp": {
+      "type": "number",
+      "description": "Return to Player percentage"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived",
+        "testing"
+      ],
+      "default": "testing",
+      "description": "Configuration status"
+    },
+    "cardedPayouts": {
+      "type": "array",
+      "description": "Payout multipliers for 10 carded hands",
+      "items": {
+        "type": "number"
+      }
+    },
+    "rankPayouts": {
+      "type": "object",
+      "description": "Hand rank payout multipliers",
+      "properties": {
+        "Royal Flush": {
+          "type": "number"
+        },
+        "Straight Flush": {
+          "type": "number"
+        },
+        "Four of a Kind": {
+          "type": "number"
+        },
+        "Full House": {
+          "type": "number"
+        },
+        "Flush": {
+          "type": "number"
+        },
+        "Straight": {
+          "type": "number"
+        },
+        "Three of a Kind": {
+          "type": "number"
+        },
+        "Two Pair": {
+          "type": "number"
+        },
+        "One Pair": {
+          "type": "number"
+        }
+      }
+    },
+    "colorPayouts": {
+      "type": "object",
+      "description": "Red/Black color board payout multipliers",
+      "properties": {
+        "5R": {
+          "type": "number"
+        },
+        "5B": {
+          "type": "number"
+        },
+        "4R": {
+          "type": "number"
+        },
+        "4B": {
+          "type": "number"
+        },
+        "3R": {
+          "type": "number"
+        },
+        "3B": {
+          "type": "number"
+        }
+      }
+    },
+    "lowHighPayout": {
+      "type": "number",
+      "description": "Low/High bet payout multiplier"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes or testing details"
+    }
+  },
+  "required": [
+    "name",
+    "version",
+    "rtp",
+    "cardedPayouts",
+    "rankPayouts",
+    "colorPayouts",
+    "lowHighPayout"
+  ]
+}
