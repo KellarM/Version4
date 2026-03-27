@@ -1,5 +1,13 @@
 import { motion } from 'framer-motion';
 
+const PLAYER_CHIP_COLORS = [
+  { bg: 'bg-yellow-500',  text: 'text-black',  border: 'border-yellow-400'  },
+  { bg: 'bg-blue-500',    text: 'text-white',  border: 'border-blue-300'    },
+  { bg: 'bg-pink-500',    text: 'text-white',  border: 'border-pink-300'    },
+  { bg: 'bg-green-500',   text: 'text-black',  border: 'border-green-300'   },
+  { bg: 'bg-orange-500',  text: 'text-black',  border: 'border-orange-300'  },
+];
+
 // High Card removed - always at least 1 pair minimum (K/K)
 export const RANK_BET_OPTIONS = [
   { key: 'Royal Flush',     label: 'Royal Flush',     payout: 'JACKPOT', color: 'purple' },
@@ -22,7 +30,7 @@ const COLOR_STYLES = {
   green:  { active: 'border-green-500 bg-green-900/50 text-green-200',    inactive: 'border-green-800/40 bg-green-950/20 text-green-400/60',    winner: 'border-green-300 bg-green-800/60 text-green-100 shadow-green-400/60 shadow-lg' },
 };
 
-export default function RankBets({ rankBets, onRankBet, gamePhase, winningRank, leadingRank, disabled }) {
+export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, gamePhase, winningRank, leadingRank, disabled }) {
   const canBet = gamePhase === 'betting' && !disabled;
 
   return (
@@ -40,6 +48,13 @@ export default function RankBets({ rankBets, onRankBet, gamePhase, winningRank, 
           else if (isLeading) cls = styles.active;
           else if (bet > 0) cls = styles.active;
 
+          // Collect all players' chips
+          const chipsHere = [];
+          for (let i = 0; i < (playerCount || 1); i++) {
+            const amt = (allRankBets?.[i] || {})[opt.key] || 0;
+            if (amt > 0) chipsHere.push({ pid: i, amt, color: PLAYER_CHIP_COLORS[i % PLAYER_CHIP_COLORS.length] });
+          }
+
           return (
             <motion.button
               key={opt.key}
@@ -53,10 +68,19 @@ export default function RankBets({ rankBets, onRankBet, gamePhase, winningRank, 
               <span className="truncate">{opt.label}</span>
               <span className="text-yellow-400/80 ml-1 flex-shrink-0">{opt.payout}</span>
 
-              {bet > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-yellow-500 text-black text-xs font-black rounded-full w-5 h-5 flex items-center justify-center z-10">
-                  ${bet}
-                </span>
+              {chipsHere.length > 0 && (
+                <div className="absolute -top-1.5 -right-1.5 flex flex-row-reverse gap-0.5 z-10">
+                  {chipsHere.map(({ pid, amt, color }, idx) => (
+                    <span
+                      key={pid}
+                      style={{ zIndex: 10 + idx }}
+                      className={`${color.bg} ${color.text} text-xs font-black rounded-full w-5 h-5 flex items-center justify-center border ${color.border} shadow`}
+                      title={`P${pid + 1}: $${amt}`}
+                    >
+                      {amt >= 100 ? '99+' : amt}
+                    </span>
+                  ))}
+                </div>
               )}
               {isLeading && (
                 <div className="absolute inset-0 rounded-lg bg-white/5 animate-pulse pointer-events-none" />

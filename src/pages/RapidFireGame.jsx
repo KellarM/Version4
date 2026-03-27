@@ -495,6 +495,8 @@ export default function RapidFireGame() {
                   isWinner={winnerHandIds.includes(hand.id)}
                   communityCards={communityCards}
                   betAmount={pHandBets[hand.id] || 0}
+                  allHandBets={handBets}
+                  playerCount={playerCount}
                   onBet={handleHandBet}
                   gamePhase={gamePhase}
                   disabled={balance < selectedChip && !pHandBets[hand.id]}
@@ -552,6 +554,8 @@ export default function RapidFireGame() {
           <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-shrink-0">
             <RankBets
               rankBets={pRankBets}
+              allRankBets={rankBets}
+              playerCount={playerCount}
               onRankBet={handleRankBet}
               gamePhase={gamePhase}
               winningRank={winningRank}
@@ -563,6 +567,8 @@ export default function RapidFireGame() {
           <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-1 overflow-hidden">
             <SideBets
               communityCards={communityCards}
+              allRedBlackBets={redBlackBets}
+              allLowHighBets={lowHighBets}
               redBlackBets={pRedBlackBets}
               lowHighBet={pLowHighBet}
               onRedBlackBet={handleRedBlackBet}
@@ -571,6 +577,7 @@ export default function RapidFireGame() {
               winningRedBlack={winningRedBlack}
               winningLowHigh={winningLowHigh}
               disabled={balance < selectedChip}
+              playerCount={playerCount}
             />
           </div>
         </div>

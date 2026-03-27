@@ -3,16 +3,33 @@ import PlayingCard from './PlayingCard';
 import { SUITS, evaluateBestHand } from '@/lib/gameEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const PLAYER_CHIP_COLORS = [
+  { bg: 'bg-yellow-500',  text: 'text-black',  border: 'border-yellow-400'  },
+  { bg: 'bg-blue-500',    text: 'text-white',  border: 'border-blue-300'    },
+  { bg: 'bg-pink-500',    text: 'text-white',  border: 'border-pink-300'    },
+  { bg: 'bg-green-500',   text: 'text-black',  border: 'border-green-300'   },
+  { bg: 'bg-orange-500',  text: 'text-black',  border: 'border-orange-300'  },
+];
+
 export default function FixedHandCard({
   hand,
   isLeading,
   isWinner,
   communityCards,
   betAmount,
+  allHandBets,     // { [pid]: amount } for all players on this hand
+  playerCount,
   onBet,
   gamePhase,
   disabled,
 }) {
+  // Build chip list from all players
+  const allBets = [];
+  for (let i = 0; i < (playerCount || 1); i++) {
+    const amt = (allHandBets || {})[i]?.[hand?.id] || 0;
+    if (amt > 0) allBets.push({ pid: i, amt, color: PLAYER_CHIP_COLORS[i % PLAYER_CHIP_COLORS.length] });
+  }
+
   const [hovered, setHovered] = useState(false);
   const canBet = gamePhase === 'betting' && !disabled;
 
@@ -67,10 +84,19 @@ export default function FixedHandCard({
         </div>
       )}
 
-      {/* Bet indicator */}
-      {betAmount > 0 && (
-        <div className="absolute -top-2 -right-2 bg-yellow-500 text-black text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-10">
-          ${betAmount}
+      {/* Bet indicator — show all players' chips */}
+      {allBets && allBets.length > 0 && (
+        <div className="absolute -top-2 -right-2 flex flex-row-reverse gap-0.5 z-10">
+          {allBets.map(({ pid, amt, color }, idx) => (
+            <span
+              key={pid}
+              style={{ zIndex: 10 + idx }}
+              className={`${color.bg} ${color.text} text-xs font-black rounded-full w-6 h-6 flex items-center justify-center border ${color.border} shadow-lg`}
+              title={`P${pid + 1}: $${amt}`}
+            >
+              {amt >= 100 ? '99+' : amt}
+            </span>
+          ))}
         </div>
       )}
 

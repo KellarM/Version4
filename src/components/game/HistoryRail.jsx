@@ -41,11 +41,11 @@ export default function HistoryRail({ history, royalFlushJackpot, straightFlushJ
         <div className="text-yellow-400 text-xs font-bold tracking-wider uppercase py-1.5 text-center border-b border-yellow-700/30">
           Previous Hands
         </div>
-        {/* Column headers */}
-        <div className="grid grid-cols-4 gap-0 px-1 py-0.5 border-b border-yellow-700/20">
-          <span className="text-yellow-400/60 text-xs font-semibold">HAND</span>
+        {/* Column headers: HAND | TYPE (wider) | R/B | L/H */}
+        <div className="grid px-1 py-0.5 border-b border-yellow-700/20" style={{gridTemplateColumns:'auto 1fr auto auto', gap:'0 2px'}}>
+          <span className="text-yellow-400/60 text-xs font-semibold pr-1">HAND</span>
           <span className="text-yellow-400/60 text-xs font-semibold">TYPE</span>
-          <span className="text-yellow-400/60 text-xs font-semibold text-center">R/B</span>
+          <span className="text-yellow-400/60 text-xs font-semibold text-center px-1">R/B</span>
           <span className="text-yellow-400/60 text-xs font-semibold text-right">L/H</span>
         </div>
         <div className="flex flex-col overflow-y-auto flex-1">
@@ -66,21 +66,18 @@ export default function HistoryRail({ history, royalFlushJackpot, straightFlushJ
               const handColor0 = entry.cards[0]?.suit === 'hearts' || entry.cards[0]?.suit === 'diamonds' ? 'text-red-400' : 'text-gray-200';
               const handColor1 = entry.cards[1]?.suit === 'hearts' || entry.cards[1]?.suit === 'diamonds' ? 'text-red-400' : 'text-gray-200';
 
-              const handStr = entry.cards.length >= 2
-                ? `${entry.cards[0].rank}${SUITS[entry.cards[0].suit]}/${entry.cards[1].rank}${SUITS[entry.cards[1].suit]}`
-                : '';
-
               return (
                 <motion.div
                   key={entry.roundId}
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`grid grid-cols-4 gap-0 px-1 py-0.5 border-b border-green-900/30 ${isRecent ? 'bg-green-900/20' : ''}`}
+                  className={`grid px-1 py-0.5 border-b border-green-900/30 ${isRecent ? 'bg-green-900/20' : ''}`}
+                  style={{gridTemplateColumns:'auto 1fr auto auto', gap:'0 2px'}}
                 >
-                  {/* Winning Hand cards - colored by suit */}
-                  <div className="flex items-center">
+                  {/* Winning Hand cards */}
+                  <div className="flex items-center pr-1">
                     {entry.cards.length >= 2 ? (
-                      <span className="text-xs font-mono leading-none">
+                      <span className="text-xs font-mono leading-none whitespace-nowrap">
                         <span className={handColor0}>{entry.cards[0].rank}{SUITS[entry.cards[0].suit]}</span>
                         <span className="text-gray-500">/</span>
                         <span className={handColor1}>{entry.cards[1].rank}{SUITS[entry.cards[1].suit]}</span>
@@ -88,11 +85,11 @@ export default function HistoryRail({ history, royalFlushJackpot, straightFlushJ
                     ) : null}
                   </div>
                   {/* Type */}
-                  <div className={`text-xs font-semibold leading-none flex items-center ${rankColor}`}>
+                  <div className={`text-xs font-semibold leading-none flex items-center truncate ${rankColor}`}>
                     {shortRank(entry.handRank)}
                   </div>
                   {/* R/B */}
-                  <div className={`text-xs font-bold leading-none flex items-center justify-center ${isRed ? 'text-red-400' : 'text-gray-300'}`}>
+                  <div className={`text-xs font-bold leading-none flex items-center justify-center px-1 ${isRed ? 'text-red-400' : 'text-gray-300'}`}>
                     {entry.colorResult}
                   </div>
                   {/* L/H */}
