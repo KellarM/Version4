@@ -29,7 +29,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
   const suitSymbol = SUITS[card.suit];
 
   return (
-    <div className={`${sizeClasses[size]} rounded-md border bg-white flex flex-col justify-between p-0.5 shadow-lg select-none
+    <div className={`${sizeClasses[size]} rounded-md border bg-white flex flex-col justify-between p-0.5 pb-2 shadow-lg select-none
       ${isRed ? 'text-red-600' : 'text-gray-900'}
       ${glow ? 'border-yellow-400 shadow-yellow-400/80 shadow-lg ring-2 ring-yellow-400' : 'border-gray-200'}
     `}>
