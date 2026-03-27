@@ -12,6 +12,7 @@ import SideBets from '@/components/game/SideBets';
 import HistoryRail from '@/components/game/HistoryRail';
 import DealerAnnouncement from '@/components/game/DealerAnnouncement';
 import RankBets from '@/components/game/RankBets';
+import PayoutTable from '@/components/game/PayoutTable';
 
 const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -795,8 +796,12 @@ export default function RapidFireGame() {
           </div>
         </div>
 
-        {/* RIGHT: Rank Bets | Side Bets */}
-        <div className="w-48 flex-shrink-0 flex flex-col gap-1.5 overflow-hidden">
+        {/* RIGHT: Rank Bets | Side Bets | Payout Table */}
+        <div className="w-56 flex-shrink-0 flex flex-col gap-1.5 overflow-y-auto">
+          {/* Payout Table */}
+          <div className="flex-shrink-0">
+            <PayoutTable />
+          </div>
           {/* Rank Bets panel */}
           <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-shrink-0">
             <RankBets
