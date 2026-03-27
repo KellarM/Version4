@@ -614,7 +614,7 @@ export default function RapidFireGame() {
           <DealerAnnouncement message={dealerMessage} phase={gamePhase} />
 
           {/* Community Cards */}
-          <div className="border border-yellow-700/30 rounded-xl bg-green-900/20 py-1.5 px-4 flex items-center justify-between flex-shrink-0">
+          <div className="border border-yellow-700/30 rounded-xl bg-green-900/20 py-1.5 px-8 flex items-center justify-between flex-shrink-0">
             {/* Logo — left side */}
             <div className="flex flex-col leading-none select-none flex-shrink-0">
               <div className="flex items-baseline gap-0.5">
