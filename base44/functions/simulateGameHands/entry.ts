@@ -37,18 +37,18 @@ Deno.serve(async (req) => {
     }
 
     const rankPayoutMap = {
-      'Royal Flush': 1,
-      'Straight Flush': 0.5,
-      'Four of a Kind': 0.07,
-      'Full House': 0.015,
-      'Flush': 0.02,
-      'Straight': 0.04,
-      'Three of a Kind': 0.02,
-      'Two Pair': 0.08,
-      'One Pair': 0.1,
+      'Royal Flush': 0.005,
+      'Straight Flush': 0.0025,
+      'Four of a Kind': 0.00035,
+      'Full House': 0.000075,
+      'Flush': 0.0001,
+      'Straight': 0.0002,
+      'Three of a Kind': 0.0001,
+      'Two Pair': 0.0004,
+      'One Pair': 0.0005,
     };
 
-    const rbPayoutMap = { '3R': 0.1, '3B': 0.1, '4R': 0.3, '4B': 0.3, '5R': 2.5, '5B': 2.5 };
+    const rbPayoutMap = { '3R': 0.008, '3B': 0.008, '4R': 0.025, '4B': 0.025, '5R': 0.2, '5B': 0.2 };
 
     // Initialize rank tracking
     Object.keys(rankPayoutMap).forEach(rank => {
@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
       const winLH = isLow ? 'LOW' : 'HIGH';
       stats.lowHighWins[winLH]++;
       stats.totalBetByType.lowHigh += 1;
-      stats.totalPayoutByType.lowHigh += 1.9; // ~90% payout
+      stats.totalPayoutByType.lowHigh += 1.8; // ~90% payout
     }
 
     // Calculate payout percentages

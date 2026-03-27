@@ -7,16 +7,16 @@ export const SUIT_COLORS = { spades: 'black', hearts: 'red', diamonds: 'red', cl
 
 // The 10 fixed carded hands (20 locked cards, never in deck)
 export const FIXED_HANDS = [
-  { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }], payout: 1.1 },
-  { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },   { rank: 'K',  suit: 'spades' }], payout: 0.3  },
-  { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },   { rank: 'J',  suit: 'spades' }], payout: 0.9 },
-  { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },  { rank: '10', suit: 'spades' }], payout: 0.55  },
-  { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },   { rank: '9',  suit: 'clubs'  }], payout: 0.45  },
-  { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6', suit: 'diamonds' }], payout: 0.35 },
-  { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7', suit: 'spades' }], payout: 0.45  },
-  { id: 8,  cards: [{ rank: '4', suit: 'hearts' },  { rank: '2',  suit: 'hearts' }], payout: 0.45  },
-  { id: 9,  cards: [{ rank: '3', suit: 'clubs' },   { rank: '3',  suit: 'hearts' }], payout: 0.55  },
-  { id: 10, cards: [{ rank: 'A', suit: 'hearts' },  { rank: '5',  suit: 'diamonds' }], payout: 0.9 },
+  { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }], payout: 0.08 },
+  { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },   { rank: 'K',  suit: 'spades' }], payout: 0.025  },
+  { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },   { rank: 'J',  suit: 'spades' }], payout: 0.07 },
+  { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },  { rank: '10', suit: 'spades' }], payout: 0.045  },
+  { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },   { rank: '9',  suit: 'clubs'  }], payout: 0.035  },
+  { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6', suit: 'diamonds' }], payout: 0.03 },
+  { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7', suit: 'spades' }], payout: 0.035  },
+  { id: 8,  cards: [{ rank: '4', suit: 'hearts' },  { rank: '2',  suit: 'hearts' }], payout: 0.035  },
+  { id: 9,  cards: [{ rank: '3', suit: 'clubs' },   { rank: '3',  suit: 'hearts' }], payout: 0.045  },
+  { id: 10, cards: [{ rank: 'A', suit: 'hearts' },  { rank: '5',  suit: 'diamonds' }], payout: 0.07 },
 ];
 
 // The 32-card dealer deck (52 - 20 fixed)
@@ -166,12 +166,12 @@ export function findLeadingHand(communityCards) {
 
 // Red/Black payouts
 export const RED_BLACK_PAYOUTS = {
-  '3R': { label: '3 Red Cards', payout: 0.1 },
-  '3B': { label: '3 Black Cards', payout: 0.1 },
-  '4R': { label: '4 Red Cards', payout: 0.3 },
-  '4B': { label: '4 Black Cards', payout: 0.3 },
-  '5R': { label: '5 Red Cards', payout: 2.5 },
-  '5B': { label: '5 Black Cards', payout: 2.5 },
+  '3R': { label: '3 Red Cards', payout: 0.008 },
+  '3B': { label: '3 Black Cards', payout: 0.008 },
+  '4R': { label: '4 Red Cards', payout: 0.025 },
+  '4B': { label: '4 Black Cards', payout: 0.025 },
+  '5R': { label: '5 Red Cards', payout: 0.2 },
+  '5B': { label: '5 Black Cards', payout: 0.2 },
 };
 
 // The winning Red/Black bets based on final community cards
@@ -195,22 +195,22 @@ export const LOW_HIGH_PAYOUT = 1; // 1:1 (even money)
 
 // Red/Black display payouts for the table
 export const RB_TABLE = [
-  { key: '5R', label: '5 Red', payout: '2.5 to 1' },
-  { key: '5B', label: '5 Black', payout: '2.5 to 1' },
-  { key: '4R', label: '4 Red', payout: '0.3 to 1' },
-  { key: '4B', label: '4 Black', payout: '0.3 to 1' },
-  { key: '3R', label: '3 Red', payout: '0.1 to 1' },
-  { key: '3B', label: '3 Black', payout: '0.1 to 1' },
+  { key: '5R', label: '5 Red', payout: '0.2 to 1' },
+  { key: '5B', label: '5 Black', payout: '0.2 to 1' },
+  { key: '4R', label: '4 Red', payout: '0.025 to 1' },
+  { key: '4B', label: '4 Black', payout: '0.025 to 1' },
+  { key: '3R', label: '3 Red', payout: '0.008 to 1' },
+  { key: '3B', label: '3 Black', payout: '0.008 to 1' },
 ];
 
 export const HAND_RANK_PAYOUTS = [
   { name: 'Royal Flush',     payout: 'Progressive', special: true },
   { name: 'Straight Flush',  payout: 'Progressive', special: true },
-  { name: 'Four of a Kind',  payout: '0.07 to 1' },
-  { name: 'Full House',      payout: '0.015 to 1' },
-  { name: 'Flush',           payout: '0.02 to 1' },
-  { name: 'Straight',        payout: '0.04 to 1' },
-  { name: 'Three of a Kind', payout: '0.02 to 1' },
-  { name: 'Two Pair',        payout: '0.08 to 1' },
-  { name: 'One Pair',        payout: '0.1 to 1' },
+  { name: 'Four of a Kind',  payout: '0.00035 to 1' },
+  { name: 'Full House',      payout: '0.000075 to 1' },
+  { name: 'Flush',           payout: '0.0001 to 1' },
+  { name: 'Straight',        payout: '0.0002 to 1' },
+  { name: 'Three of a Kind', payout: '0.0001 to 1' },
+  { name: 'Two Pair',        payout: '0.0004 to 1' },
+  { name: 'One Pair',        payout: '0.0005 to 1' },
 ];
