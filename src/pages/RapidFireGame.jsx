@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
   FIXED_HANDS, shuffleDeck, DEALER_DECK, findLeadingHand,
   resolveRedBlack, resolveLowHigh, cardColor, isLowCard,
@@ -67,6 +68,37 @@ export default function RapidFireGame() {
   // Casino profit tracking
   const [casinoProfit, setCasinoProfit] = useState(0);
   const [roundsPlayed, setRoundsPlayed] = useState(0);
+
+  // Game progress persistence
+  useEffect(() => {
+    const savedGame = localStorage.getItem('rapidFireGameState');
+    if (savedGame) {
+      try {
+        const state = JSON.parse(savedGame);
+        setBalances(state.balances);
+        setRoundId(state.roundId);
+        setCasinoProfit(state.casinoProfit);
+        setRoundsPlayed(state.roundsPlayed);
+        setRoyalFlushJackpot(state.royalFlushJackpot);
+        setStraightFlushJackpot(state.straightFlushJackpot);
+      } catch (e) {
+        console.log('Could not restore game state');
+      }
+    }
+  }, []);
+
+  // Auto-save game state
+  useEffect(() => {
+    const gameState = {
+      balances,
+      roundId,
+      casinoProfit,
+      roundsPlayed,
+      royalFlushJackpot,
+      straightFlushJackpot,
+    };
+    localStorage.setItem('rapidFireGameState', JSON.stringify(gameState));
+  }, [balances, roundId, casinoProfit, roundsPlayed, royalFlushJackpot, straightFlushJackpot]);
 
   // Active player helpers
   const pid = activePlayer;
@@ -585,6 +617,13 @@ export default function RapidFireGame() {
               <div className="text-yellow-400/40 text-xs">{roundsPlayed} rounds</div>
             </div>
           )}
+          <Link
+            to="/simulation"
+            className="ml-2 px-2 py-1 rounded-lg border border-blue-700/60 bg-blue-900/30 text-blue-300 text-xs font-bold hover:bg-blue-800/50 transition-all"
+            title="Open simulation mode"
+          >
+            🔬 Simulate
+          </Link>
           <button
             onClick={handleResetGame}
             className="ml-2 px-2 py-1 rounded-lg border border-red-700/60 bg-red-900/30 text-red-300 text-xs font-bold hover:bg-red-800/50 transition-all"
