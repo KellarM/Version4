@@ -82,15 +82,15 @@ Deno.serve(async (req) => {
         if (Math.random() < player.handBetProb) {
           const handId = Math.floor(Math.random() * 10) + 1;
           const bet = [5, 10, 25][Math.floor(Math.random() * 3)];
-          bets.hand = { id: handId, amount: bet };
-          playerBet += bet;
-
-          // Winner hand gets payout
           const winningHandId = Math.floor(Math.random() * 10) + 1;
-          if (handId === winningHandId) {
-            const hand = FIXED_HANDS.find(h => h.id === handId);
-            playerWin += bet * (1 + hand.payout);
-          }
+          const won = handId === winningHandId;
+          
+          const hand = FIXED_HANDS.find(h => h.id === handId);
+          const winAmount = won ? bet * (1 + hand.payout) : 0;
+          
+          bets.hand = { id: handId, amount: bet, winAmount, won };
+          playerBet += bet;
+          playerWin += winAmount;
         }
 
         // Rank bets
@@ -98,45 +98,39 @@ Deno.serve(async (req) => {
           const rankKeys = Object.keys(rankPayoutMap);
           const rank = rankKeys[Math.floor(Math.random() * rankKeys.length)];
           const bet = [5, 10, 25][Math.floor(Math.random() * 3)];
-          bets.rank = { name: rank, amount: bet };
-          playerBet += bet;
-
-          // Check if rank wins
-          const roll = Math.random();
           const frequency = rankFrequencies[rank];
-          if (roll < frequency) {
-            const multiplier = rankPayoutMap[rank];
-            if (multiplier !== null && multiplier !== undefined) {
-              playerWin += bet * (1 + multiplier);
-            }
-          }
+          const won = Math.random() < frequency;
+          const multiplier = rankPayoutMap[rank];
+          const winAmount = won && multiplier !== null ? bet * (1 + multiplier) : 0;
+          
+          bets.rank = { name: rank, amount: bet, winAmount, won };
+          playerBet += bet;
+          playerWin += winAmount;
         }
 
         // Color board bets
         if (Math.random() < player.rbBetProb) {
           const colorType = Math.random() < 0.5 ? 'R' : 'B';
-          const count = 3 + Math.floor(Math.random() * 3); // 3-5
+          const count = 3 + Math.floor(Math.random() * 3);
           const bet = [5, 10, 25][Math.floor(Math.random() * 3)];
-          bets.color = { type: `${count}${colorType}`, amount: bet };
+          const won = Math.random() < 0.5;
+          const mult = rbPayoutMap[`${count}${colorType}`] || 1;
+          const winAmount = won ? bet * (1 + mult) : 0;
+          
+          bets.color = { type: `${count}${colorType}`, amount: bet, winAmount, won };
           playerBet += bet;
-
-          // Assume 50% chance for color outcome
-          if (Math.random() < 0.5) {
-            const mult = rbPayoutMap[`${count}${colorType}`] || 1;
-            playerWin += bet * (1 + mult);
-          }
+          playerWin += winAmount;
         }
 
         // Low/High bets
         if (Math.random() < player.lhBetProb) {
           const bet = [5, 10, 25][Math.floor(Math.random() * 3)];
-          bets.lowHigh = { type: Math.random() < 0.5 ? 'LOW' : 'HIGH', amount: bet };
+          const won = Math.random() < 0.5;
+          const winAmount = won ? bet * 1.35 : 0;
+          
+          bets.lowHigh = { type: Math.random() < 0.5 ? 'LOW' : 'HIGH', amount: bet, winAmount, won };
           playerBet += bet;
-
-          // 50% win probability
-          if (Math.random() < 0.5) {
-            playerWin += bet * 1.35;
-          }
+          playerWin += winAmount;
         }
 
         playerDetails.push({

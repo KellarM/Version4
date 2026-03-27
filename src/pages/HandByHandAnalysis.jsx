@@ -198,110 +198,124 @@ export default function HandByHandAnalysis() {
                   </thead>
                   <tbody>
                     {results.games.map((game, idx) => (
-                      <motion.tr
-                        key={idx}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: idx * 0.02 }}
-                        className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer ${
-                          expandedGame === idx ? 'bg-slate-700/50' : ''
-                        }`}
-                        onClick={() => setExpandedGame(expandedGame === idx ? null : idx)}
-                      >
-                        <td className="px-4 py-3 font-bold">#{game.gameNumber}</td>
-                        <td className="px-4 py-3 text-center">{game.playerCount}</td>
-                        <td className="px-4 py-3 text-right">${game.totalBets.toFixed(0)}</td>
-                        <td className="px-4 py-3 text-right">${game.totalPayouts.toFixed(2)}</td>
-                        <td className={`px-4 py-3 text-right font-bold ${game.houseProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {game.houseProfit >= 0 ? '+' : ''}${game.houseProfit.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-center">{game.rtp}</td>
-                        <td className="px-4 py-3 text-center text-purple-400 font-bold">{game.cumulativeRTP}</td>
-                        <td className="px-4 py-3 text-center">
-                          {expandedGame === idx ? <ChevronUp className="w-4 h-4 mx-auto" /> : <ChevronDown className="w-4 h-4 mx-auto" />}
-                        </td>
-                      </motion.tr>
+                      <motion.div key={idx}>
+                        <motion.tr
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: idx * 0.02 }}
+                          className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer ${
+                            expandedGame === idx ? 'bg-slate-700/50' : ''
+                          }`}
+                          onClick={() => setExpandedGame(expandedGame === idx ? null : idx)}
+                          component="tr"
+                        >
+                          <td className="px-4 py-3 font-bold">#{game.gameNumber}</td>
+                          <td className="px-4 py-3 text-center">{game.playerCount}</td>
+                          <td className="px-4 py-3 text-right">${game.totalBets.toFixed(0)}</td>
+                          <td className="px-4 py-3 text-right">${game.totalPayouts.toFixed(2)}</td>
+                          <td className={`px-4 py-3 text-right font-bold ${game.houseProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {game.houseProfit >= 0 ? '+' : ''}${game.houseProfit.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-center">{game.rtp}</td>
+                          <td className="px-4 py-3 text-center text-purple-400 font-bold">{game.cumulativeRTP}</td>
+                          <td className="px-4 py-3 text-center">
+                            {expandedGame === idx ? <ChevronUp className="w-4 h-4 mx-auto" /> : <ChevronDown className="w-4 h-4 mx-auto" />}
+                          </td>
+                        </motion.tr>
+
+                        {/* Expanded Details Row */}
+                        {expandedGame === idx && (
+                          <tr>
+                            <td colSpan="8" className="p-0">
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="bg-slate-900/80 border-t border-slate-700 p-4"
+                              >
+                                <h3 className="text-lg font-bold mb-4">Game #{game.gameNumber} - Player Breakdown</h3>
+                                <div className="space-y-3">
+                                  {game.players.map((player, pIdx) => (
+                                    <div key={pIdx} className="bg-slate-800/50 rounded-lg border border-slate-700 p-4">
+                                      <div className="flex justify-between items-center mb-3 pb-3 border-b border-slate-700">
+                                        <div>
+                                          <p className="font-bold text-white">Player {player.playerId} - {player.strategy} Strategy</p>
+                                        </div>
+                                        <div className="text-sm space-x-4 flex">
+                                          <span>Total Bet: <span className="font-bold text-yellow-400">${player.totalBet.toFixed(0)}</span></span>
+                                          <span>Total Win: <span className={`font-bold ${player.totalWin >= player.totalBet ? 'text-green-400' : 'text-red-400'}`}>${player.totalWin.toFixed(2)}</span></span>
+                                          <span>P/L: <span className={`font-bold ${player.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>{player.profit >= 0 ? '+' : ''}${player.profit.toFixed(2)}</span></span>
+                                        </div>
+                                      </div>
+
+                                      <div className="space-y-2">
+                                        {player.bets.hand && (
+                                          <div className="grid grid-cols-12 gap-2 text-xs bg-blue-900/20 p-3 rounded border border-blue-800/30">
+                                            <div className="col-span-2 font-bold text-blue-400">Card Hand</div>
+                                            <div className="col-span-2 text-gray-300">Hand #{player.bets.hand.id}</div>
+                                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.hand.amount}</div>
+                                            <div className="col-span-3 text-gray-300">Won: ${player.bets.hand.winAmount.toFixed(2)}</div>
+                                            <div className={`col-span-3 text-right font-bold ${player.bets.hand.won ? 'text-green-400' : 'text-red-400'}`}>
+                                              {player.bets.hand.won ? '✓ WIN' : '✗ LOSS'}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {player.bets.rank && (
+                                          <div className="grid grid-cols-12 gap-2 text-xs bg-purple-900/20 p-3 rounded border border-purple-800/30">
+                                            <div className="col-span-2 font-bold text-purple-400">Rank Hand</div>
+                                            <div className="col-span-2 text-gray-300">{player.bets.rank.name}</div>
+                                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.rank.amount}</div>
+                                            <div className="col-span-3 text-gray-300">Won: ${player.bets.rank.winAmount.toFixed(2)}</div>
+                                            <div className={`col-span-3 text-right font-bold ${player.bets.rank.won ? 'text-green-400' : 'text-red-400'}`}>
+                                              {player.bets.rank.won ? '✓ WIN' : '✗ LOSS'}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {player.bets.color && (
+                                          <div className="grid grid-cols-12 gap-2 text-xs bg-red-900/20 p-3 rounded border border-red-800/30">
+                                            <div className="col-span-2 font-bold text-red-400">Red/Black</div>
+                                            <div className="col-span-2 text-gray-300">{player.bets.color.type}</div>
+                                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.color.amount}</div>
+                                            <div className="col-span-3 text-gray-300">Won: ${player.bets.color.winAmount.toFixed(2)}</div>
+                                            <div className={`col-span-3 text-right font-bold ${player.bets.color.won ? 'text-green-400' : 'text-red-400'}`}>
+                                              {player.bets.color.won ? '✓ WIN' : '✗ LOSS'}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {player.bets.lowHigh && (
+                                          <div className="grid grid-cols-12 gap-2 text-xs bg-teal-900/20 p-3 rounded border border-teal-800/30">
+                                            <div className="col-span-2 font-bold text-teal-400">Low/High</div>
+                                            <div className="col-span-2 text-gray-300">{player.bets.lowHigh.type}</div>
+                                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.lowHigh.amount}</div>
+                                            <div className="col-span-3 text-gray-300">Won: ${player.bets.lowHigh.winAmount.toFixed(2)}</div>
+                                            <div className={`col-span-3 text-right font-bold ${player.bets.lowHigh.won ? 'text-green-400' : 'text-red-400'}`}>
+                                              {player.bets.lowHigh.won ? '✓ WIN' : '✗ LOSS'}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {Object.keys(player.bets).length === 0 && (
+                                          <p className="text-gray-500 text-xs italic">No bets placed</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            </td>
+                          </tr>
+                        )}
+                      </motion.div>
                     ))}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            {/* Expanded Game Details */}
-            {expandedGame !== null && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="bg-slate-800/50 border border-slate-700 rounded-lg p-6"
-              >
-                <h3 className="text-lg font-bold mb-4">Game #{results.games[expandedGame].gameNumber} - Detailed Breakdown</h3>
-                <div className="space-y-4">
-                  {results.games[expandedGame].players.map((player, pIdx) => (
-                    <div key={pIdx} className="bg-slate-900/50 rounded-lg border border-slate-700 overflow-hidden">
-                      <div className="bg-slate-800/70 px-4 py-3 border-b border-slate-700 flex justify-between items-center">
-                        <div>
-                          <p className="font-bold text-lg">Player {player.playerId} - {player.strategy} Strategy</p>
-                        </div>
-                        <div className="text-sm">
-                          <span className="text-gray-400">Total Bet: </span>
-                          <span className="font-bold text-yellow-400">${player.totalBet.toFixed(0)}</span>
-                          <span className="text-gray-400 ml-4">Total Win: </span>
-                          <span className={`font-bold ${player.totalWin >= player.totalBet ? 'text-green-400' : 'text-red-400'}`}>
-                            ${player.totalWin.toFixed(2)}
-                          </span>
-                          <span className="text-gray-400 ml-4">Profit: </span>
-                          <span className={`font-bold ${player.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {player.profit >= 0 ? '+' : ''}${player.profit.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 space-y-2">
-                        {player.bets.hand && (
-                          <div className="grid grid-cols-12 gap-2 text-sm bg-blue-900/20 p-3 rounded border border-blue-800/30">
-                            <div className="col-span-3 font-bold text-blue-400">Card Hand</div>
-                            <div className="col-span-3 text-gray-300">Hand #{player.bets.hand.id}</div>
-                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.hand.amount}</div>
-                            <div className="col-span-4 text-right text-gray-400">Outcome: Calculated in game</div>
-                          </div>
-                        )}
-                        
-                        {player.bets.rank && (
-                          <div className="grid grid-cols-12 gap-2 text-sm bg-purple-900/20 p-3 rounded border border-purple-800/30">
-                            <div className="col-span-3 font-bold text-purple-400">Rank Hand</div>
-                            <div className="col-span-3 text-gray-300">{player.bets.rank.name}</div>
-                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.rank.amount}</div>
-                            <div className="col-span-4 text-right text-gray-400">Outcome: Calculated in game</div>
-                          </div>
-                        )}
-                        
-                        {player.bets.color && (
-                          <div className="grid grid-cols-12 gap-2 text-sm bg-red-900/20 p-3 rounded border border-red-800/30">
-                            <div className="col-span-3 font-bold text-red-400">Red/Black</div>
-                            <div className="col-span-3 text-gray-300">{player.bets.color.type}</div>
-                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.color.amount}</div>
-                            <div className="col-span-4 text-right text-gray-400">Outcome: Calculated in game</div>
-                          </div>
-                        )}
-                        
-                        {player.bets.lowHigh && (
-                          <div className="grid grid-cols-12 gap-2 text-sm bg-teal-900/20 p-3 rounded border border-teal-800/30">
-                            <div className="col-span-3 font-bold text-teal-400">Low/High</div>
-                            <div className="col-span-3 text-gray-300">{player.bets.lowHigh.type}</div>
-                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.lowHigh.amount}</div>
-                            <div className="col-span-4 text-right text-gray-400">Outcome: Calculated in game</div>
-                          </div>
-                        )}
-                        
-                        {Object.keys(player.bets).length === 0 && (
-                          <p className="text-gray-500 text-sm italic">No bets placed</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+
           </motion.div>
         )}
       </div>
