@@ -6,7 +6,9 @@ import { Link } from 'react-router-dom';
 export default function DetailedSimulation() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
+  const [strategyResults, setStrategyResults] = useState(null);
   const [error, setError] = useState(null);
+  const [tab, setTab] = useState('basic');
 
   const runSim = async (handCount = 100000) => {
     setLoading(true);
@@ -14,6 +16,20 @@ export default function DetailedSimulation() {
     try {
       const response = await base44.functions.invoke('detailedGameSimulation', { handsToSimulate: handCount });
       setResults(response.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const runStrategySim = async (handCount = 100000) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await base44.functions.invoke('strategicPlayerSimulation', { handsToSimulate: handCount, strategy: 'all' });
+      setStrategyResults(response.data);
+      setTab('strategy');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -31,22 +47,56 @@ export default function DetailedSimulation() {
         </div>
 
         {/* Controls */}
-        <div className="mb-8 flex gap-4">
+        <div className="mb-8 flex gap-4 flex-wrap">
           <button
             onClick={() => runSim(100000)}
             disabled={loading}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg font-semibold"
           >
-            {loading ? 'Simulating...' : '100K Hands'}
+            {loading ? 'Simulating...' : 'Basic: 100K'}
           </button>
           <button
             onClick={() => runSim(500000)}
             disabled={loading}
             className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 rounded-lg font-semibold"
           >
-            {loading ? 'Simulating...' : '500K Hands'}
+            {loading ? 'Simulating...' : 'Basic: 500K'}
+          </button>
+          <button
+            onClick={() => runStrategySim(100000)}
+            disabled={loading}
+            className="px-6 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 rounded-lg font-semibold"
+          >
+            {loading ? 'Simulating...' : 'Strategies: 100K'}
+          </button>
+          <button
+            onClick={() => runStrategySim(500000)}
+            disabled={loading}
+            className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 rounded-lg font-semibold"
+          >
+            {loading ? 'Simulating...' : 'Strategies: 500K'}
           </button>
         </div>
+
+        {/* Tabs */}
+        {(results || strategyResults) && (
+          <div className="mb-6 flex gap-2">
+            <button
+              onClick={() => setTab('basic')}
+              disabled={!results}
+              className={`px-4 py-2 rounded-lg font-semibold ${tab === 'basic' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-400'}`}
+            >
+              Basic Breakdown
+            </button>
+            <button
+              onClick={() => setTab('strategy')}
+              disabled={!strategyResults}
+              className={`px-4 py-2 rounded-lg font-semibold ${tab === 'strategy' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-gray-400'}`}
+            >
+              Strategy Testing
+            </button>
+          </div>
+        )}
 
         {loading && (
           <div className="text-center py-12">
@@ -63,7 +113,7 @@ export default function DetailedSimulation() {
           </div>
         )}
 
-        {results && (
+        {tab === 'basic' && results && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
             {/* Overall Summary */}
             <div className={`rounded-lg border-2 p-6 ${
@@ -241,6 +291,75 @@ export default function DetailedSimulation() {
                   </div>
                 ))}
               </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* STRATEGY TESTING TAB */}
+        {tab === 'strategy' && strategyResults && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+            {/* Recommendation */}
+            <div className={`rounded-lg border-2 p-6 ${
+              strategyResults.recommendation.includes('EXPLOITABLE')
+                ? 'border-red-500 bg-red-900/20'
+                : strategyResults.recommendation.includes('SLIGHTLY')
+                ? 'border-orange-500 bg-orange-900/20'
+                : 'border-green-500 bg-green-900/20'
+            }`}>
+              <h2 className="text-2xl font-bold mb-4">Exploitation Risk Assessment</h2>
+              <p className="text-lg">{strategyResults.recommendation}</p>
+            </div>
+
+            {/* Strategy Comparison */}
+            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+              <h3 className="text-xl font-bold mb-6">Strategy Comparison (Best Player vs Casual)</h3>
+              <div className="space-y-4">
+                {Object.entries(strategyResults.strategies).map(([strategyName, data]) => {
+                  const rtp = parseFloat(data.rtp);
+                  const isExploitable = rtp > 100;
+                  
+                  return (
+                    <div key={strategyName} className={`rounded-lg p-4 border ${
+                      isExploitable ? 'border-red-600/50 bg-red-900/20' : 'border-slate-600 bg-slate-900/30'
+                    }`}>
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="font-bold text-lg">{strategyName}</h4>
+                        <span className={`text-2xl font-black ${
+                          isExploitable ? 'text-red-400' : 'text-green-400'
+                        }`}>{data.rtp}</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-4 text-sm">
+                        <div className="bg-slate-900/50 p-3 rounded">
+                          <p className="text-gray-400">Avg Bet/Round</p>
+                          <p className="font-bold">${data.avgBetPerRound}</p>
+                        </div>
+                        <div className="bg-slate-900/50 p-3 rounded">
+                          <p className="text-gray-400">Avg Payout/Round</p>
+                          <p className="font-bold">${data.avgPayoutPerRound}</p>
+                        </div>
+                        <div className="bg-slate-900/50 p-3 rounded">
+                          <p className="text-gray-400">Casino Profit</p>
+                          <p className={`font-bold ${isExploitable ? 'text-red-400' : 'text-green-400'}`}>${data.casinoProfit}</p>
+                        </div>
+                        <div className="bg-slate-900/50 p-3 rounded">
+                          <p className="text-gray-400">Profit Margin</p>
+                          <p className={`font-bold ${isExploitable ? 'text-red-400' : 'text-green-400'}`}>{data.profitMargin}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Key Insights */}
+            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+              <h3 className="text-xl font-bold mb-4">Key Insights</h3>
+              <ul className="space-y-2 text-gray-300">
+                <li>• <span className="font-bold">Maximum Exploitation RTP:</span> {Math.max(...Object.values(strategyResults.strategies).map(s => parseFloat(s.rtp))).toFixed(2)}%</li>
+                <li>• <span className="font-bold">Most Dangerous Strategy:</span> {Object.entries(strategyResults.strategies).reduce((a, b) => parseFloat(b[1].rtp) > parseFloat(a[1].rtp) ? b : a)[0]}</li>
+                <li>• <span className="font-bold">Recommended Action:</span> Reduce rank payouts by 20-30%, lower color board multipliers, and cap hedging opportunities</li>
+              </ul>
             </div>
           </motion.div>
         )}
