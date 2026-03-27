@@ -29,7 +29,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
   const suitSymbol = SUITS[card.suit];
 
   return (
-    <div className={`${sizeClasses[size]} rounded-md border bg-white flex flex-col items-stretch justify-between p-0.5 shadow-lg select-none overflow-hidden
+    <div className={`${sizeClasses[size]} rounded-md border bg-white flex flex-col items-stretch justify-between p-0.5 shadow-lg select-none overflow-hidden relative
       ${isRed ? 'text-red-600' : 'text-gray-900'}
       ${glow ? 'border-yellow-400 shadow-yellow-400/80 shadow-lg ring-2 ring-yellow-400' : 'border-gray-200'}
     `}>
@@ -44,6 +44,9 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
         <span className="font-bold">{card.rank}</span>
         <span>{suitSymbol}</span>
       </div>
+      {/* Logo decals in corners */}
+      <div className="absolute top-0.5 right-0.5 text-xs font-black italic leading-none opacity-30" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.5rem', transform: 'skewX(-8deg)', color: '#fbbf24' }}>RF</div>
+      <div className="absolute bottom-0.5 left-0.5 text-xs font-black italic leading-none opacity-30" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.5rem', transform: 'skewX(-8deg)', color: '#fbbf24' }}>RF</div>
     </div>
   );
 }
