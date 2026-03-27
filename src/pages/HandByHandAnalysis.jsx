@@ -10,6 +10,7 @@ export default function HandByHandAnalysis() {
   const [results, setResults] = useState(null);
   const [expandedGame, setExpandedGame] = useState(null);
   const [error, setError] = useState(null);
+  const [showAddOptions, setShowAddOptions] = useState(false);
 
   const runSimulation = async (count, isAdd = false) => {
     setLoading(true);
@@ -98,14 +99,37 @@ export default function HandByHandAnalysis() {
           
           {results && (
             <div className="flex gap-3 ml-auto">
-              <button
-                onClick={() => runSimulation(gameCount, true)}
-                disabled={loading}
-                className="px-4 py-3 rounded-lg font-semibold bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-700 flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                ADD {gameCount} More
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowAddOptions(!showAddOptions)}
+                  disabled={loading}
+                  className="px-4 py-3 rounded-lg font-semibold bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-700 flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  ADD
+                </button>
+                {showAddOptions && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute top-full mt-2 right-0 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-10"
+                  >
+                    {[10, 25, 50, 75, 100, 1000, 5000].map(count => (
+                      <button
+                        key={count}
+                        onClick={() => {
+                          runSimulation(count, true);
+                          setShowAddOptions(false);
+                        }}
+                        disabled={loading}
+                        className="block w-full px-6 py-2 text-left text-gray-300 hover:bg-slate-700 text-sm first:rounded-t-lg last:rounded-b-lg"
+                      >
+                        {count} Games
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </div>
               <button
                 onClick={clearData}
                 disabled={loading}
@@ -186,42 +210,38 @@ export default function HandByHandAnalysis() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-700 bg-slate-900/50">
-                      <th className="px-4 py-3 text-left">Game</th>
-                      <th className="px-4 py-3 text-center">Players</th>
-                      <th className="px-4 py-3 text-right">Total Bets</th>
-                      <th className="px-4 py-3 text-right">Payouts</th>
-                      <th className="px-4 py-3 text-right">House Profit</th>
-                      <th className="px-4 py-3 text-center">RTP</th>
-                      <th className="px-4 py-3 text-center">Cumulative RTP</th>
-                      <th className="px-4 py-3 text-center">Details</th>
+                      <th className="px-3 py-3 text-left w-12">Game</th>
+                      <th className="px-3 py-3 text-center w-16">Players</th>
+                      <th className="px-3 py-3 text-right w-20">Total Bets</th>
+                      <th className="px-3 py-3 text-right w-20">Payouts</th>
+                      <th className="px-3 py-3 text-right w-24">House Profit</th>
+                      <th className="px-3 py-3 text-center w-16">RTP</th>
+                      <th className="px-3 py-3 text-center w-24">Cumulative RTP</th>
+                      <th className="px-3 py-3 text-center w-12">Details</th>
                     </tr>
                   </thead>
                   <tbody>
                     {results.games.map((game, idx) => (
                       <motion.div key={idx}>
-                        <motion.tr
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: idx * 0.02 }}
+                        <tr
                           className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer ${
                             expandedGame === idx ? 'bg-slate-700/50' : ''
                           }`}
                           onClick={() => setExpandedGame(expandedGame === idx ? null : idx)}
-                          component="tr"
                         >
-                          <td className="px-4 py-3 font-bold">#{game.gameNumber}</td>
-                          <td className="px-4 py-3 text-center">{game.playerCount}</td>
-                          <td className="px-4 py-3 text-right">${game.totalBets.toFixed(0)}</td>
-                          <td className="px-4 py-3 text-right">${game.totalPayouts.toFixed(2)}</td>
-                          <td className={`px-4 py-3 text-right font-bold ${game.houseProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          <td className="px-3 py-3 font-bold">#{game.gameNumber}</td>
+                          <td className="px-3 py-3 text-center">{game.playerCount}</td>
+                          <td className="px-3 py-3 text-right">${game.totalBets.toFixed(0)}</td>
+                          <td className="px-3 py-3 text-right">${game.totalPayouts.toFixed(2)}</td>
+                          <td className={`px-3 py-3 text-right font-bold ${game.houseProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {game.houseProfit >= 0 ? '+' : ''}${game.houseProfit.toFixed(2)}
                           </td>
-                          <td className="px-4 py-3 text-center">{game.rtp}</td>
-                          <td className="px-4 py-3 text-center text-purple-400 font-bold">{game.cumulativeRTP}</td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-3 py-3 text-center">{game.rtp}</td>
+                          <td className="px-3 py-3 text-center text-purple-400 font-bold">{game.cumulativeRTP}</td>
+                          <td className="px-3 py-3 text-center">
                             {expandedGame === idx ? <ChevronUp className="w-4 h-4 mx-auto" /> : <ChevronDown className="w-4 h-4 mx-auto" />}
                           </td>
-                        </motion.tr>
+                        </tr>
 
                         {/* Expanded Details Row */}
                         {expandedGame === idx && (
@@ -231,9 +251,12 @@ export default function HandByHandAnalysis() {
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="bg-slate-900/80 border-t border-slate-700 p-4"
+                                className="bg-slate-900/80 border-t border-slate-700 p-6"
                               >
-                                <h3 className="text-lg font-bold mb-4">Game #{game.gameNumber} - Player Breakdown</h3>
+                                <div className="mb-4">
+                                  <h3 className="text-lg font-bold">Game #{game.gameNumber} - Player Breakdown</h3>
+                                  <div className="text-sm text-gray-400 mt-1">Players: {game.playerCount} | Total Bets: ${game.totalBets.toFixed(0)} | Payouts: ${game.totalPayouts.toFixed(2)} | House Profit: ${game.houseProfit.toFixed(2)} | RTP: {game.rtp}</div>
+                                </div>
                                 <div className="space-y-3">
                                   {game.players.map((player, pIdx) => (
                                     <div key={pIdx} className="bg-slate-800/50 rounded-lg border border-slate-700 p-4">
@@ -252,7 +275,7 @@ export default function HandByHandAnalysis() {
                                         {player.bets.hand && (
                                           <div className="grid grid-cols-12 gap-2 text-xs bg-blue-900/20 p-3 rounded border border-blue-800/30">
                                             <div className="col-span-2 font-bold text-blue-400">Card Hand</div>
-                                            <div className="col-span-2 text-gray-300">Hand #{player.bets.hand.id}</div>
+                                            <div className="col-span-2 text-gray-300">{player.bets.hand.cards}</div>
                                             <div className="col-span-2 text-yellow-400">Bet: ${player.bets.hand.amount}</div>
                                             <div className="col-span-3 text-gray-300">Won: ${player.bets.hand.winAmount.toFixed(2)}</div>
                                             <div className={`col-span-3 text-right font-bold ${player.bets.hand.won ? 'text-green-400' : 'text-red-400'}`}>

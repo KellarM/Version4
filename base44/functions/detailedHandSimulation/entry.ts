@@ -86,9 +86,10 @@ Deno.serve(async (req) => {
           const won = handId === winningHandId;
           
           const hand = FIXED_HANDS.find(h => h.id === handId);
+          const cards = hand.cards.map(c => `${c.rank}${c.suit === 'spades' ? '♠' : c.suit === 'hearts' ? '♥' : c.suit === 'diamonds' ? '♦' : '♣'}`).join(' / ');
           const winAmount = won ? bet * (1 + hand.payout) : 0;
           
-          bets.hand = { id: handId, amount: bet, winAmount, won };
+          bets.hand = { id: handId, cards, amount: bet, winAmount, won };
           playerBet += bet;
           playerWin += winAmount;
         }
