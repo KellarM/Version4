@@ -442,7 +442,7 @@ export default function RapidFireGame() {
     const reds = finalComm.filter(c => cardColor(c) === 'red').length;
     const blacks = finalComm.length - reds;
     const colorResult = reds >= blacks ? `${reds}R` : `${blacks}B`;
-    if (leaderHand) {
+    if (leader && leaderHand) {
       setHistory(prev => [{
         roundId,
         winningHandId: leaderHand.id,
