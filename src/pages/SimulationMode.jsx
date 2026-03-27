@@ -66,83 +66,78 @@ export default function SimulationMode() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
             {/* Compliance Summary */}
             <div className={`rounded-lg border-2 p-6 ${
-              results.analysis.conclusion.isCompliant
+              results.summary.isCompliant
                 ? 'border-green-500 bg-green-900/20'
                 : 'border-red-500 bg-red-900/20'
             }`}>
               <h2 className="text-2xl font-bold mb-4">Compliance Analysis</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Average RTP</p>
-                  <p className="text-3xl font-bold">{results.analysis.conclusion.averagePayout}%</p>
+                  <p className="text-gray-400 text-sm">Total Hands Simulated</p>
+                  <p className="text-3xl font-bold">{(results.summary.totalHandsSimulated / 1000000).toFixed(1)}M</p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Status</p>
-                  <p className={`text-xl font-bold ${
-                    results.analysis.conclusion.isCompliant ? 'text-green-400' : 'text-red-400'
+                  <p className="text-gray-400 text-sm">Overall RTP</p>
+                  <p className={`text-3xl font-bold ${
+                    results.summary.isCompliant ? 'text-green-400' : 'text-red-400'
                   }`}>
-                    {results.analysis.conclusion.isCompliant ? '✓ COMPLIANT' : '✗ NON-COMPLIANT'}
+                    {results.summary.overallRTP}
                   </p>
                 </div>
               </div>
-              <p className="mt-4 text-sm">{results.analysis.conclusion.recommendation}</p>
+              <p className="mt-4 text-sm text-gray-300">{results.summary.recommendation}</p>
             </div>
 
-            {/* Payout Percentages */}
+            {/* Summary Stats */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-              <h3 className="text-xl font-bold mb-4">Payout Percentages by Bet Type</h3>
+              <h3 className="text-xl font-bold mb-4">Summary Statistics</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-slate-900/50 rounded p-4">
-                  <p className="text-gray-400 text-sm mb-1">Carded Hands</p>
-                  <p className="text-2xl font-bold">{results.stats.payoutPercentages.hand}%</p>
+                  <p className="text-gray-400 text-sm mb-1">Total Bets</p>
+                  <p className="text-2xl font-bold">${(results.summary.totalBets / 1000000).toFixed(1)}M</p>
                 </div>
                 <div className="bg-slate-900/50 rounded p-4">
-                  <p className="text-gray-400 text-sm mb-1">Color Board</p>
-                  <p className="text-2xl font-bold">{results.stats.payoutPercentages.color}%</p>
+                  <p className="text-gray-400 text-sm mb-1">Total Payouts</p>
+                  <p className="text-2xl font-bold">${(results.summary.totalPayouts / 1000000).toFixed(1)}M</p>
                 </div>
                 <div className="bg-slate-900/50 rounded p-4">
-                  <p className="text-gray-400 text-sm mb-1">Hand Rank</p>
-                  <p className="text-2xl font-bold">{results.stats.payoutPercentages.rank}%</p>
+                  <p className="text-gray-400 text-sm mb-1">Casino Profit</p>
+                  <p className="text-2xl font-bold text-green-400">${(results.summary.casinoProfit / 1000).toFixed(0)}K</p>
                 </div>
                 <div className="bg-slate-900/50 rounded p-4">
-                  <p className="text-gray-400 text-sm mb-1">Low/High</p>
-                  <p className="text-2xl font-bold">{results.stats.payoutPercentages.lowHigh}%</p>
+                  <p className="text-gray-400 text-sm mb-1">Avg Profit/Round</p>
+                  <p className="text-2xl font-bold">${results.summary.avgProfitPerRound}</p>
                 </div>
               </div>
             </div>
 
-            {/* Hand Frequency */}
+            {/* Sample Rounds */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-              <h3 className="text-xl font-bold mb-4">Winning Hand Frequency ({results.stats.totalHands.toLocaleString()} hands)</h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-                {Object.entries(results.analysis.handFrequency).map(([hand, freq]) => (
-                  <div key={hand} className="bg-slate-900/50 rounded p-3">
-                    <p className="text-gray-400">Hand {hand}</p>
-                    <p className="text-lg font-bold">{freq}%</p>
-                  </div>
-                ))}
+              <h3 className="text-xl font-bold mb-4">Sample Round Results</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-600">
+                      <th className="text-left py-2 px-2">Round</th>
+                      <th className="text-right py-2 px-2">Bets</th>
+                      <th className="text-right py-2 px-2">Payouts</th>
+                      <th className="text-right py-2 px-2">P/L</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.sampleRounds.map((round, idx) => (
+                      <tr key={idx} className="border-b border-slate-700 hover:bg-slate-900/30">
+                        <td className="py-2 px-2 text-gray-400">#{round.round}</td>
+                        <td className="text-right py-2 px-2">${round.bets}</td>
+                        <td className="text-right py-2 px-2">${round.payouts.toFixed(2)}</td>
+                        <td className={`text-right py-2 px-2 font-bold ${round.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {round.profit >= 0 ? '+' : ''}${round.profit.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
-
-            {/* Color Frequency */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-              <h3 className="text-xl font-bold mb-4">Color Board Winning Combinations</h3>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
-                {Object.entries(results.analysis.colorFrequency).map(([key, freq]) => (
-                  <div key={key} className="bg-slate-900/50 rounded p-3">
-                    <p className={`font-bold ${key.includes('R') ? 'text-red-400' : 'text-gray-300'}`}>{key}</p>
-                    <p className="text-gray-400">{freq}%</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Raw Stats */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-              <h3 className="text-xl font-bold mb-4">Raw Statistics</h3>
-              <pre className="bg-slate-900 rounded p-4 text-xs overflow-auto max-h-96 text-gray-300">
-                {JSON.stringify(results.stats, null, 2)}
-              </pre>
             </div>
           </motion.div>
         )}
