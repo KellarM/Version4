@@ -40,7 +40,7 @@ const PHASE_LABELS = {
 export default function RapidFireGame() {
   const [playerCount, setPlayerCount] = useState(1);
   // balances[i] = balance for player i+1
-  const [balances, setBalances] = useState(Array(5).fill(STARTING_BALANCE));
+  const [balances, setBalances] = useState(() => Array(5).fill(STARTING_BALANCE));
   const [selectedChip, setSelectedChip] = useState(DEFAULT_CHIP);
   // handBets[playerId][handId], redBlackBets[playerId][key], rankBets[playerId][key]
   const [handBets, setHandBets] = useState({}); // { [pid]: { handId: amount } }
@@ -59,8 +59,8 @@ export default function RapidFireGame() {
   const [winningLowHigh, setWinningLowHigh] = useState(null);
   const [history, setHistory] = useState([]);
   const [roundId, setRoundId] = useState(1);
-  const [royalFlushJackpot, setRoyalFlushJackpot] = useState(0);
-  const [straightFlushJackpot, setStraightFlushJackpot] = useState(0);
+  const [royalFlushJackpot, setRoyalFlushJackpot] = useState(10000);
+  const [straightFlushJackpot, setStraightFlushJackpot] = useState(2000);
   const [lastWinInfo, setLastWinInfo] = useState(null);
   const [winningRank, setWinningRank] = useState(null);
   const [leadingRank, setLeadingRank] = useState(null);
@@ -361,14 +361,14 @@ export default function RapidFireGame() {
           if (rfBet >= 25) {
             w += royalFlushJackpot + rfBet + rfBet * 100;
           }
-          newRF = 0;
+          newRF = 10000;
         }
         if (handResult.name === 'Straight Flush') {
           const sfBet = prk['Straight Flush'] || 0;
           if (sfBet >= 15) {
             w += straightFlushJackpot + sfBet + sfBet * 50;
           }
-          newSF = 0;
+          newSF = 2000;
         }
       }
 
@@ -418,6 +418,33 @@ export default function RapidFireGame() {
         lowHighResult: winLH || '-',
       }, ...prev].slice(0, 20));
     }
+  };
+
+  const handleResetGame = () => {
+    setBalances(Array(5).fill(STARTING_BALANCE));
+    setHandBets({});
+    setRedBlackBets({});
+    setRankBets({});
+    setLowHighBets({});
+    setCommunityCards([]);
+    setLeadingHandIds([]);
+    setWinnerHandIds([]);
+    setWinningRedBlack([]);
+    setWinningLowHigh(null);
+    setWinningRank(null);
+    setLeadingRank(null);
+    setLastWinInfo(null);
+    setDeck(shuffleDeck(DEALER_DECK));
+    setDeckIndex(0);
+    setRoundId(1);
+    setRoundsPlayed(0);
+    setCasinoProfit(0);
+    setHistory([]);
+    setRoyalFlushJackpot(10000);
+    setStraightFlushJackpot(2000);
+    setActivePlayer(0);
+    setDealerMessage("Texas Hold'em is open for play. Players, please place your bets.");
+    setGamePhase('betting');
   };
 
   const handleNewRound = () => {
@@ -526,6 +553,13 @@ export default function RapidFireGame() {
               <div className="text-yellow-400/40 text-xs">{roundsPlayed} rounds</div>
             </div>
           )}
+          <button
+            onClick={handleResetGame}
+            className="ml-2 px-2 py-1 rounded-lg border border-red-700/60 bg-red-900/30 text-red-300 text-xs font-bold hover:bg-red-800/50 transition-all"
+            title="Reset entire game"
+          >
+            ↺ Reset
+          </button>
         </div>
       </div>
 
