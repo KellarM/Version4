@@ -615,39 +615,33 @@ export default function RapidFireGame() {
 
           {/* Community Cards */}
           <div className="border border-yellow-700/30 rounded-xl bg-green-900/20 py-1.5 px-2 flex items-center justify-between flex-shrink-0">
-            {/* TEXAS — left side */}
-            <span
-              className="font-black italic tracking-widest select-none flex-shrink-0"
-              style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontSize: 'clamp(1rem, 2.5vw, 1.75rem)',
-                transform: 'skewX(-12deg)',
-                background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))',
-              }}
-            >
-              TEXAS
-            </span>
+            {/* Logo — left side */}
+            <div className="flex flex-col leading-none select-none flex-shrink-0">
+              <div className="flex items-baseline gap-0.5">
+                <span className="font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: 'clamp(1.1rem, 2.8vw, 2rem)', transform: 'skewX(-12deg)', background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.05em', filter: 'drop-shadow(2px 0 4px rgba(148,163,184,0.5))' }}>RAPID</span>
+                <span className="font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: 'clamp(1.1rem, 2.8vw, 2rem)', transform: 'skewX(-12deg)', background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.8)) drop-shadow(0 0 12px rgba(239,68,68,0.5))', letterSpacing: '-0.02em' }}>🔥FIRE</span>
+              </div>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-yellow-500/60" style={{ fontSize: 'clamp(0.6rem, 1vw, 0.8rem)' }}>—</span>
+                <span className="font-black italic tracking-widest" style={{ fontFamily: 'Oswald, sans-serif', fontSize: 'clamp(0.7rem, 1.4vw, 1.1rem)', transform: 'skewX(-12deg)', background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))' }}>TEXAS 10</span>
+                <span className="text-yellow-500/60" style={{ fontSize: 'clamp(0.6rem, 1vw, 0.8rem)' }}>—</span>
+              </div>
+            </div>
 
             <CommunityCards cards={communityCards} phase={gamePhase} />
 
-            {/* 10 — right side */}
-            <span
-              className="font-black italic tracking-widest select-none flex-shrink-0"
-              style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontSize: 'clamp(1rem, 2.5vw, 1.75rem)',
-                transform: 'skewX(-12deg)',
-                background: 'linear-gradient(90deg, #22c55e 0%, #4ade80 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))',
-              }}
-            >
-              10
-            </span>
+            {/* Mirror logo — right side */}
+            <div className="flex flex-col leading-none select-none flex-shrink-0 items-end">
+              <div className="flex items-baseline gap-0.5">
+                <span className="font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: 'clamp(1.1rem, 2.8vw, 2rem)', transform: 'skewX(-12deg)', background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.05em', filter: 'drop-shadow(2px 0 4px rgba(148,163,184,0.5))' }}>RAPID</span>
+                <span className="font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: 'clamp(1.1rem, 2.8vw, 2rem)', transform: 'skewX(-12deg)', background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.8)) drop-shadow(0 0 12px rgba(239,68,68,0.5))', letterSpacing: '-0.02em' }}>🔥FIRE</span>
+              </div>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-yellow-500/60" style={{ fontSize: 'clamp(0.6rem, 1vw, 0.8rem)' }}>—</span>
+                <span className="font-black italic tracking-widest" style={{ fontFamily: 'Oswald, sans-serif', fontSize: 'clamp(0.7rem, 1.4vw, 1.1rem)', transform: 'skewX(-12deg)', background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))' }}>TEXAS 10</span>
+                <span className="text-yellow-500/60" style={{ fontSize: 'clamp(0.6rem, 1vw, 0.8rem)' }}>—</span>
+              </div>
+            </div>
           </div>
 
           {/* Win Overlay */}
