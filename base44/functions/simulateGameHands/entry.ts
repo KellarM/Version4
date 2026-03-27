@@ -39,16 +39,16 @@ Deno.serve(async (req) => {
     const rankPayoutMap = {
       'Royal Flush': 100,
       'Straight Flush': 50,
-      'Four of a Kind': 10,
-      'Full House': 2,
-      'Flush': 3,
-      'Straight': 5,
-      'Three of a Kind': 3,
-      'Two Pair': 12,
-      'One Pair': 15,
+      'Four of a Kind': 7,
+      'Full House': 1.5,
+      'Flush': 2,
+      'Straight': 4,
+      'Three of a Kind': 2,
+      'Two Pair': 8,
+      'One Pair': 10,
     };
 
-    const rbPayoutMap = { '3R': 1, '3B': 1, '4R': 4, '4B': 4, '5R': 40, '5B': 40 };
+    const rbPayoutMap = { '3R': 1, '3B': 1, '4R': 3, '4B': 3, '5R': 25, '5B': 25 };
 
     // Initialize rank tracking
     Object.keys(rankPayoutMap).forEach(rank => {
