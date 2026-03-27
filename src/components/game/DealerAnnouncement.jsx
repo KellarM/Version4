@@ -12,21 +12,7 @@ export default function DealerAnnouncement({ message, phase }) {
           transition={{ duration: 0.3 }}
           className="text-center flex items-center justify-center h-full"
         >
-          <div className="flex flex-col items-center gap-1.5">
-            <span
-              className="font-black italic text-lg leading-none"
-              style={{
-                fontFamily: 'Oswald, sans-serif',
-                transform: 'skewX(-12deg)',
-                background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.5))',
-                letterSpacing: '-0.02em',
-              }}
-            >
-              🎙️ DEALER
-            </span>
+          <div className="flex flex-col items-center justify-center">
             <p
               className="text-sm font-bold leading-relaxed max-w-2xl italic"
               style={{
