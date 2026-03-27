@@ -693,7 +693,9 @@ export default function RapidFireGame() {
         <div className="flex-1 flex flex-col gap-1.5 min-w-0">
 
           {/* Dealer Announcement */}
-          <DealerAnnouncement message={dealerMessage} phase={gamePhase} />
+          <div className="border-2 border-yellow-600/50 rounded-xl bg-gradient-to-r from-yellow-900/40 to-orange-900/40 py-4 px-6 flex-shrink-0">
+            <DealerAnnouncement message={dealerMessage} phase={gamePhase} />
+          </div>
 
           {/* Community Cards */}
           <div className="border border-yellow-700/30 rounded-xl bg-green-900/20 py-1.5 px-8 flex items-center justify-between flex-shrink-0">
@@ -755,7 +757,7 @@ export default function RapidFireGame() {
 
           {/* 10 Fixed Hands Grid */}
           <div className="flex-1 min-h-0">
-            <div className="grid grid-cols-5 gap-1.5 h-full">
+            <div className="grid grid-cols-5 gap-1.5 h-full auto-rows-fr">
               {FIXED_HANDS.map(hand => (
                 <FixedHandCard
                   key={hand.id}
