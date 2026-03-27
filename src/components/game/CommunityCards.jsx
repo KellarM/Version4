@@ -5,16 +5,16 @@ export default function CommunityCards({ cards, phase }) {
   const slots = [0, 1, 2, 3, 4];
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-1">
       <div className="text-yellow-400/70 text-xs font-semibold tracking-widest uppercase">Community Cards</div>
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-1.5 items-center">
         {slots.map((i) => {
           const card = cards[i];
           const label = i < 3 ? 'Flop' : i === 3 ? 'Turn' : 'River';
           const isActive = i === cards.length - 1 && cards.length > 0;
 
           return (
-            <div key={i} className="flex flex-col items-center gap-1">
+            <div key={i} className="flex flex-col items-center gap-0.5">
               <AnimatePresence mode="wait">
                 {card ? (
                   <motion.div
@@ -23,11 +23,11 @@ export default function CommunityCards({ cards, phase }) {
                     animate={{ rotateY: 0, opacity: 1 }}
                     transition={{ duration: 0.4, delay: 0.05 * i }}
                   >
-                    <PlayingCard card={card} size="lg" glow={isActive} />
+                    <PlayingCard card={card} size="md" glow={isActive} />
                   </motion.div>
                 ) : (
                   <motion.div key={`empty-${i}`}>
-                    <PlayingCard card={null} size="lg" />
+                    <PlayingCard card={null} size="md" />
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -9,8 +9,8 @@ import FixedHandCard from '@/components/game/FixedHandCard';
 import CommunityCards from '@/components/game/CommunityCards';
 import SideBets from '@/components/game/SideBets';
 import HistoryRail from '@/components/game/HistoryRail';
-import PayoutTable from '@/components/game/PayoutTable';
 import DealerAnnouncement from '@/components/game/DealerAnnouncement';
+import RankBets from '@/components/game/RankBets';
 
 const STARTING_BALANCE = 500;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -47,16 +47,26 @@ export default function RapidFireGame() {
   const [royalFlushJackpot, setRoyalFlushJackpot] = useState(12595);
   const [straightFlushJackpot, setStraightFlushJackpot] = useState(2845);
   const [lastWinInfo, setLastWinInfo] = useState(null);
+  const [rankBets, setRankBets] = useState({}); // { 'Royal Flush': amount, ... }
+  const [winningRank, setWinningRank] = useState(null);
+  const [leadingRank, setLeadingRank] = useState(null);
 
 
   const totalBet = Object.values(handBets).reduce((s, v) => s + v, 0) +
     Object.values(redBlackBets).reduce((s, v) => s + v, 0) +
+    Object.values(rankBets).reduce((s, v) => s + v, 0) +
     (lowHighBet ? lowHighBet.amount : 0);
 
   // ---- BETTING ----
   const handleHandBet = useCallback((handId) => {
     if (gamePhase !== 'betting' || balance < selectedChip) return;
     setHandBets(prev => ({ ...prev, [handId]: (prev[handId] || 0) + selectedChip }));
+    setBalance(b => b - selectedChip);
+  }, [gamePhase, balance, selectedChip]);
+
+  const handleRankBet = useCallback((key) => {
+    if (gamePhase !== 'betting' || balance < selectedChip) return;
+    setRankBets(prev => ({ ...prev, [key]: (prev[key] || 0) + selectedChip }));
     setBalance(b => b - selectedChip);
   }, [gamePhase, balance, selectedChip]);
 
@@ -79,10 +89,12 @@ export default function RapidFireGame() {
 
   const clearBets = () => {
     const refund = Object.values(handBets).reduce((s, v) => s + v, 0) +
-      Object.values(redBlackBets).reduce((s, v) => s + v, 0);
+      Object.values(redBlackBets).reduce((s, v) => s + v, 0) +
+      Object.values(rankBets).reduce((s, v) => s + v, 0);
     setBalance(b => b + refund);
     setHandBets({});
     setRedBlackBets({});
+    setRankBets({});
   };
 
   // ---- GAME FLOW ----
@@ -96,6 +108,7 @@ export default function RapidFireGame() {
 
     const leader = findLeadingHand(flop);
     setLeadingHandIds(leader ? leader.handIds : []);
+    setLeadingRank(leader ? leader.handResult.name : null);
 
     const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
     const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
@@ -116,6 +129,7 @@ export default function RapidFireGame() {
 
     const leader = findLeadingHand(newComm);
     setLeadingHandIds(leader ? leader.handIds : []);
+    setLeadingRank(leader ? leader.handResult.name : null);
 
     const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
     const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
@@ -137,7 +151,9 @@ export default function RapidFireGame() {
 
     const leader = findLeadingHand(newComm);
     setLeadingHandIds([]);
+    setLeadingRank(null);
     setWinnerHandIds(leader ? leader.handIds : []);
+    setWinningRank(leader ? leader.handResult.name : null);
 
     const winRB = resolveRedBlack(newComm);
     const winLH = resolveLowHigh(riverCard);
@@ -188,15 +204,40 @@ export default function RapidFireGame() {
       winnings += lowHighBet.amount + lowHighBet.amount * 1;
     }
 
+    // Rank bets
+    if (handResult) {
+      const rankPayoutMap = {
+        'Royal Flush': null,     // handled via jackpot below
+        'Straight Flush': null,  // handled via jackpot below
+        'Four of a Kind': 10,
+        'Full House': 2,
+        'Flush': 9,
+        'Straight': 2,
+        'Three of a Kind': 3,
+        'Two Pair': 2,
+        'One Pair': 18,
+        'High Card': 18,
+      };
+      const rankBetAmt = rankBets[handResult.name] || 0;
+      if (rankBetAmt > 0) {
+        const multiplier = rankPayoutMap[handResult.name];
+        if (multiplier !== null && multiplier !== undefined) {
+          winnings += rankBetAmt + rankBetAmt * multiplier;
+        }
+      }
+    }
+
     // Progressive jackpot logic
     let newRF = royalFlushJackpot;
     let newSF = straightFlushJackpot;
     if (handResult?.name === 'Royal Flush' && leaderHand) {
       winnings += royalFlushJackpot;
+      if (rankBets['Royal Flush']) winnings += rankBets['Royal Flush'] + rankBets['Royal Flush'] * 100;
       newRF = 500;
     }
     if (handResult?.name === 'Straight Flush' && leaderHand) {
       winnings += straightFlushJackpot;
+      if (rankBets['Straight Flush']) winnings += rankBets['Straight Flush'] + rankBets['Straight Flush'] * 50;
       newSF = 200;
     }
     setRoyalFlushJackpot(newRF);
@@ -225,12 +266,15 @@ export default function RapidFireGame() {
   const handleNewRound = () => {
     setHandBets({});
     setRedBlackBets({});
+    setRankBets({});
     setLowHighBet(null);
     setCommunityCards([]);
     setLeadingHandIds([]);
     setWinnerHandIds([]);
     setWinningRedBlack([]);
     setWinningLowHigh(null);
+    setWinningRank(null);
+    setLeadingRank(null);
     setLastWinInfo(null);
 
     setDeck(shuffleDeck(DEALER_DECK));
@@ -255,38 +299,42 @@ export default function RapidFireGame() {
   const btn = actionButton();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white overflow-x-hidden"
+    <div className="h-screen w-screen overflow-hidden text-white flex flex-col"
       style={{ background: 'radial-gradient(ellipse at top, #0a1628 0%, #050d1a 100%)' }}>
 
       {/* Header */}
-      <div className="w-full bg-black/60 border-b border-yellow-700/30 px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <div className="text-yellow-400 font-black text-lg tracking-wider leading-none">RAPID FIRE</div>
-            <div className="text-green-400 font-bold text-xs tracking-widest">TEXAS 10</div>
-          </div>
+      <div className="w-full bg-black/60 border-b border-yellow-700/30 px-3 py-1.5 flex items-center justify-between flex-shrink-0">
+        <div>
+          <div className="text-yellow-400 font-black text-base tracking-wider leading-none">RAPID FIRE</div>
+          <div className="text-green-400 font-bold text-xs tracking-widest">TEXAS 10</div>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           <div className="text-center">
             <div className="text-yellow-400/60 text-xs">ROUND</div>
-            <div className="text-white font-bold">#{roundId}</div>
+            <div className="text-white font-bold text-sm">#{roundId}</div>
           </div>
           <div className="text-center">
             <div className="text-yellow-400/60 text-xs">PHASE</div>
-            <div className="text-green-300 font-bold text-sm">{PHASE_LABELS[gamePhase]}</div>
+            <div className="text-green-300 font-bold text-xs">{PHASE_LABELS[gamePhase]}</div>
           </div>
           <div className="text-center">
             <div className="text-yellow-400/60 text-xs">BALANCE</div>
-            <div className="text-yellow-300 font-black text-lg">${balance.toFixed(2)}</div>
+            <div className="text-yellow-300 font-black text-base">${balance.toFixed(2)}</div>
           </div>
+          {totalBet > 0 && (
+            <div className="text-center">
+              <div className="text-yellow-400/60 text-xs">BET</div>
+              <div className="text-white font-bold text-sm">${totalBet}</div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Layout: 3 columns */}
-      <div className="flex gap-2 p-2 h-[calc(100vh-56px)] overflow-hidden">
+      {/* Main Layout: 3 columns, fills remaining height */}
+      <div className="flex gap-1.5 p-1.5 flex-1 min-h-0">
 
         {/* LEFT: History + Jackpots */}
-        <div className="w-44 flex-shrink-0 overflow-y-auto">
+        <div className="w-40 flex-shrink-0 flex flex-col gap-1.5 overflow-hidden">
           <HistoryRail
             history={history}
             royalFlushJackpot={royalFlushJackpot}
@@ -295,24 +343,24 @@ export default function RapidFireGame() {
         </div>
 
         {/* CENTER: Main Game Board */}
-        <div className="flex-1 flex flex-col gap-2 overflow-hidden">
+        <div className="flex-1 flex flex-col gap-1.5 min-w-0">
 
           {/* Dealer Announcement */}
           <DealerAnnouncement message={dealerMessage} phase={gamePhase} />
 
           {/* Community Cards */}
-          <div className="border border-yellow-700/30 rounded-xl bg-green-900/20 p-3 flex items-center justify-center">
+          <div className="border border-yellow-700/30 rounded-xl bg-green-900/20 py-1.5 px-2 flex items-center justify-center flex-shrink-0">
             <CommunityCards cards={communityCards} phase={gamePhase} />
           </div>
 
-          {/* Winner Win Overlay */}
+          {/* Win Overlay */}
           <AnimatePresence>
             {lastWinInfo && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 pointer-events-none flex items-center justify-center z-50"
+                className="fixed inset-0 pointer-events-none flex items-center justify-center z-50"
               >
                 <div className="bg-yellow-900/90 border-2 border-yellow-400 rounded-2xl px-8 py-4 shadow-yellow-400/50 shadow-2xl text-center">
                   <div className="text-yellow-300 text-2xl font-black">🏆 YOU WIN!</div>
@@ -322,9 +370,9 @@ export default function RapidFireGame() {
             )}
           </AnimatePresence>
 
-          {/* 10 Fixed Hands Grid: 5 top, 5 bottom */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="grid grid-cols-5 gap-2">
+          {/* 10 Fixed Hands Grid */}
+          <div className="flex-1 min-h-0">
+            <div className="grid grid-cols-5 gap-1.5 h-full">
               {FIXED_HANDS.map(hand => (
                 <FixedHandCard
                   key={hand.id}
@@ -342,15 +390,14 @@ export default function RapidFireGame() {
           </div>
 
           {/* Bottom controls: chips + action button */}
-          <div className="flex items-center justify-between gap-3 border-t border-yellow-700/20 pt-2">
-            {/* Chip selector */}
+          <div className="flex items-center justify-between gap-2 border-t border-yellow-700/20 pt-1.5 flex-shrink-0">
             <div className="flex items-center gap-1">
               <span className="text-yellow-400/60 text-xs mr-1">Chip:</span>
               {CHIP_VALUES.map(v => (
                 <button
                   key={v}
                   onClick={() => setSelectedChip(v)}
-                  className={`w-10 h-10 rounded-full font-bold text-xs border-2 transition-all
+                  className={`w-9 h-9 rounded-full font-bold text-xs border-2 transition-all
                     ${selectedChip === v
                       ? 'border-yellow-400 bg-yellow-600 text-black shadow-yellow-400/50 shadow-md scale-110'
                       : 'border-yellow-700/40 bg-yellow-900/30 text-yellow-300 hover:border-yellow-500'}`}
@@ -359,30 +406,21 @@ export default function RapidFireGame() {
                 </button>
               ))}
             </div>
-
             <div className="flex items-center gap-2">
-              {/* Bet total */}
-              {totalBet > 0 && (
-                <div className="text-yellow-300 text-sm font-semibold">
-                  Bet: ${totalBet}
-                </div>
-              )}
-              {/* Clear bets */}
               {gamePhase === 'betting' && totalBet > 0 && (
                 <button
                   onClick={clearBets}
-                  className="px-3 py-2 rounded-lg border border-red-700/50 bg-red-900/30 text-red-300 text-xs font-semibold hover:bg-red-900/50 transition-all"
+                  className="px-3 py-1.5 rounded-lg border border-red-700/50 bg-red-900/30 text-red-300 text-xs font-semibold hover:bg-red-900/50 transition-all"
                 >
-                  Clear Bets
+                  Clear
                 </button>
               )}
-              {/* Action button */}
               {btn && (
                 <motion.button
                   whileTap={btn.disabled ? {} : { scale: 0.97 }}
                   onClick={btn.disabled ? null : btn.action}
                   disabled={btn.disabled}
-                  className={`px-6 py-2.5 rounded-xl font-black text-sm tracking-wider transition-all
+                  className={`px-5 py-2 rounded-xl font-black text-sm tracking-wider transition-all
                     ${btn.disabled
                       ? 'border border-gray-600 bg-gray-800 text-gray-500 cursor-not-allowed'
                       : 'border-2 border-yellow-500 bg-yellow-600 hover:bg-yellow-500 text-black shadow-yellow-500/40 shadow-lg'}`}
@@ -394,20 +432,33 @@ export default function RapidFireGame() {
           </div>
         </div>
 
-        {/* RIGHT: Side Bets + Payout Table */}
-        <div className="w-52 flex-shrink-0 flex flex-col gap-2 overflow-y-auto">
-          <SideBets
-            communityCards={communityCards}
-            redBlackBets={redBlackBets}
-            lowHighBet={lowHighBet}
-            onRedBlackBet={handleRedBlackBet}
-            onLowHighBet={handleLowHighBet}
-            gamePhase={gamePhase}
-            winningRedBlack={winningRedBlack}
-            winningLowHigh={winningLowHigh}
-            disabled={balance < selectedChip}
-          />
-          <PayoutTable />
+        {/* RIGHT: Rank Bets | Side Bets */}
+        <div className="w-48 flex-shrink-0 flex flex-col gap-1.5 overflow-hidden">
+          {/* Rank Bets panel */}
+          <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-shrink-0">
+            <RankBets
+              rankBets={rankBets}
+              onRankBet={handleRankBet}
+              gamePhase={gamePhase}
+              winningRank={winningRank}
+              leadingRank={leadingRank}
+              disabled={balance < selectedChip}
+            />
+          </div>
+          {/* Side Bets panel */}
+          <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-1 overflow-hidden">
+            <SideBets
+              communityCards={communityCards}
+              redBlackBets={redBlackBets}
+              lowHighBet={lowHighBet}
+              onRedBlackBet={handleRedBlackBet}
+              onLowHighBet={handleLowHighBet}
+              gamePhase={gamePhase}
+              winningRedBlack={winningRedBlack}
+              winningLowHigh={winningLowHigh}
+              disabled={balance < selectedChip}
+            />
+          </div>
         </div>
       </div>
     </div>
