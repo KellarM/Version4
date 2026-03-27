@@ -15,6 +15,8 @@ import RankBets from '@/components/game/RankBets';
 import PayoutTable from '@/components/game/PayoutTable';
 import NewPlayerButton from '@/components/game/NewPlayerButton';
 import PlayerStatsPanel from '@/components/game/PlayerStatsPanel';
+import SoundControls from '@/components/game/SoundControls';
+import { soundManager } from '@/lib/soundManager';
 
 const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -74,7 +76,7 @@ export default function RapidFireGame() {
   const [casinoProfit, setCasinoProfit] = useState(0);
   const [roundsPlayed, setRoundsPlayed] = useState(0);
 
-  // Game progress persistence
+  // Game progress persistence + casino ambiance
   useEffect(() => {
     const savedGame = localStorage.getItem('rapidFireGameState');
     if (savedGame) {
@@ -90,6 +92,8 @@ export default function RapidFireGame() {
         console.log('Could not restore game state');
       }
     }
+    soundManager.startCasinoAmbiance();
+    return () => soundManager.stopCasinoAmbiance();
   }, []);
 
   // Auto-save game state
@@ -167,6 +171,7 @@ export default function RapidFireGame() {
     if (balance < selectedChip) return;
     setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+    soundManager.playSound('chipPlace');
   }, [gamePhase, balance, selectedChip, pid, handBets, rankBetCount]);
 
   const handleRemoveHandBet = useCallback((handId) => {
@@ -200,6 +205,7 @@ export default function RapidFireGame() {
     if (balance < selectedChip) return;
     setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+    soundManager.playSound('chipPlace');
   }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount]);
 
   const handleRemoveRankBet = useCallback((key) => {
@@ -221,6 +227,7 @@ export default function RapidFireGame() {
     if (balance < selectedChip) return;
     setRedBlackBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+    soundManager.playSound('chipPlace');
   }, [gamePhase, balance, selectedChip, pid, redBlackBets]);
 
   const handleRemoveRedBlackBet = useCallback((key) => {
@@ -301,11 +308,12 @@ export default function RapidFireGame() {
 
     const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
     const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
-    setDealerMessage(
-      leader
-        ? `Flop: ${flop.map(cardDisplay).join(', ')}. ${leaderCards} is leading with ${leader.handResult.name}.`
-        : `Flop: ${flop.map(cardDisplay).join(', ')}.`
-    );
+    const message = leader
+      ? `Flop: ${flop.map(cardDisplay).join(', ')}. ${leaderCards} is leading with ${leader.handResult.name}.`
+      : `Flop: ${flop.map(cardDisplay).join(', ')}.`;
+    setDealerMessage(message);
+    soundManager.playSound('cardDeal');
+    soundManager.speakDealer(message);
     setGamePhase('flop');
   };
 
@@ -325,9 +333,10 @@ export default function RapidFireGame() {
     const lows = newComm.filter(c => isLowCard(c)).length;
     const highs = newComm.length - lows;
 
-    setDealerMessage(
-      `Turn: ${cardDisplay(turnCard)}. ${leaderCards ? leaderCards + ' leads with ' + leader.handResult.name + '. ' : ''}${lows} Low / ${highs} High showing. Low/High betting is now open!`
-    );
+    const message = `Turn: ${cardDisplay(turnCard)}. ${leaderCards ? leaderCards + ' leads with ' + leader.handResult.name + '. ' : ''}${lows} Low / ${highs} High showing. Low/High betting is now open!`;
+    setDealerMessage(message);
+    soundManager.playSound('cardDeal');
+    soundManager.speakDealer(message);
     setGamePhase('lowHighBetting');
   };
 
@@ -354,11 +363,17 @@ export default function RapidFireGame() {
     const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
     const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
 
-    setDealerMessage(
-      leader
-        ? `🏆 Winner! ${leaderCards} wins with ${leader.handResult.name}! Board: ${reds}R / ${blacks}B. River card is ${winLH}.`
-        : `River: ${cardDisplay(riverCard)}.`
-    );
+    const message = leader
+      ? `🏆 Winner! ${leaderCards} wins with ${leader.handResult.name}! Board: ${reds}R / ${blacks}B. River card is ${winLH}.`
+      : `River: ${cardDisplay(riverCard)}.`;
+    setDealerMessage(message);
+    soundManager.playSound('cardDeal');
+    if (leader) {
+      soundManager.playSound('win');
+      soundManager.speakDealer(`Winner! ${leaderCards} wins with ${leader.handResult.name}!`);
+    } else {
+      soundManager.speakDealer(message);
+    }
     setGamePhase('river');
 
     const leaderResult = leader?.handResult;
@@ -693,6 +708,7 @@ export default function RapidFireGame() {
               <div className="text-yellow-400/40 text-xs">{roundsPlayed} rounds</div>
             </div>
           )}
+          <SoundControls />
           <button
             onClick={() => setShowStatsPanel(!showStatsPanel)}
             className="ml-2 px-2 py-1 rounded-lg border border-purple-700/60 bg-purple-900/30 text-purple-300 text-xs font-bold hover:bg-purple-800/50 transition-all"
