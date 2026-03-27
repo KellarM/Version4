@@ -7,6 +7,7 @@ export default function DetailedSimulation() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [strategyResults, setStrategyResults] = useState(null);
+  const [calibrationResults, setCalibrationResults] = useState(null);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('basic');
 
@@ -30,6 +31,20 @@ export default function DetailedSimulation() {
       const response = await base44.functions.invoke('strategicPlayerSimulation', { handsToSimulate: handCount, strategy: 'all' });
       setStrategyResults(response.data);
       setTab('strategy');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const runCalibration = async (handCount = 50000) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await base44.functions.invoke('calibratePayouts', { handsToSimulate: handCount });
+      setCalibrationResults(response.data);
+      setTab('calibration');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -76,11 +91,18 @@ export default function DetailedSimulation() {
           >
             {loading ? 'Simulating...' : 'Strategies: 500K'}
           </button>
+          <button
+            onClick={() => runCalibration(50000)}
+            disabled={loading}
+            className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-semibold"
+          >
+            {loading ? 'Calibrating...' : 'Calibrate Payouts'}
+          </button>
         </div>
 
         {/* Tabs */}
-        {(results || strategyResults) && (
-          <div className="mb-6 flex gap-2">
+        {(results || strategyResults || calibrationResults) && (
+          <div className="mb-6 flex gap-2 flex-wrap">
             <button
               onClick={() => setTab('basic')}
               disabled={!results}
@@ -94,6 +116,13 @@ export default function DetailedSimulation() {
               className={`px-4 py-2 rounded-lg font-semibold ${tab === 'strategy' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-gray-400'}`}
             >
               Strategy Testing
+            </button>
+            <button
+              onClick={() => setTab('calibration')}
+              disabled={!calibrationResults}
+              className={`px-4 py-2 rounded-lg font-semibold ${tab === 'calibration' ? 'bg-green-600 text-white' : 'bg-slate-700 text-gray-400'}`}
+            >
+              Payout Calibration
             </button>
           </div>
         )}
@@ -360,6 +389,94 @@ export default function DetailedSimulation() {
                 <li>• <span className="font-bold">Most Dangerous Strategy:</span> {Object.entries(strategyResults.strategies).reduce((a, b) => parseFloat(b[1].rtp) > parseFloat(a[1].rtp) ? b : a)[0]}</li>
                 <li>• <span className="font-bold">Recommended Action:</span> Reduce rank payouts by 20-30%, lower color board multipliers, and cap hedging opportunities</li>
               </ul>
+            </div>
+          </motion.div>
+        )}
+
+        {/* CALIBRATION TAB */}
+        {tab === 'calibration' && calibrationResults && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+            {/* Recommendation */}
+            <div className={`rounded-lg border-2 p-6 ${
+              calibrationResults.recommendation.includes('OPTIMAL')
+                ? 'border-green-500 bg-green-900/20'
+                : calibrationResults.recommendation.includes('EXPLOITABLE')
+                ? 'border-red-500 bg-red-900/20'
+                : 'border-orange-500 bg-orange-900/20'
+            }`}>
+              <h2 className="text-2xl font-bold mb-4">Recommended Configuration</h2>
+              <p className="text-lg">{calibrationResults.recommendation}</p>
+            </div>
+
+            {/* Best Config Details */}
+            {calibrationResults.bestConfiguration && (
+              <div className="bg-slate-800/50 border border-green-600/50 rounded-lg p-6">
+                <h3 className="text-2xl font-bold mb-6">✓ Optimal Payouts</h3>
+                <div className="grid grid-cols-1 gap-6">
+                  {/* Rank Payouts */}
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 text-blue-400">Hand Rank Payouts</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(calibrationResults.bestConfiguration.payoutConfig.rankPayouts).map(([rank, payout]) => (
+                        <div key={rank} className="bg-slate-900/50 rounded p-3">
+                          <p className="text-sm text-gray-400">{rank}</p>
+                          <p className="font-bold text-lg text-yellow-400">{payout.toFixed(2)}:1</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Color Payouts */}
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 text-purple-400">Color Board Payouts</h4>
+                    <div className="grid grid-cols-6 gap-2">
+                      {Object.entries(calibrationResults.bestConfiguration.payoutConfig.colorPayouts).map(([color, payout]) => (
+                        <div key={color} className="bg-slate-900/50 rounded p-3">
+                          <p className="text-sm text-gray-400">{color}</p>
+                          <p className="font-bold text-lg text-yellow-400">{payout.toFixed(2)}:1</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Low/High */}
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 text-green-400">Low/High Payout</h4>
+                    <div className="bg-slate-900/50 rounded p-3 w-full">
+                      <p className="font-bold text-2xl text-yellow-400">{calibrationResults.bestConfiguration.payoutConfig.lowHighPayout.toFixed(2)}:1</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Config Comparison Table */}
+            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+              <h3 className="text-xl font-bold mb-4">Configuration Comparison</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-600">
+                      <th className="text-left py-2 px-2">Configuration</th>
+                      <th className="text-center py-2 px-2">Naive RTP</th>
+                      <th className="text-center py-2 px-2">Hedge Color RTP</th>
+                      <th className="text-center py-2 px-2">Max Risk</th>
+                      <th className="text-center py-2 px-2">Safe?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calibrationResults.testResults.map((result, idx) => (
+                      <tr key={idx} className={`border-b border-slate-700 ${result.isSafe ? 'bg-green-900/10' : 'bg-red-900/10'}`}>
+                        <td className="py-2 px-2 font-bold">{result.config}</td>
+                        <td className="text-center py-2 px-2">{result.naiveRTP}</td>
+                        <td className="text-center py-2 px-2">{result.hedgeColorTrendRTP}</td>
+                        <td className="text-center py-2 px-2 font-bold">{result.maxRiskRTP}</td>
+                        <td className="text-center py-2 px-2">{result.isSafe ? '✓' : '✗'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </motion.div>
         )}
