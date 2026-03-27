@@ -29,18 +29,20 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
   const suitSymbol = SUITS[card.suit];
 
   return (
-    <div className={`${sizeClasses[size]} rounded-md border bg-white flex flex-col justify-between p-1 shadow-lg select-none
+    <div className={`${sizeClasses[size]} rounded-md border bg-white flex flex-col items-stretch justify-between p-0.5 shadow-lg select-none overflow-hidden
       ${isRed ? 'text-red-600' : 'text-gray-900'}
       ${glow ? 'border-yellow-400 shadow-yellow-400/80 shadow-lg ring-2 ring-yellow-400' : 'border-gray-200'}
     `}>
-      <div className="flex flex-col leading-tight">
-        <span className="font-bold leading-tight text-xs">{card.rank}</span>
-        <span className="leading-tight text-xs">{suitSymbol}</span>
+      <div className="flex flex-col leading-none text-xs">
+        <span className="font-bold">{card.rank}</span>
+        <span>{suitSymbol}</span>
       </div>
-      <div className="text-center font-bold leading-none mt-auto mb-auto">{suitSymbol}</div>
-      <div className="flex flex-col leading-tight rotate-180 self-end">
-        <span className="font-bold leading-tight text-xs">{card.rank}</span>
-        <span className="leading-tight text-xs">{suitSymbol}</span>
+      <div className="flex-1 flex items-center justify-center">
+        <span className="text-base font-bold">{suitSymbol}</span>
+      </div>
+      <div className="flex flex-col leading-none text-xs items-end self-end">
+        <span className="font-bold">{card.rank}</span>
+        <span>{suitSymbol}</span>
       </div>
     </div>
   );
