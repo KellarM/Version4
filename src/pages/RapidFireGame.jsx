@@ -525,14 +525,14 @@ export default function RapidFireGame() {
             <div className="flex items-center gap-1 mt-0.5">
               <span className="text-yellow-500/60 text-xs">—</span>
               <span
-                className="font-black italic text-xs tracking-widest"
+                className="font-black italic text-sm tracking-widest"
                 style={{
                   fontFamily: 'Oswald, sans-serif',
                   transform: 'skewX(-12deg)',
-                  background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
+                  background: 'linear-gradient(90deg, #86efac 0%, #4ade80 50%, #22c55e 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))',
+                  filter: 'drop-shadow(0 0 6px rgba(74,222,128,0.8)) drop-shadow(0 0 12px rgba(34,197,94,0.5))',
                 }}
               >
                 TEXAS 10
