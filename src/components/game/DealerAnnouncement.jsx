@@ -12,25 +12,34 @@ export default function DealerAnnouncement({ message, phase }) {
           transition={{ duration: 0.3 }}
           className="text-center flex items-center justify-center h-full"
         >
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-1.5">
             <span
-              className="font-black italic text-2xl leading-none"
+              className="font-black italic text-lg leading-none"
               style={{
                 fontFamily: 'Oswald, sans-serif',
                 transform: 'skewX(-12deg)',
                 background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 8px rgba(251,146,60,0.6))',
+                filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.5))',
                 letterSpacing: '-0.02em',
               }}
             >
               🎙️ DEALER
             </span>
-            <p className={`text-sm font-semibold leading-relaxed max-w-2xl
-              ${phase === 'winner' ? 'text-yellow-300' :
-                phase === 'lowHighBetting' ? 'text-blue-300' :
-                'text-green-300'}`}
+            <p
+              className="text-sm font-bold leading-relaxed max-w-2xl italic"
+              style={{
+                fontFamily: 'Oswald, sans-serif',
+                transform: 'skewX(-8deg)',
+                background: phase === 'winner' 
+                  ? 'linear-gradient(90deg, #fef08a 0%, #f97316 100%)'
+                  : phase === 'lowHighBetting'
+                  ? 'linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%)'
+                  : 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
             >
               {message}
             </p>
