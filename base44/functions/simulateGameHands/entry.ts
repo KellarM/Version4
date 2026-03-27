@@ -13,10 +13,10 @@ Deno.serve(async (req) => {
 
     // Game logic (inlined from gameEngine)
     const FIXED_HANDS = [
-      { id: 1,  payout: 18 }, { id: 2,  payout: 4  }, { id: 3,  payout: 15 },
-      { id: 4,  payout: 8  }, { id: 5,  payout: 6  }, { id: 6,  payout: 5  },
-      { id: 7,  payout: 6  }, { id: 8,  payout: 7  }, { id: 9,  payout: 8  },
-      { id: 10, payout: 15 },
+      { id: 1,  payout: 0.0008 }, { id: 2,  payout: 0.00025 }, { id: 3,  payout: 0.0007 },
+      { id: 4,  payout: 0.00045 }, { id: 5,  payout: 0.00035 }, { id: 6,  payout: 0.0003 },
+      { id: 7,  payout: 0.00035 }, { id: 8,  payout: 0.00035 }, { id: 9,  payout: 0.00045 },
+      { id: 10, payout: 0.0007 },
     ];
 
     // Statistics tracking
