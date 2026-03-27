@@ -22,28 +22,19 @@ Deno.serve(async (req) => {
     // Test configurations targeting 90-95% RTP
     const testConfigs = [
       {
-        name: 'Config A: Rank -25%, Color -30%',
-        rankPayouts: { 'Four of a Kind': 4.35, 'Full House': 1.125, 'Flush': 1.5, 'Straight': 2.175, 'Three of a Kind': 1.125, 'Two Pair': 5.55, 'One Pair': 6.75 },
-        colorPayouts: { '3R': 0.133, '3B': 0.133, '4R': 0.518, '4B': 0.518, '5R': 2.03, '5B': 2.03 },
+        name: 'Config E: Reduce Hand Payouts 0.5-1.0x',
+        rankPayouts: { 'Four of a Kind': 5.8, 'Full House': 1.5, 'Flush': 2.0, 'Straight': 2.9, 'Three of a Kind': 1.5, 'Two Pair': 7.4, 'One Pair': 9.0 },
+        colorPayouts: { '3R': 0.19, '3B': 0.19, '4R': 0.74, '4B': 0.74, '5R': 2.9, '5B': 2.9 },
         lowHighPayout: 0.35,
+        handPayouts: { 1: 0.8, 2: 0.5, 3: 0.8, 4: 0.65, 5: 0.6, 6: 0.5, 7: 0.6, 8: 0.65, 9: 0.65, 10: 0.8 }, // Reduced from 1.2-2.4
+        strategy: 'reduce-hand',
       },
       {
-        name: 'Config B: Rank -30%, Color -35%, LowHigh -20%',
-        rankPayouts: { 'Four of a Kind': 4.06, 'Full House': 1.05, 'Flush': 1.4, 'Straight': 2.03, 'Three of a Kind': 1.05, 'Two Pair': 5.18, 'One Pair': 6.3 },
-        colorPayouts: { '3R': 0.1235, '3B': 0.1235, '4R': 0.481, '4B': 0.481, '5R': 1.885, '5B': 1.885 },
-        lowHighPayout: 0.28,
-      },
-      {
-        name: 'Config C: Rank -35%, Color -40%, LowHigh -30%',
-        rankPayouts: { 'Four of a Kind': 3.77, 'Full House': 0.975, 'Flush': 1.3, 'Straight': 1.885, 'Three of a Kind': 0.975, 'Two Pair': 4.81, 'One Pair': 5.85 },
-        colorPayouts: { '3R': 0.114, '3B': 0.114, '4R': 0.444, '4B': 0.444, '5R': 1.74, '5B': 1.74 },
-        lowHighPayout: 0.245,
-      },
-      {
-        name: 'Config D: Rank -40%, Color -45%, LowHigh -35%',
-        rankPayouts: { 'Four of a Kind': 3.48, 'Full House': 0.9, 'Flush': 1.2, 'Straight': 1.74, 'Three of a Kind': 0.9, 'Two Pair': 4.44, 'One Pair': 5.4 },
-        colorPayouts: { '3R': 0.1045, '3B': 0.1045, '4R': 0.407, '4B': 0.407, '5R': 1.595, '5B': 1.595 },
-        lowHighPayout: 0.2275,
+        name: 'Config F: Cap Multi-Category (hand+rank=no color)',
+        rankPayouts: { 'Four of a Kind': 5.8, 'Full House': 1.5, 'Flush': 2.0, 'Straight': 2.9, 'Three of a Kind': 1.5, 'Two Pair': 7.4, 'One Pair': 9.0 },
+        colorPayouts: { '3R': 0.19, '3B': 0.19, '4R': 0.74, '4B': 0.74, '5R': 2.9, '5B': 2.9 },
+        lowHighPayout: 0.35,
+        strategy: 'multi-category-cap',
       },
     ];
 
@@ -91,6 +82,12 @@ function testConfigAgainstStrategies(handsToSimulate, config) {
     { id: 10, payout: 2.4 },
   ];
 
+  // Apply reduced hand payouts if strategy requires
+  let handPayouts = FIXED_HANDS;
+  if (config.strategy === 'reduce-hand' && config.handPayouts) {
+    handPayouts = FIXED_HANDS.map((h, idx) => ({ ...h, payout: config.handPayouts[h.id] }));
+  }
+
   const rankFrequencies = {
     'Four of a Kind': 0.00168, 'Full House': 0.00261, 'Flush': 0.00327, 'Straight': 0.00462,
     'Three of a Kind': 0.02113, 'Two Pair': 0.04754, 'One Pair': 0.42256,
@@ -98,17 +95,16 @@ function testConfigAgainstStrategies(handsToSimulate, config) {
 
   let naiveTotalBets = 0, naiveTotalPayouts = 0;
   let hedgeTotalBets = 0, hedgeTotalPayouts = 0;
-  let strongTotalBets = 0, strongTotalPayouts = 0;
 
   for (let round = 0; round < handsToSimulate; round++) {
     const winningHand = Math.floor(Math.random() * 10);
-    const hand = FIXED_HANDS[winningHand];
+    const hand = handPayouts.find(h => h.id === winningHand + 1) || handPayouts[winningHand];
     const reds = Math.floor(Math.random() * 6);
     const blacks = 5 - reds;
 
     // NAIVE: Bet everything
     let naiveBets = 0, naivePayouts = 0;
-    naiveBets += 10; // Hand
+    naiveBets += 10;
     naivePayouts += 10 * (1 + hand.payout);
     
     ['Four of a Kind', 'Full House', 'Flush', 'Straight', 'Three of a Kind', 'Two Pair', 'One Pair'].forEach(rank => {
@@ -118,77 +114,77 @@ function testConfigAgainstStrategies(handsToSimulate, config) {
       }
     });
     
-    naiveBets += 10; // Color
+    naiveBets += 10;
     if (reds >= 3) for (let i = 3; i <= reds; i++) naivePayouts += 10 * (1 + (config.colorPayouts[`${i}R`] || 0));
     if (blacks >= 3) for (let i = 3; i <= blacks; i++) naivePayouts += 10 * (1 + (config.colorPayouts[`${i}B`] || 0));
     
-    naiveBets += 10; // LowHigh
+    naiveBets += 10;
     naivePayouts += 10 * (1 + config.lowHighPayout);
 
     naiveTotalBets += naiveBets;
     naiveTotalPayouts += naivePayouts;
 
-    // HEDGE COLOR TREND: Only bet if red-heavy, pick HIGH
-    if (reds >= 2) {
-      let hedgeBets = 0, hedgePayouts = 0;
-      hedgeBets += 10;
-      hedgePayouts += 10 * (1 + hand.payout);
-      
-      ['One Pair', 'Two Pair', 'Three of a Kind'].forEach(rank => {
+    // HEDGE COLOR TREND: Depends on strategy
+    if (config.strategy === 'multi-category-cap') {
+      // With multi-category cap: if betting hand+rank, NO color bets allowed
+      // Hedge strategy would bet hand + rank, then low/high (no color)
+      if (reds >= 2) {
+        let hedgeBets = 0, hedgePayouts = 0;
         hedgeBets += 10;
-        if (Math.random() < rankFrequencies[rank]) {
-          hedgePayouts += 10 * (1 + config.rankPayouts[rank]);
-        }
-      });
-      
-      hedgeBets += 10;
-      if (reds >= 3) for (let i = 3; i <= reds; i++) hedgePayouts += 10 * (1 + (config.colorPayouts[`${i}R`] || 0));
-      
-      hedgeBets += 10;
-      hedgePayouts += 10 * (1 + config.lowHighPayout);
-      
-      hedgeTotalBets += hedgeBets;
-      hedgeTotalPayouts += hedgePayouts;
-    }
-
-    // HEDGE STRONG: Only on pair hands
-    if (hand.payout >= 1.6) {
-      let strongBets = 0, strongPayouts = 0;
-      strongBets += 10;
-      strongPayouts += 10 * (1 + hand.payout);
-      
-      ['One Pair', 'Two Pair', 'Three of a Kind', 'Full House', 'Four of a Kind'].forEach(rank => {
-        strongBets += 10;
-        if (Math.random() < rankFrequencies[rank]) {
-          strongPayouts += 10 * (1 + config.rankPayouts[rank]);
-        }
-      });
-      
-      strongBets += 10;
-      if (reds >= 3) for (let i = 3; i <= reds; i++) strongPayouts += 10 * (1 + (config.colorPayouts[`${i}R`] || 0));
-      if (blacks >= 3) for (let i = 3; i <= blacks; i++) strongPayouts += 10 * (1 + (config.colorPayouts[`${i}B`] || 0));
-      
-      strongBets += 10;
-      strongPayouts += 10 * (1 + config.lowHighPayout);
-      
-      strongTotalBets += strongBets;
-      strongTotalPayouts += strongPayouts;
+        hedgePayouts += 10 * (1 + hand.payout);
+        
+        ['One Pair', 'Two Pair', 'Three of a Kind'].forEach(rank => {
+          hedgeBets += 10;
+          if (Math.random() < rankFrequencies[rank]) {
+            hedgePayouts += 10 * (1 + config.rankPayouts[rank]);
+          }
+        });
+        
+        // NO color bets when hand+rank are bet (multi-category cap)
+        
+        hedgeBets += 10;
+        hedgePayouts += 10 * (1 + config.lowHighPayout);
+        
+        hedgeTotalBets += hedgeBets;
+        hedgeTotalPayouts += hedgePayouts;
+      }
+    } else {
+      // Original hedge: hand + rank + color + low/high
+      if (reds >= 2) {
+        let hedgeBets = 0, hedgePayouts = 0;
+        hedgeBets += 10;
+        hedgePayouts += 10 * (1 + hand.payout);
+        
+        ['One Pair', 'Two Pair', 'Three of a Kind'].forEach(rank => {
+          hedgeBets += 10;
+          if (Math.random() < rankFrequencies[rank]) {
+            hedgePayouts += 10 * (1 + config.rankPayouts[rank]);
+          }
+        });
+        
+        hedgeBets += 10;
+        if (reds >= 3) for (let i = 3; i <= reds; i++) hedgePayouts += 10 * (1 + (config.colorPayouts[`${i}R`] || 0));
+        
+        hedgeBets += 10;
+        hedgePayouts += 10 * (1 + config.lowHighPayout);
+        
+        hedgeTotalBets += hedgeBets;
+        hedgeTotalPayouts += hedgePayouts;
+      }
     }
   }
 
   const naiveRTP = ((naiveTotalPayouts / naiveTotalBets) * 100).toFixed(2);
   const hedgeRTP = hedgeTotalBets > 0 ? ((hedgeTotalPayouts / hedgeTotalBets) * 100).toFixed(2) : '0.00';
-  const strongRTP = strongTotalBets > 0 ? ((strongTotalPayouts / strongTotalBets) * 100).toFixed(2) : '0.00';
-  const overallRTP = ((naiveTotalPayouts / naiveTotalBets) * 100).toFixed(2); // Use naive as baseline
+  const overallRTP = ((naiveTotalPayouts / naiveTotalBets) * 100).toFixed(2);
 
   return {
     config: config.name,
     naiveRTP: naiveRTP + '%',
     hedgeColorTrendRTP: hedgeRTP + '%',
-    hedgeStrongRTP: strongRTP + '%',
     overallRTP: overallRTP + '%',
-    maxRiskRTP: Math.max(parseFloat(naiveRTP), parseFloat(hedgeRTP), parseFloat(strongRTP)).toFixed(2) + '%',
-    isSafe: parseFloat(hedgeRTP) <= 100 && parseFloat(strongRTP) <= 100,
+    maxRiskRTP: Math.max(parseFloat(naiveRTP), parseFloat(hedgeRTP)).toFixed(2) + '%',
+    isSafe: parseFloat(hedgeRTP) <= 100,
     payoutConfig: config,
   };
 }
