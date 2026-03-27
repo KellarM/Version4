@@ -2,27 +2,71 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 
 export default function HandByHandAnalysis() {
-  const [gameCount, setGameCount] = useState(25);
+  const [gameCount, setGameCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [expandedGame, setExpandedGame] = useState(null);
   const [error, setError] = useState(null);
 
-  const runSimulation = async (count) => {
+  const runSimulation = async (count, isAdd = false) => {
     setLoading(true);
     setError(null);
     try {
       const response = await base44.functions.invoke('detailedHandSimulation', { gamesToSimulate: count });
-      setResults(response.data);
-      setGameCount(count);
+      
+      if (isAdd && results) {
+        // Append new games
+        const updatedGames = [...results.games, ...response.data.games];
+        const totalBets = results.summary.totalBets + response.data.summary.totalBets;
+        const totalPayouts = results.summary.totalPayouts + response.data.summary.totalPayouts;
+        const houseProfit = totalBets - totalPayouts;
+        const overallRTP = ((totalPayouts / totalBets) * 100).toFixed(2);
+        
+        // Recalculate cumulative RTP for all games
+        let runningBets = 0;
+        let runningPayouts = 0;
+        const recalculatedGames = updatedGames.map(game => {
+          runningBets += game.totalBets;
+          runningPayouts += game.totalPayouts;
+          return {
+            ...game,
+            cumulativeRTP: ((runningPayouts / runningBets) * 100).toFixed(2) + '%',
+          };
+        });
+
+        setResults({
+          ...response.data,
+          games: recalculatedGames,
+          summary: {
+            totalGames: results.summary.totalGames + count,
+            totalBets,
+            totalPayouts,
+            houseProfit,
+            overallRTP: overallRTP + '%',
+            isCompliant: parseFloat(overallRTP) >= 95 && parseFloat(overallRTP) <= 98,
+          },
+        });
+        setGameCount(results.summary.totalGames + count);
+      } else {
+        // Start fresh
+        setResults(response.data);
+        setGameCount(count);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const clearData = () => {
+    setResults(null);
+    setGameCount(0);
+    setExpandedGame(null);
+    setError(null);
   };
 
   return (
@@ -39,20 +83,39 @@ export default function HandByHandAnalysis() {
 
         {/* Controls */}
         <div className="mb-8 flex gap-3 flex-wrap">
-          {[10, 25, 50, 75, 100].map(count => (
-            <button
-              key={count}
-              onClick={() => runSimulation(count)}
-              disabled={loading}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                gameCount === count && results
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-slate-700 hover:bg-slate-600 text-gray-300 disabled:bg-gray-700'
-              }`}
-            >
-              {loading && gameCount === count ? 'Simulating...' : `${count} Games`}
-            </button>
-          ))}
+          <div className="flex gap-3 flex-wrap">
+            {[10, 25, 50, 75, 100, 1000, 5000].map(count => (
+              <button
+                key={count}
+                onClick={() => runSimulation(count, false)}
+                disabled={loading}
+                className="px-6 py-3 rounded-lg font-semibold transition-all bg-slate-700 hover:bg-slate-600 text-gray-300 disabled:bg-gray-700"
+              >
+                {loading ? 'Simulating...' : `${count} Games`}
+              </button>
+            ))}
+          </div>
+          
+          {results && (
+            <div className="flex gap-3 ml-auto">
+              <button
+                onClick={() => runSimulation(gameCount, true)}
+                disabled={loading}
+                className="px-4 py-3 rounded-lg font-semibold bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-700 flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                ADD {gameCount} More
+              </button>
+              <button
+                onClick={clearData}
+                disabled={loading}
+                className="px-4 py-3 rounded-lg font-semibold bg-red-600 hover:bg-red-700 text-white disabled:bg-gray-700 flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Clear Data
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Loading */}
@@ -171,33 +234,69 @@ export default function HandByHandAnalysis() {
                 animate={{ opacity: 1, height: 'auto' }}
                 className="bg-slate-800/50 border border-slate-700 rounded-lg p-6"
               >
-                <h3 className="text-lg font-bold mb-4">Game #{results.games[expandedGame].gameNumber} - Player Details</h3>
+                <h3 className="text-lg font-bold mb-4">Game #{results.games[expandedGame].gameNumber} - Detailed Breakdown</h3>
                 <div className="space-y-4">
-                  {results.games[expandedGame].players.map((player, idx) => (
-                    <div key={idx} className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-                      <div className="flex justify-between items-start mb-3">
+                  {results.games[expandedGame].players.map((player, pIdx) => (
+                    <div key={pIdx} className="bg-slate-900/50 rounded-lg border border-slate-700 overflow-hidden">
+                      <div className="bg-slate-800/70 px-4 py-3 border-b border-slate-700 flex justify-between items-center">
                         <div>
-                          <p className="font-bold text-lg">Player {player.playerId}</p>
-                          <p className="text-sm text-gray-400">{player.strategy} Strategy</p>
+                          <p className="font-bold text-lg">Player {player.playerId} - {player.strategy} Strategy</p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-yellow-400">Bet: ${player.totalBet.toFixed(0)}</p>
-                          <p className={`font-bold ${player.totalWin >= player.totalBet ? 'text-green-400' : 'text-red-400'}`}>
-                            Win: ${player.totalWin.toFixed(2)}
-                          </p>
-                          <p className={`font-bold ${player.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        <div className="text-sm">
+                          <span className="text-gray-400">Total Bet: </span>
+                          <span className="font-bold text-yellow-400">${player.totalBet.toFixed(0)}</span>
+                          <span className="text-gray-400 ml-4">Total Win: </span>
+                          <span className={`font-bold ${player.totalWin >= player.totalBet ? 'text-green-400' : 'text-red-400'}`}>
+                            ${player.totalWin.toFixed(2)}
+                          </span>
+                          <span className="text-gray-400 ml-4">Profit: </span>
+                          <span className={`font-bold ${player.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {player.profit >= 0 ? '+' : ''}${player.profit.toFixed(2)}
-                          </p>
+                          </span>
                         </div>
                       </div>
-                      {Object.keys(player.bets).length > 0 && (
-                        <div className="text-xs text-gray-400 space-y-1">
-                          {player.bets.hand && <p>Hand Bet: #{player.bets.hand.id} (${player.bets.hand.amount})</p>}
-                          {player.bets.rank && <p>Rank Bet: {player.bets.rank.name} (${player.bets.rank.amount})</p>}
-                          {player.bets.color && <p>Color Bet: {player.bets.color.type} (${player.bets.color.amount})</p>}
-                          {player.bets.lowHigh && <p>Low/High: {player.bets.lowHigh.type} (${player.bets.lowHigh.amount})</p>}
-                        </div>
-                      )}
+                      
+                      <div className="p-4 space-y-2">
+                        {player.bets.hand && (
+                          <div className="grid grid-cols-12 gap-2 text-sm bg-blue-900/20 p-3 rounded border border-blue-800/30">
+                            <div className="col-span-3 font-bold text-blue-400">Card Hand</div>
+                            <div className="col-span-3 text-gray-300">Hand #{player.bets.hand.id}</div>
+                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.hand.amount}</div>
+                            <div className="col-span-4 text-right text-gray-400">Outcome: Calculated in game</div>
+                          </div>
+                        )}
+                        
+                        {player.bets.rank && (
+                          <div className="grid grid-cols-12 gap-2 text-sm bg-purple-900/20 p-3 rounded border border-purple-800/30">
+                            <div className="col-span-3 font-bold text-purple-400">Rank Hand</div>
+                            <div className="col-span-3 text-gray-300">{player.bets.rank.name}</div>
+                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.rank.amount}</div>
+                            <div className="col-span-4 text-right text-gray-400">Outcome: Calculated in game</div>
+                          </div>
+                        )}
+                        
+                        {player.bets.color && (
+                          <div className="grid grid-cols-12 gap-2 text-sm bg-red-900/20 p-3 rounded border border-red-800/30">
+                            <div className="col-span-3 font-bold text-red-400">Red/Black</div>
+                            <div className="col-span-3 text-gray-300">{player.bets.color.type}</div>
+                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.color.amount}</div>
+                            <div className="col-span-4 text-right text-gray-400">Outcome: Calculated in game</div>
+                          </div>
+                        )}
+                        
+                        {player.bets.lowHigh && (
+                          <div className="grid grid-cols-12 gap-2 text-sm bg-teal-900/20 p-3 rounded border border-teal-800/30">
+                            <div className="col-span-3 font-bold text-teal-400">Low/High</div>
+                            <div className="col-span-3 text-gray-300">{player.bets.lowHigh.type}</div>
+                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.lowHigh.amount}</div>
+                            <div className="col-span-4 text-right text-gray-400">Outcome: Calculated in game</div>
+                          </div>
+                        )}
+                        
+                        {Object.keys(player.bets).length === 0 && (
+                          <p className="text-gray-500 text-sm italic">No bets placed</p>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
