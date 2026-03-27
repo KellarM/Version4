@@ -78,12 +78,11 @@ export default function SideBets({
         onClick={() => canBetRB && onRedBlackBet(opt.key)}
         onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveRedBlackBet(opt.key); }}
         whileTap={canBetRB ? { scale: 0.95 } : {}}
-        className={`relative rounded-lg px-1 py-1.5 text-xs font-bold border-2 transition-all duration-300 ${cls} ${canBetRB ? 'cursor-pointer' : 'cursor-default'}`}
+        className={`relative rounded-lg px-1 py-0.5 text-xs font-bold border-2 transition-all duration-300 ${cls} ${canBetRB ? 'cursor-pointer' : 'cursor-default'}`}
       >
-        <div className="flex flex-col items-center gap-0.5">
-          <span className={`w-2 h-2 rounded-full ${isRed ? 'bg-red-500' : 'bg-gray-300'}`} />
-          <span className="text-xs">{opt.label}</span>
-          <span className="text-yellow-400/80 text-xs">{opt.payout}</span>
+        <div className="flex flex-col items-center">
+          <span className="text-xs leading-tight">{opt.label}</span>
+          <span className="text-yellow-400/80 text-xs leading-tight">{opt.payout}</span>
         </div>
         {/* Multi-player chips — offset in a small cluster */}
         {chipsHere.length > 0 && (
