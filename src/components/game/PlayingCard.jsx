@@ -33,12 +33,12 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
       ${isRed ? 'text-red-600' : 'text-gray-900'}
       ${glow ? 'border-yellow-400 shadow-yellow-400/80 shadow-lg ring-2 ring-yellow-400' : 'border-gray-200'}
     `}>
-      <div className="flex flex-col leading-none">
+      <div className="flex flex-col items-center leading-none">
         <span className="font-bold leading-none">{card.rank}</span>
         <span className="leading-none">{suitSymbol}</span>
       </div>
       <div className="text-center text-lg font-bold leading-none">{suitSymbol}</div>
-      <div className="flex flex-col leading-none rotate-180 self-end">
+      <div className="flex flex-col items-center leading-none rotate-180">
         <span className="font-bold leading-none">{card.rank}</span>
         <span className="leading-none">{suitSymbol}</span>
       </div>
