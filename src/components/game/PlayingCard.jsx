@@ -45,8 +45,8 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
         <span>{suitSymbol}</span>
       </div>
       {/* Logo decals in corners */}
-      <div className="absolute top-0.5 right-0.5 text-xs font-black italic leading-none opacity-30" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.5rem', transform: 'skewX(-8deg)', color: '#fbbf24' }}>RF</div>
-      <div className="absolute bottom-0.5 left-0.5 text-xs font-black italic leading-none opacity-30" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.5rem', transform: 'skewX(-8deg)', color: '#fbbf24' }}>RF</div>
+      <div className="absolute top-0.5 right-0.5 font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.55rem', transform: 'skewX(-8deg)', background: 'linear-gradient(90deg, #cbd5e1 0%, #f97316 50%, #dc2626 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', opacity: 0.85, filter: 'drop-shadow(0 0 1px rgba(249, 115, 22, 0.4))' }}>RF</div>
+      <div className="absolute bottom-0.5 left-0.5 font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.55rem', transform: 'skewX(-8deg)', background: 'linear-gradient(90deg, #cbd5e1 0%, #f97316 50%, #dc2626 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', opacity: 0.85, filter: 'drop-shadow(0 0 1px rgba(249, 115, 22, 0.4))' }}>RF</div>
     </div>
   );
 }
