@@ -8,6 +8,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
 import RapidFireGame from './pages/RapidFireGame';
 import SimulationMode from './pages/SimulationMode';
+import DetailedSimulation from './pages/DetailedSimulation';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -37,6 +38,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<RapidFireGame />} />
       <Route path="/simulation" element={<SimulationMode />} />
+      <Route path="/detailed-simulation" element={<DetailedSimulation />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

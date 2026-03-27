@@ -626,6 +626,13 @@ export default function RapidFireGame() {
           >
             🔬 Simulate
           </Link>
+          <Link
+            to="/detailed-simulation"
+            className="ml-1 px-2 py-1 rounded-lg border border-purple-700/60 bg-purple-900/30 text-purple-300 text-xs font-bold hover:bg-purple-800/50 transition-all"
+            title="Detailed category analysis"
+          >
+            📊 Analysis
+          </Link>
           <button
             onClick={handleResetGame}
             className="ml-2 px-2 py-1 rounded-lg border border-red-700/60 bg-red-900/30 text-red-300 text-xs font-bold hover:bg-red-800/50 transition-all"
