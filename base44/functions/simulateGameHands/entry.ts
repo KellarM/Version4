@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     };
 
     const rbPayoutMap = { '3R': 0.008, '3B': 0.008, '4R': 0.025, '4B': 0.025, '5R': 0.2, '5B': 0.2 };
-    const lowHighPayout = 1; // 1:1 even money
+    const lowHighPayout = 1; // Player gets 2x their bet back (1:1 payout)
 
     const stats = {
       totalHands: handsToSimulate,

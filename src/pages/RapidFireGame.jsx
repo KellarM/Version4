@@ -335,15 +335,15 @@ export default function RapidFireGame() {
     const rankPayoutMap = {
       'Royal Flush': null,
       'Straight Flush': null,
-      'Four of a Kind': 0.00035,
-      'Full House': 0.000075,
-      'Flush': 0.0001,
-      'Straight': 0.0002,
-      'Three of a Kind': 0.0001,
-      'Two Pair': 0.0004,
-      'One Pair': 0.0005,
+      'Four of a Kind': 10,
+      'Full House': 2,
+      'Flush': 3,
+      'Straight': 5,
+      'Three of a Kind': 3,
+      'Two Pair': 12,
+      'One Pair': 15,
     };
-    const rbPayoutMap = { '3R': 0.008, '3B': 0.008, '4R': 0.025, '4B': 0.025, '5R': 0.2, '5B': 0.2 };
+    const rbPayoutMap = { '3R': 1, '3B': 1, '4R': 4, '4B': 4, '5R': 40, '5B': 40 };
 
     let totalBetsAllPlayers = 0;
     let totalWinningsAllPlayers = 0;
