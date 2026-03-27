@@ -13,6 +13,7 @@ import HistoryRail from '@/components/game/HistoryRail';
 import DealerAnnouncement from '@/components/game/DealerAnnouncement';
 import RankBets from '@/components/game/RankBets';
 import PayoutTable from '@/components/game/PayoutTable';
+import NewPlayerButton from '@/components/game/NewPlayerButton';
 
 const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -538,6 +539,13 @@ export default function RapidFireGame() {
     setStraightFlushJackpot(p => p + 5);
   };
 
+  const handleAddPlayer = (playerNum) => {
+    if (playerNum > playerCount) {
+      setPlayerCount(playerNum);
+      setActivePlayer(playerNum - 1);
+    }
+  };
+
   const actionButton = () => {
     if (gamePhase === 'betting') return { label: '🃏 Deal Flop', action: handleDealFlop, disabled: false };
     if (gamePhase === 'flop') return { label: '🃏 Deal Turn', action: handleDealTurn, disabled: false };
@@ -756,26 +764,36 @@ export default function RapidFireGame() {
           </AnimatePresence>
 
           {/* 10 Fixed Hands Grid */}
-          <div className="flex-1 min-h-0">
-            <div className="grid grid-cols-5 gap-1.5 h-full auto-rows-fr">
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="grid grid-cols-5 gap-1.5 flex-1 auto-rows-fr">
               {FIXED_HANDS.map(hand => (
-                <FixedHandCard
-                  key={hand.id}
-                  hand={hand}
-                  isLeading={leadingHandIds.includes(hand.id)}
-                  isWinner={winnerHandIds.includes(hand.id)}
-                  communityCards={communityCards}
-                  betAmount={pHandBets[hand.id] || 0}
-                  allHandBets={handBets}
-                  playerCount={playerCount}
-                  activePlayerId={pid}
-                  onBet={handleHandBet}
-                  onRemoveBet={handleRemoveHandBet}
-                  onDropChip={handleDropChip}
-                  gamePhase={gamePhase}
-                  disabled={balance < selectedChip && !pHandBets[hand.id]}
-                  disabledByConstraint={rankBetCount > 1}
-                />
+                <div key={hand.id} className="flex flex-col">
+                  <FixedHandCard
+                    hand={hand}
+                    isLeading={leadingHandIds.includes(hand.id)}
+                    isWinner={winnerHandIds.includes(hand.id)}
+                    communityCards={communityCards}
+                    betAmount={pHandBets[hand.id] || 0}
+                    allHandBets={handBets}
+                    playerCount={playerCount}
+                    activePlayerId={pid}
+                    onBet={handleHandBet}
+                    onRemoveBet={handleRemoveHandBet}
+                    onDropChip={handleDropChip}
+                    gamePhase={gamePhase}
+                    disabled={balance < selectedChip && !pHandBets[hand.id]}
+                    disabledByConstraint={rankBetCount > 1}
+                  />
+                  {(hand.id === 8 || hand.id === 9) && (
+                    <div className="flex justify-center mt-1">
+                      <NewPlayerButton 
+                        playerCount={playerCount} 
+                        onAddPlayer={handleAddPlayer}
+                        gamePhase={gamePhase}
+                      />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
