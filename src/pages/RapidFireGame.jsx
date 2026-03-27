@@ -714,6 +714,13 @@ export default function RapidFireGame() {
           >
             📊 Analysis
           </Link>
+          <Link
+            to="/analysis"
+            className="ml-1 px-2 py-1 rounded-lg border border-green-700/60 bg-green-900/30 text-green-300 text-xs font-bold hover:bg-green-800/50 transition-all"
+            title="Hand-by-hand breakdown"
+          >
+            🔍 H-by-H
+          </Link>
           <button
             onClick={handleResetGame}
             className="ml-2 px-2 py-1 rounded-lg border border-red-700/60 bg-red-900/30 text-red-300 text-xs font-bold hover:bg-red-800/50 transition-all"
