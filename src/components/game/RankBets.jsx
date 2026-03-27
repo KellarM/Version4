@@ -21,8 +21,8 @@ export const RANK_BET_OPTIONS = [
   { key: 'One Pair',        label: 'One Pair',         payout: '15:1',    color: 'green'  },
 ];
 
-// Winner always highlights in gold/yellow (same as carded hand, R/B, L/H winners)
-const WINNER_STYLE = 'border-yellow-400 bg-yellow-900/50 text-yellow-200 shadow-yellow-400/50 shadow-lg';
+// Winner always highlights in gold/yellow with flash animation
+const WINNER_STYLE = 'bg-yellow-900/50 text-yellow-200 winner-flash';
 
 const COLOR_STYLES = {
   purple: { active: 'border-purple-400 bg-purple-900/50 text-purple-200', inactive: 'border-purple-800/40 bg-purple-950/20 text-purple-400/60', winner: WINNER_STYLE },

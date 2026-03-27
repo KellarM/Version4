@@ -12,7 +12,7 @@ import HistoryRail from '@/components/game/HistoryRail';
 import DealerAnnouncement from '@/components/game/DealerAnnouncement';
 import RankBets from '@/components/game/RankBets';
 
-const STARTING_BALANCE = 500;
+const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
 const DEFAULT_CHIP = 10;
 const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4, 5];
@@ -59,8 +59,8 @@ export default function RapidFireGame() {
   const [winningLowHigh, setWinningLowHigh] = useState(null);
   const [history, setHistory] = useState([]);
   const [roundId, setRoundId] = useState(1);
-  const [royalFlushJackpot, setRoyalFlushJackpot] = useState(12595);
-  const [straightFlushJackpot, setStraightFlushJackpot] = useState(2845);
+  const [royalFlushJackpot, setRoyalFlushJackpot] = useState(0);
+  const [straightFlushJackpot, setStraightFlushJackpot] = useState(0);
   const [lastWinInfo, setLastWinInfo] = useState(null);
   const [winningRank, setWinningRank] = useState(null);
   const [leadingRank, setLeadingRank] = useState(null);
@@ -182,6 +182,28 @@ export default function RapidFireGame() {
     setBalances(b => { const n = [...b]; n[pid] += pLowHighBet.amount; return n; });
     setLowHighBets(prev => ({ ...prev, [pid]: null }));
   }, [gamePhase, pid, pLowHighBet]);
+
+  // Drag-drop: move a chip from one hand to another, or back to bank
+  const handleDropChip = useCallback((fromHandId, toHandId, dragPid) => {
+    if (gamePhase !== 'betting') return;
+    const fromAmt = (handBets[dragPid] || {})[fromHandId] || 0;
+    if (fromAmt <= 0) return;
+
+    if (toHandId === 'bank') {
+      // Drag to bank — refund
+      setHandBets(prev => { const n = { ...(prev[dragPid] || {}) }; delete n[fromHandId]; return { ...prev, [dragPid]: n }; });
+      setBalances(b => { const n = [...b]; n[dragPid] += fromAmt; return n; });
+    } else {
+      // Move entire bet from fromHandId to toHandId
+      setHandBets(prev => {
+        const pb = { ...(prev[dragPid] || {}) };
+        const toAmt = pb[toHandId] || 0;
+        delete pb[fromHandId];
+        pb[toHandId] = toAmt + fromAmt;
+        return { ...prev, [dragPid]: pb };
+      });
+    }
+  }, [gamePhase, handBets]);
 
   const clearBets = () => {
     const refund = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
@@ -566,8 +588,10 @@ export default function RapidFireGame() {
                   betAmount={pHandBets[hand.id] || 0}
                   allHandBets={handBets}
                   playerCount={playerCount}
+                  activePlayerId={pid}
                   onBet={handleHandBet}
                   onRemoveBet={handleRemoveHandBet}
+                  onDropChip={handleDropChip}
                   gamePhase={gamePhase}
                   disabled={balance < selectedChip && !pHandBets[hand.id]}
                 />
@@ -578,6 +602,24 @@ export default function RapidFireGame() {
           {/* Bottom controls: chips + action button */}
           <div className="flex items-center justify-between gap-2 border-t border-yellow-700/20 pt-1.5 flex-shrink-0">
             <div className="flex items-center gap-1">
+              {/* Bank drop zone — drag chips here to refund */}
+              {gamePhase === 'betting' && (
+                <div
+                  id="bank-drop-zone"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const data = e.dataTransfer.getData('text/plain');
+                    if (!data) return;
+                    const { from, pid: dragPid } = JSON.parse(data);
+                    handleDropChip(from, 'bank', dragPid);
+                  }}
+                  className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-dashed border-yellow-600/50 bg-yellow-900/20 text-yellow-500/60 text-xs font-bold transition-all hover:border-yellow-400 hover:bg-yellow-900/40 mr-1"
+                  title="Drag chip here to refund to bank"
+                >
+                  💰
+                </div>
+              )}
               <span className="text-yellow-400/60 text-xs mr-1">Chip:</span>
               {CHIP_VALUES.map(v => (
                 <button

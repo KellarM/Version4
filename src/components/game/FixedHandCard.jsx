@@ -17,14 +17,15 @@ export default function FixedHandCard({
   isWinner,
   communityCards,
   betAmount,
-  allHandBets,     // { [pid]: amount } for all players on this hand
+  allHandBets,
   playerCount,
+  activePlayerId,
   onBet,
   onRemoveBet,
+  onDropChip,      // (fromHandId | 'bank', toHandId | 'bank', pid) — drag-drop handler
   gamePhase,
   disabled,
 }) {
-  // Build chip list from all players
   const allBets = [];
   for (let i = 0; i < (playerCount || 1); i++) {
     const amt = (allHandBets || {})[i]?.[hand?.id] || 0;
@@ -32,7 +33,9 @@ export default function FixedHandCard({
   }
 
   const [hovered, setHovered] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const canBet = gamePhase === 'betting' && !disabled;
+  const isBettingPhase = gamePhase === 'betting';
 
   let currentEval = null;
   if (communityCards && communityCards.length > 0) {
@@ -41,24 +44,39 @@ export default function FixedHandCard({
 
   const cardDisplayName = hand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join('/');
 
+  // Border class
+  let borderCls;
+  if (isWinner) borderCls = 'border-yellow-400 bg-yellow-900/40 shadow-yellow-400/60 shadow-xl winner-flash';
+  else if (isLeading) borderCls = 'border-yellow-300 bg-yellow-900/20 shadow-yellow-300/40 shadow-lg';
+  else if (dragOver && isBettingPhase) borderCls = 'border-green-300 bg-green-800/60';
+  else if (hovered && canBet) borderCls = 'border-yellow-600/70 bg-green-900/60';
+  else borderCls = 'border-green-700/60 bg-green-900/40';
+
   return (
     <motion.div
-      className={`relative rounded-xl p-1.5 border-2 cursor-pointer transition-all duration-300 select-none flex flex-col justify-between
-        ${isWinner ? 'border-yellow-400 bg-yellow-900/40 shadow-yellow-400/60 shadow-xl' :
-          isLeading ? 'border-yellow-300 bg-yellow-900/20 shadow-yellow-300/40 shadow-lg' :
-          hovered && canBet ? 'border-yellow-600/70 bg-green-900/60' :
-          'border-green-700/60 bg-green-900/40'}
-      `}
-      animate={isLeading || isWinner ? { scale: [1, 1.02, 1] } : { scale: 1 }}
+      className={`relative rounded-xl p-1.5 border-2 cursor-pointer transition-colors duration-200 select-none flex flex-col justify-between ${borderCls}`}
+      animate={isLeading && !isWinner ? { scale: [1, 1.02, 1] } : { scale: 1 }}
       transition={{ duration: 0.5, repeat: isLeading && !isWinner ? Infinity : 0, repeatDelay: 1.5 }}
       onClick={() => canBet && onBet(hand.id)}
-      onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveBet(hand.id); }}
+      onContextMenu={(e) => { e.preventDefault(); if (isBettingPhase) onRemoveBet(hand.id); }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      // Drop target
+      onDragOver={(e) => { if (isBettingPhase) { e.preventDefault(); setDragOver(true); } }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        if (!isBettingPhase) return;
+        const data = e.dataTransfer.getData('text/plain');
+        if (!data) return;
+        const { from, pid } = JSON.parse(data);
+        if (from !== hand.id) onDropChip(from, hand.id, pid);
+      }}
     >
-      {(isLeading || isWinner) && (
+      {(isLeading || isWinner) && !isWinner && (
         <div className="absolute inset-0 rounded-xl pointer-events-none">
-          <div className={`absolute inset-0 rounded-xl animate-pulse ${isWinner ? 'bg-yellow-400/10' : 'bg-yellow-300/5'}`} />
+          <div className="absolute inset-0 rounded-xl animate-pulse bg-yellow-300/5" />
         </div>
       )}
 
@@ -86,15 +104,21 @@ export default function FixedHandCard({
         </div>
       )}
 
-      {/* Bet indicator — show all players' chips */}
+      {/* Bet chips — draggable during betting */}
       {allBets && allBets.length > 0 && (
         <div className="absolute -top-2 -right-2 flex flex-row-reverse gap-0.5 z-10">
           {allBets.map(({ pid, amt, color }, idx) => (
             <span
               key={pid}
-              style={{ zIndex: 10 + idx }}
-              className={`${color.bg} ${color.text} text-xs font-black rounded-full w-6 h-6 flex items-center justify-center border ${color.border} shadow-lg`}
-              title={`P${pid + 1}: $${amt}`}
+              draggable={isBettingPhase && pid === activePlayerId}
+              onDragStart={(e) => {
+                e.stopPropagation();
+                e.dataTransfer.setData('text/plain', JSON.stringify({ from: hand.id, pid }));
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+              style={{ zIndex: 10 + idx, cursor: isBettingPhase && pid === activePlayerId ? 'grab' : 'default' }}
+              className={`${color.bg} ${color.text} text-xs font-black rounded-full w-6 h-6 flex items-center justify-center border ${color.border} shadow-lg transition-transform hover:scale-110`}
+              title={`P${pid + 1}: $${amt} — drag to move`}
             >
               {amt >= 100 ? '99+' : amt}
             </span>
@@ -115,7 +139,7 @@ export default function FixedHandCard({
 
       {/* Bet prompt */}
       {canBet && hovered && betAmount === 0 && (
-        <div className="absolute inset-0 rounded-xl bg-yellow-400/10 flex items-center justify-center">
+        <div className="absolute inset-0 rounded-xl bg-yellow-400/10 flex items-center justify-center pointer-events-none">
           <span className="text-yellow-300 font-bold text-xs">BET</span>
         </div>
       )}

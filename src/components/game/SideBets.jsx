@@ -56,7 +56,7 @@ export default function SideBets({
     const isLive = liveRedBlack.includes(opt.key) && !isWinner && communityCards.length > 0 && communityCards.length < 5;
 
     let cls;
-    if (isWinner) cls = 'border-yellow-400 bg-yellow-900/50 text-yellow-200 shadow-yellow-400/50 shadow-lg';
+    if (isWinner) cls = 'bg-yellow-900/50 text-yellow-200 winner-flash';
     else if (isLive) cls = isRed
       ? 'border-red-400 bg-red-900/50 text-red-100 shadow-red-400/40 shadow-md'
       : 'border-gray-300 bg-gray-700/60 text-gray-100 shadow-gray-300/40 shadow-md';
@@ -144,7 +144,7 @@ export default function SideBets({
             const isWinner = winningLowHigh === type;
 
             let cls;
-            if (isWinner) cls = 'border-yellow-400 bg-yellow-900/50 text-yellow-300 shadow-yellow-400/50 shadow-lg';
+            if (isWinner) cls = 'bg-yellow-900/50 text-yellow-300 winner-flash';
             else if (canBetLH) cls = 'border-blue-700/50 bg-blue-950/30 text-blue-300 hover:border-blue-400 cursor-pointer';
             else cls = 'border-blue-900/20 bg-blue-950/10 text-blue-400/40';
 
