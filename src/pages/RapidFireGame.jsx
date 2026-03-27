@@ -379,8 +379,8 @@ export default function RapidFireGame() {
         if (bet > 0) w += bet + bet * (rbPayoutMap[key] || 1);
       });
 
-      // Low/High (ADJUSTED: 0.50:1 payout)
-      if (plh && winLH === plh.type) w += plh.amount * (1 + 0.50);
+      // Low/High (ADJUSTED: 0.35:1 payout)
+      if (plh && winLH === plh.type) w += plh.amount * (1 + 0.35);
 
       // Rank bets (VERSION 2: 93.80% RTP)
       if (handResult) {

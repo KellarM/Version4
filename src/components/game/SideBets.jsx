@@ -161,7 +161,7 @@ export default function SideBets({
               >
                 <div className="flex flex-col items-center">
                   <span className="font-black text-sm leading-tight">{type}</span>
-                  <span className="text-yellow-400/80 text-xs leading-tight">{isLow ? '2–7' : '8–A'} · 0.50:1</span>
+                  <span className="text-yellow-400/80 text-xs leading-tight">{isLow ? '2–7' : '8–A'} · 0.35:1</span>
                 </div>
                 {chipsHere.length > 0 && (
                   <div className="absolute -top-1.5 -right-1.5 flex flex-row-reverse gap-0.5">
