@@ -522,23 +522,7 @@ export default function RapidFireGame() {
                 🔥FIRE
               </span>
             </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-yellow-500/60 text-xs">—</span>
-              <span
-                className="font-black italic text-sm tracking-widest"
-                style={{
-                  fontFamily: 'Oswald, sans-serif',
-                  transform: 'skewX(-12deg)',
-                  background: 'linear-gradient(90deg, #86efac 0%, #4ade80 50%, #22c55e 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  filter: 'drop-shadow(0 0 6px rgba(74,222,128,0.8)) drop-shadow(0 0 12px rgba(34,197,94,0.5))',
-                }}
-              >
-                TEXAS 10
-              </span>
-              <span className="text-yellow-500/60 text-xs">—</span>
-            </div>
+            
           </div>
           {/* Player count selector */}
           {gamePhase === 'betting' && roundId === 1 && Object.values(handBets).every(b => Object.keys(b || {}).length === 0) && (
@@ -630,8 +614,40 @@ export default function RapidFireGame() {
           <DealerAnnouncement message={dealerMessage} phase={gamePhase} />
 
           {/* Community Cards */}
-          <div className="border border-yellow-700/30 rounded-xl bg-green-900/20 py-1.5 px-2 flex items-center justify-center flex-shrink-0">
+          <div className="border border-yellow-700/30 rounded-xl bg-green-900/20 py-1.5 px-2 flex items-center justify-between flex-shrink-0">
+            {/* TEXAS — left side */}
+            <span
+              className="font-black italic tracking-widest select-none flex-shrink-0"
+              style={{
+                fontFamily: 'Oswald, sans-serif',
+                fontSize: 'clamp(1rem, 2.5vw, 1.75rem)',
+                transform: 'skewX(-12deg)',
+                background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))',
+              }}
+            >
+              TEXAS
+            </span>
+
             <CommunityCards cards={communityCards} phase={gamePhase} />
+
+            {/* 10 — right side */}
+            <span
+              className="font-black italic tracking-widest select-none flex-shrink-0"
+              style={{
+                fontFamily: 'Oswald, sans-serif',
+                fontSize: 'clamp(1rem, 2.5vw, 1.75rem)',
+                transform: 'skewX(-12deg)',
+                background: 'linear-gradient(90deg, #22c55e 0%, #4ade80 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))',
+              }}
+            >
+              10
+            </span>
           </div>
 
           {/* Win Overlay */}
