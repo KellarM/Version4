@@ -438,20 +438,20 @@ export default function RapidFireGame() {
     setLastWinInfo(activeWin > 0 ? { amount: activeWin, allWinnings: playerWinnings } : null);
     setGamePhase('winner');
 
-    // History
+    // History — capture ALL winning outcomes regardless of wagers
     const reds = finalComm.filter(c => cardColor(c) === 'red').length;
     const blacks = finalComm.length - reds;
     const colorResult = reds >= blacks ? `${reds}R` : `${blacks}B`;
-    if (leader && leaderHand) {
-      setHistory(prev => [{
-        roundId,
-        winningHandId: leaderHand.id,
-        handRank: handResult?.name || 'Unknown',
-        cards: leaderHand.cards,
-        colorResult,
-        lowHighResult: winLH || '-',
-      }, ...prev].slice(0, 20));
-    }
+    
+    setHistory(prev => [{
+      roundId,
+      winningHandId: leader ? leaderHand?.id : null,
+      handRank: handResult?.name || 'No Hand',
+      cards: leader ? leaderHand?.cards : [],
+      colorResult,
+      colorWinners: winRB,
+      lowHighResult: winLH || '-',
+    }, ...prev].slice(0, 20));
   };
 
   const handleResetGame = () => {
