@@ -24,17 +24,32 @@ Deno.serve(async (req) => {
     let cum = 0;
     for (const f of RANK_FREQ) { cum += f; RANK_CUM.push(cum); }
 
-    // Color: 6 outcomes index 0-5: 3R,3B,4R,4B,5R,5B
-    // Probabilities: P(exactly k of 5 cards = Red) = C(5,k)*0.5^5
-    // P(3R)=0.3125, P(3B)=0.3125, P(4R)=0.15625, P(4B)=0.15625, P(5R)=0.03125, P(5B)=0.03125
-    const COLOR_KEYS    = ['3R','3B','4R','4B','5R','5B'];
-    const COLOR_PAYOUTS = [0.19, 0.19, 0.74, 0.74, 2.9, 2.9];
-    const COLOR_PROBS   = [0.3125, 0.3125, 0.15625, 0.15625, 0.03125, 0.03125]; // true marginal probs
-    const COLOR_CUM = [];
-    let cCum = 0;
-    for (const p of COLOR_PROBS) { cCum += p; COLOR_CUM.push(cCum); }
+    // Color board — simulate red count (0-5), then derive CUMULATIVE winning keys
+    // Real game: if 4R hits, both 3R and 4R bets win (cumulative)
+    // P(exactly k red of 5) = C(5,k)*0.5^5
+    const RED_COUNT_PROBS = [0.03125, 0.15625, 0.3125, 0.3125, 0.15625, 0.03125]; // 0R..5R
+    const RED_COUNT_CUM = [];
+    let rcCum = 0;
+    for (const p of RED_COUNT_PROBS) { rcCum += p; RED_COUNT_CUM.push(rcCum); }
 
-    const LH_PAYOUT = 0.35;
+    // Live game payouts (matching settle() in RapidFireGame)
+    const COLOR_KEYS    = ['3R','3B','4R','4B','5R','5B'];
+    const COLOR_PAYOUTS = { '3R': 0.72, '3B': 0.72, '4R': 2.8, '4B': 2.8, '5R': 10.96, '5B': 10.96 };
+
+    function rollRedCount() {
+      const r = Math.random();
+      for (let i = 0; i < 6; i++) { if (r < RED_COUNT_CUM[i]) return i; }
+      return 5;
+    }
+    function getWinningColorKeys(reds) {
+      const blacks = 5 - reds;
+      const winners = [];
+      if (reds >= 3)   for (let i = 3; i <= reds;   i++) winners.push(`${i}R`);
+      if (blacks >= 3) for (let i = 3; i <= blacks; i++) winners.push(`${i}B`);
+      return winners;
+    }
+
+    const LH_PAYOUT = 0.50; // matches settle() in RapidFireGame
 
     // ── Accumulators ──────────────────────────────────────────────────────
     let handBet = 0, handPayout = 0;
@@ -63,11 +78,9 @@ Deno.serve(async (req) => {
       let gameRank = 8;
       for (let r = 0; r < 9; r++) { if (rankRoll < RANK_CUM[r]) { gameRank = r; break; } }
 
-      const colorRoll = Math.random();
-      let gameColor = 0;
-      for (let c = 0; c < 6; c++) { if (colorRoll < COLOR_CUM[c]) { gameColor = c; break; } }
-
-      const gameLH = Math.random() < 0.5 ? 0 : 1;
+      const gameRedCount   = rollRedCount();
+      const winningColors  = getWinningColorKeys(gameRedCount);
+      const gameLH         = Math.random() < 0.5 ? 0 : 1;
 
       const playerCount = ((Math.random() * 5) | 0) + 1;
 
@@ -94,13 +107,16 @@ Deno.serve(async (req) => {
         }
 
         if (Math.random() < strat[2]) {
-          const chosen = (Math.random() * 6) | 0;
+          // Player picks one of the 6 color keys
+          const chosenKey = COLOR_KEYS[(Math.random() * 6) | 0];
+          const cidx = COLOR_KEYS.indexOf(chosenKey);
           colorBet += b;
-          colorBetsArr[chosen] += b;
-          if (chosen === gameColor) {
-            const p = b * (1 + COLOR_PAYOUTS[chosen]);
+          colorBetsArr[cidx] += b;
+          // Wins if the chosen key is in the cumulative winning set
+          if (winningColors.includes(chosenKey)) {
+            const p = b * (1 + COLOR_PAYOUTS[chosenKey]);
             colorPayout += p;
-            colorPayoutsArr[chosen] += p;
+            colorPayoutsArr[cidx] += p;
           }
         }
 
@@ -161,15 +177,21 @@ Deno.serve(async (req) => {
 
     const suggestedColorPayouts = {};
     const colorDetail = {};
+    // Win probabilities per key accounting for cumulative mechanic:
+    // P(3R wins) = P(reds>=3) = P(3)+P(4)+P(5) = 0.3125+0.15625+0.03125 = 0.5
+    // P(4R wins) = P(reds>=4) = 0.15625+0.03125 = 0.1875
+    // P(5R wins) = P(reds==5) = 0.03125  (same for B)
+    const COLOR_WIN_PROBS = { '3R': 0.5, '3B': 0.5, '4R': 0.1875, '4B': 0.1875, '5R': 0.03125, '5B': 0.03125 };
     for (let c = 0; c < 6; c++) {
-      const mult = COLOR_PAYOUTS[c];
+      const key  = COLOR_KEYS[c];
+      const mult = COLOR_PAYOUTS[key];
       const obsRTP = colorBetsArr[c] > 0 ? colorPayoutsArr[c] / colorBetsArr[c] : 0;
       const suggested = Math.round(mult * scaleColor * 100) / 100;
-      suggestedColorPayouts[COLOR_KEYS[c]] = suggested;
-      colorDetail[COLOR_KEYS[c]] = {
+      suggestedColorPayouts[key] = suggested;
+      colorDetail[key] = {
         currentPayout: mult,
         currentRTP: (obsRTP * 100).toFixed(2) + '%',
-        winProbability: (COLOR_PROBS[c] * 100).toFixed(2) + '%',
+        winProbability: (COLOR_WIN_PROBS[key] * 100).toFixed(3) + '%',
         suggested,
       };
     }
