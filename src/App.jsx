@@ -11,6 +11,7 @@ import SimulationMode from './pages/SimulationMode';
 import DetailedSimulation from './pages/DetailedSimulation';
 import HandByHandAnalysis from './pages/HandByHandAnalysis';
 import PayoutCalibration from './pages/PayoutCalibration';
+import StrategyTest from './pages/StrategyTest';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -43,6 +44,7 @@ const AuthenticatedApp = () => {
       <Route path="/detailed-simulation" element={<DetailedSimulation />} />
       <Route path="/analysis" element={<HandByHandAnalysis />} />
       <Route path="/calibration" element={<PayoutCalibration />} />
+      <Route path="/strategy-test" element={<StrategyTest />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
