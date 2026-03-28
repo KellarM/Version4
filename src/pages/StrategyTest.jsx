@@ -464,10 +464,10 @@ export default function StrategyTest() {
                                           <span className="font-bold text-yellow-300">{result.maxProfitGameNumber}</span>
                                         </div>
                                       </div>
-                                    </div>
-                                  </div>
+                                      </div>
+                                      </div>
 
-                                  {/* Doubling Milestones */}
+                                      {/* Doubling Milestones */}
                                   {Object.keys(result.doublingMilestones).length > 0 && (
                                     <div className="rounded-lg bg-slate-700/50 p-4 border border-slate-600 mt-4">
                                       <p className="text-sm font-bold text-gray-300 mb-3">Bankroll Doubling Milestones</p>
@@ -702,8 +702,8 @@ export default function StrategyTest() {
                                         </div>
                                         </div>
 
-                                    {/* Casino Stats */}
-                                    <div className={`rounded-lg border-2 p-4 ${!playerWon ? 'border-green-600 bg-green-900/20' : 'border-red-600 bg-red-900/20'}`}>
+                                        {/* Casino Stats */}
+                                        <div className={`rounded-lg border-2 p-4 ${!playerWon ? 'border-green-600 bg-green-900/20' : 'border-red-600 bg-red-900/20'}`}>
                                       <div className="flex items-center justify-between mb-3">
                                         <h4 className={`text-lg font-bold ${!playerWon ? 'text-green-400' : 'text-red-400'}`}>
                                           {!playerWon ? '🏆 CASINO WINS' : '📉 CASINO LOSES'}
