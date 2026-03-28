@@ -410,6 +410,7 @@ Deno.serve(async (req) => {
     let maxLossStreak = 0, currentLossStreak = 0;
     let maxWinStreak = 0, currentWinStreak = 0;
     const recentGameHistory = [];
+    const detailedGameLog = [];
 
     for (let game = 0; game < gamesToSimulate; game++) {
       if (balance <= 0) break;
@@ -437,32 +438,111 @@ Deno.serve(async (req) => {
       const winningColors = getWinningColors(redCount);
       const riverIsLow = Math.random() < 0.5;
 
+      // Track individual bets for detailed log
+      const betsLog = [];
+
       // Hand payouts (player wins if they bet on winning hand)
       if (bets[`h${winningHand}`]) {
-        gameWin += bets[`h${winningHand}`] * (1 + winningHand_.payout);
+        const payout = bets[`h${winningHand}`] * (1 + winningHand_.payout);
+        gameWin += payout;
+        betsLog.push({
+          position: `Hand ${winningHand}`,
+          type: 'hand',
+          bet: bets[`h${winningHand}`],
+          won: true,
+          payout,
+        });
+      }
+      // Log losing hand bets
+      for (const [key, amount] of Object.entries(bets)) {
+        if (key.startsWith('h') && key !== `h${winningHand}` && amount > 0) {
+          betsLog.push({
+            position: `Hand ${key.slice(1)}`,
+            type: 'hand',
+            bet: amount,
+            won: false,
+            payout: 0,
+          });
+        }
       }
 
       // Rank payouts (player wins if they bet on the rank that hit)
       if (bets[`r${gameRank}`]) {
         const rankMult = RANK_PAYOUTS[gameRank];
         if (rankMult !== null) {
-          gameWin += bets[`r${gameRank}`] * (1 + rankMult);
+          const payout = bets[`r${gameRank}`] * (1 + rankMult);
+          gameWin += payout;
+          betsLog.push({
+            position: gameRank,
+            type: 'rank',
+            bet: bets[`r${gameRank}`],
+            won: true,
+            payout,
+          });
+        }
+      }
+      // Log losing rank bets
+      for (const [key, amount] of Object.entries(bets)) {
+        if (key.startsWith('r') && key !== `r${gameRank}` && amount > 0) {
+          betsLog.push({
+            position: key.slice(1),
+            type: 'rank',
+            bet: amount,
+            won: false,
+            payout: 0,
+          });
         }
       }
 
       // Color payouts (cumulative: 4R also wins 3R, 5R also wins 4R and 3R)
       for (const colorKey of winningColors) {
         if (bets[`c${colorKey}`]) {
-          gameWin += bets[`c${colorKey}`] * (1 + COLOR_PAYOUTS[colorKey]);
+          const payout = bets[`c${colorKey}`] * (1 + COLOR_PAYOUTS[colorKey]);
+          gameWin += payout;
+          betsLog.push({
+            position: colorKey,
+            type: 'color',
+            bet: bets[`c${colorKey}`],
+            won: true,
+            payout,
+          });
+        }
+      }
+      // Log losing color bets
+      for (const [key, amount] of Object.entries(bets)) {
+        if (key.startsWith('c') && !winningColors.includes(key.slice(1)) && amount > 0) {
+          betsLog.push({
+            position: key.slice(1),
+            type: 'color',
+            bet: amount,
+            won: false,
+            payout: 0,
+          });
         }
       }
 
       // River hedge/aggressive (optional payouts)
       if (bets.riverHedge && Math.random() < 0.5) {
-        gameWin += Math.floor(totalBet * 0.15);
+        const riverPayout = Math.floor(totalBet * 0.15);
+        gameWin += riverPayout;
+        betsLog.push({
+          position: 'River Hedge',
+          type: 'hedge',
+          bet: 0,
+          won: true,
+          payout: riverPayout,
+        });
       }
       if (bets.riverAggressive && Math.random() < 0.35) {
-        gameWin += Math.floor(totalBet * 0.5);
+        const riverPayout = Math.floor(totalBet * 0.5);
+        gameWin += riverPayout;
+        betsLog.push({
+          position: 'River Aggressive',
+          type: 'hedge',
+          bet: 0,
+          won: true,
+          payout: riverPayout,
+        });
       }
 
       const netGame = gameWin - totalBet;
@@ -500,6 +580,25 @@ Deno.serve(async (req) => {
         doublingMilestones[nextMilestone] = gamesActuallyPlayed;
         nextMilestone *= 2;
       }
+
+      // Capture detailed game record (keep first 500 games for UI)
+      if (detailedGameLog.length < 500) {
+        detailedGameLog.push({
+          gameNumber: gamesActuallyPlayed,
+          balanceBefore: balance + totalBet,
+          bets: betsLog,
+          totalBet,
+          gameWon: netGame > 0,
+          netResult: netGame,
+          balanceAfter: balance,
+          winningPositions: {
+            hand: `H${winningHand}`,
+            rank: gameRank,
+            colors: winningColors,
+            lowHigh: riverIsLow ? 'LOW' : 'HIGH',
+          },
+        });
+      }
     }
 
     const avgProfit = gamesActuallyPlayed > 0 ? totalProfit / gamesActuallyPlayed : 0;
@@ -528,6 +627,7 @@ Deno.serve(async (req) => {
         maxLossStreak,
         maxProfit: maxProfitEver.toFixed(2),
       },
+      detailedGameLog,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

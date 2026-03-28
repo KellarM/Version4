@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Play } from 'lucide-react';
+import { ChevronDown, ChevronUp, Play, Zap } from 'lucide-react';
+import GameDetailBreakdown from '@/components/strategy/GameDetailBreakdown';
 
 const STRATEGIES = [
   { value: 'ST1_Original', label: 'ST1: Original (Hands 2,5,6,7,8,9)' },
@@ -164,6 +165,7 @@ export default function StrategyTest() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedIdx, setExpandedIdx] = useState(null);
+  const [showDetailBreakdown, setShowDetailBreakdown] = useState(null);
 
   const testCounts = [10, 25, 50, 100, 200, 400, 800, 1600, 3200, 6400, 12900];
 
@@ -212,6 +214,7 @@ export default function StrategyTest() {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
@@ -376,10 +379,21 @@ export default function StrategyTest() {
                                 className="bg-slate-900/80 border-t border-slate-700 p-6"
                               >
                                 <div className="space-y-4">
-                                  <div>
-                                    <h3 className="text-lg font-bold mb-3">Game #{idx + 1} Summary ({result.gamesActuallyPlayed.toLocaleString()} of {result.gameCount.toLocaleString()} games played)</h3>
-                                    {result.stoppedEarly && (
-                                      <p className="text-sm text-red-400 mb-2">⚠ Simulation stopped early: Bankroll depleted at game {result.gamesActuallyPlayed}</p>
+                                  <div className="flex items-start justify-between mb-3">
+                                    <div>
+                                      <h3 className="text-lg font-bold">Game #{idx + 1} Summary ({result.gamesActuallyPlayed.toLocaleString()} of {result.gameCount.toLocaleString()} games played)</h3>
+                                      {result.stoppedEarly && (
+                                        <p className="text-sm text-red-400 mt-1">⚠ Simulation stopped early: Bankroll depleted at game {result.gamesActuallyPlayed}</p>
+                                      )}
+                                    </div>
+                                    {result.detailedGameLog && result.detailedGameLog.length > 0 && (
+                                      <button
+                                        onClick={() => setShowDetailBreakdown(idx)}
+                                        className="px-3 py-1 rounded-lg border border-cyan-600/50 bg-cyan-900/30 text-cyan-300 text-xs font-bold hover:bg-cyan-900/50 transition-all flex items-center gap-1 flex-shrink-0"
+                                        title="View detailed breakdown of each game"
+                                      >
+                                        <Zap className="w-3 h-3" /> Details
+                                      </button>
                                     )}
                                   </div>
 
@@ -647,10 +661,21 @@ export default function StrategyTest() {
                                 className="bg-slate-900/80 border-t border-slate-700 p-6"
                               >
                                 <div className="space-y-4">
-                                   <div>
-                                     <h3 className="text-lg font-bold mb-3">Game #{idx + 1} Summary ({result.gamesActuallyPlayed.toLocaleString()} of {result.gameCount.toLocaleString()} games played)</h3>
-                                     {result.stoppedEarly && (
-                                       <p className="text-sm text-red-400 mb-2">⚠ Simulation stopped early: Bankroll depleted at game {result.gamesActuallyPlayed}</p>
+                                   <div className="flex items-start justify-between">
+                                     <div>
+                                       <h3 className="text-lg font-bold mb-3">Game #{idx + 1} Summary ({result.gamesActuallyPlayed.toLocaleString()} of {result.gameCount.toLocaleString()} games played)</h3>
+                                       {result.stoppedEarly && (
+                                         <p className="text-sm text-red-400 mb-2">⚠ Simulation stopped early: Bankroll depleted at game {result.gamesActuallyPlayed}</p>
+                                       )}
+                                     </div>
+                                     {result.detailedGameLog && result.detailedGameLog.length > 0 && (
+                                       <button
+                                         onClick={() => setShowDetailBreakdown(idx)}
+                                         className="px-3 py-1 rounded-lg border border-cyan-600/50 bg-cyan-900/30 text-cyan-300 text-xs font-bold hover:bg-cyan-900/50 transition-all flex items-center gap-1 flex-shrink-0"
+                                         title="View detailed breakdown of each game"
+                                       >
+                                         <Zap className="w-3 h-3" /> Details
+                                       </button>
                                      )}
                                    </div>
 
@@ -934,5 +959,14 @@ export default function StrategyTest() {
         )}
       </div>
     </div>
+
+    {/* Detail Breakdown Modal */}
+    {showDetailBreakdown !== null && (
+      <GameDetailBreakdown
+        gameLog={resultsV2[showDetailBreakdown]?.detailedGameLog || []}
+        onClose={() => setShowDetailBreakdown(null)}
+      />
+    )}
+    </>
   );
 }
