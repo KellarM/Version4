@@ -3,14 +3,14 @@ import { cardColor, isLowCard } from '@/lib/gameEngine';
 
 // Left col = Red (3R top → 5R bottom), Right col = Black (3B top → 5B bottom)
 const RED_OPTIONS   = [
-  { key: '3R', label: '3 Red', payout: '0.19:1'  },
-  { key: '4R', label: '4 Red', payout: '0.74:1'  },
-  { key: '5R', label: '5 Red', payout: '2.9:1' },
+  { key: '3R', label: '3 Red', payout: '0.72:1'  },
+  { key: '4R', label: '4 Red', payout: '2.8:1'   },
+  { key: '5R', label: '5 Red', payout: '10.96:1' },
 ];
 const BLACK_OPTIONS = [
-  { key: '3B', label: '3 Black', payout: '0.19:1'  },
-  { key: '4B', label: '4 Black', payout: '0.74:1'  },
-  { key: '5B', label: '5 Black', payout: '2.9:1' },
+  { key: '3B', label: '3 Black', payout: '0.72:1'  },
+  { key: '4B', label: '4 Black', payout: '2.8:1'   },
+  { key: '5B', label: '5 Black', payout: '10.96:1' },
 ];
 
 // Per-player chip colors
@@ -161,7 +161,7 @@ export default function SideBets({
               >
                 <div className="flex flex-col items-center">
                   <span className="font-black text-sm leading-tight">{type}</span>
-                  <span className="text-yellow-400/80 text-xs leading-tight">{isLow ? '2–7' : '8–A'} · 0.35:1</span>
+                  <span className="text-yellow-400/80 text-xs leading-tight">{isLow ? '2–7' : '8–A'} · 0.50:1</span>
                 </div>
                 {chipsHere.length > 0 && (
                   <div className="absolute -top-1.5 -right-1.5 flex flex-row-reverse gap-0.5">
