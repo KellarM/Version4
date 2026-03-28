@@ -416,6 +416,9 @@ Deno.serve(async (req) => {
       if (balance <= 0) break;
       gamesActuallyPlayed++;
 
+      // Record balance at start of THIS game
+      const balanceAtGameStart = balance;
+
       const gameResult = strategy.execute(balance, game, winCount, lossCount, recentGameHistory);
       if (!gameResult || Object.keys(gameResult.bets).length === 0) break; // Strategy can't afford bets
       const { bets } = gameResult;
@@ -585,7 +588,7 @@ Deno.serve(async (req) => {
       if (detailedGameLog.length < 500) {
         detailedGameLog.push({
           gameNumber: gamesActuallyPlayed,
-          balanceBefore: balance + totalBet,
+          balanceBefore: balanceAtGameStart,
           bets: betsLog,
           totalBet,
           gameWon: netGame > 0,
