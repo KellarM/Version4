@@ -11,12 +11,19 @@ Deno.serve(async (req) => {
 
     const { gamesToSimulate = 10 } = await req.json();
 
-    // Fixed hands and payouts
+    // Fixed hands and payouts (matching lib/gameEngine.js FIXED_HANDS)
+    const SUITS_MAP = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
     const FIXED_HANDS = [
-      { id: 1, payout: 2.4 }, { id: 2, payout: 1.2 }, { id: 3, payout: 2.4 },
-      { id: 4, payout: 1.9 }, { id: 5, payout: 1.6 }, { id: 6, payout: 1.2 },
-      { id: 7, payout: 1.6 }, { id: 8, payout: 1.9 }, { id: 9, payout: 1.9 },
-      { id: 10, payout: 2.4 },
+      { id: 1,  payout: 2.4, cards: [{ rank: 'A', suit: 'spades' },  { rank: 'A', suit: 'hearts'   }] },
+      { id: 2,  payout: 1.2, cards: [{ rank: 'K', suit: 'spades' },  { rank: 'K', suit: 'hearts'   }] },
+      { id: 3,  payout: 2.4, cards: [{ rank: 'A', suit: 'diamonds' },{ rank: 'A', suit: 'clubs'    }] },
+      { id: 4,  payout: 1.9, cards: [{ rank: 'A', suit: 'spades' },  { rank: 'K', suit: 'spades'   }] },
+      { id: 5,  payout: 1.6, cards: [{ rank: 'Q', suit: 'hearts' },  { rank: 'Q', suit: 'diamonds' }] },
+      { id: 6,  payout: 1.2, cards: [{ rank: '8', suit: 'diamonds' },{ rank: '6', suit: 'diamonds' }] },
+      { id: 7,  payout: 1.6, cards: [{ rank: 'J', suit: 'clubs' },   { rank: 'T', suit: 'clubs'    }] },
+      { id: 8,  payout: 1.9, cards: [{ rank: 'A', suit: 'hearts' },  { rank: 'K', suit: 'diamonds' }] },
+      { id: 9,  payout: 1.9, cards: [{ rank: '7', suit: 'spades' },  { rank: '7', suit: 'clubs'    }] },
+      { id: 10, payout: 2.4, cards: [{ rank: '2', suit: 'hearts' },  { rank: '2', suit: 'spades'   }] },
     ];
 
     const rankPayoutMap = {
@@ -86,7 +93,7 @@ Deno.serve(async (req) => {
           const won = handId === winningHandId;
           
           const hand = FIXED_HANDS.find(h => h.id === handId);
-          const cards = hand.cards.map(c => `${c.rank}${c.suit === 'spades' ? '♠' : c.suit === 'hearts' ? '♥' : c.suit === 'diamonds' ? '♦' : '♣'}`).join(' / ');
+          const cards = hand.cards.map(c => `${c.rank}${SUITS_MAP[c.suit]}`).join(' / ');
           const winAmount = won ? bet * (1 + hand.payout) : 0;
           
           bets.hand = { id: handId, cards, amount: bet, winAmount, won };
