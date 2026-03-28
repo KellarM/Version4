@@ -412,6 +412,8 @@ export default function RapidFireGame() {
       // Low/High
       if (plh && winLH === plh.type) w += calculatePayout(plh.amount, LOW_HIGH_PAYOUT);
 
+      // River hedge is not a real bet type — ignore any flag
+
       // Rank bets
       if (handResult) {
         const rankBetAmt = prk[handResult.name] || 0;
