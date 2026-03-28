@@ -383,7 +383,7 @@ export default function RapidFireGame() {
       'Two Pair': 4.82,
       'One Pair': 5.86,
     };
-    const rbPayoutMap = { '3R': 1.16, '3B': 1.16, '4R': 4.53, '4B': 4.53, '5R': 17.75, '5B': 17.75 };
+    const rbPayoutMap = { '3R': 0.70, '3B': 0.70, '4R': 4.53, '4B': 4.53, '5R': 17.75, '5B': 17.75 };
 
     let totalBetsAllPlayers = 0;
     let totalWinningsAllPlayers = 0;

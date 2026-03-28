@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
     // Live game payouts (matching settle() in RapidFireGame)
     const COLOR_KEYS    = ['3R','3B','4R','4B','5R','5B'];
-    const COLOR_PAYOUTS = { '3R': 1.26, '3B': 1.26, '4R': 4.9, '4B': 4.9, '5R': 19.2, '5B': 19.2 };
+    const COLOR_PAYOUTS = { '3R': 0.70, '3B': 0.70, '4R': 4.53, '4B': 4.53, '5R': 17.75, '5B': 17.75 };
 
     function rollRedCount() {
       const r = Math.random();

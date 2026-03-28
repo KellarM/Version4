@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       'One Pair': 0.42256,
     };
 
-    const rbPayoutMap = { '3R': 1.26, '3B': 1.26, '4R': 4.9, '4B': 4.9, '5R': 19.2, '5B': 19.2 };
+    const rbPayoutMap = { '3R': 0.70, '3B': 0.70, '4R': 4.53, '4B': 4.53, '5R': 17.75, '5B': 17.75 };
 
     // Realistic player strategy profiles — capturing hedging/coverage behavior
     const strategyProfiles = [
