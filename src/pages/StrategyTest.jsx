@@ -4,8 +4,24 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Play } from 'lucide-react';
 
+const STRATEGIES = [
+  { value: 'ST1_Original', label: 'ST1: Original (Hands 2,5,6,7,8,9)' },
+  { value: 'ConservativeHedger', label: 'Conservative Hedger' },
+  { value: 'RankStacker', label: 'Rank Stacker' },
+  { value: 'FlushHunter', label: 'Flush Hunter' },
+  { value: 'StraightHunter', label: 'Straight Hunter' },
+  { value: 'ColorBoardSpecialist', label: 'Color Specialist' },
+  { value: 'HighPayoutFocus', label: 'High Payout Focus' },
+  { value: 'RiverFocused', label: 'River Focused' },
+  { value: 'BalancedSpread', label: 'Balanced Spread' },
+  { value: 'DiversifiedHedge', label: 'Diversified Hedge' },
+];
+
 export default function StrategyTest() {
+  const [activeTab, setActiveTab] = useState('ST1');
+  const [selectedStrategy, setSelectedStrategy] = useState('BalancedSpread');
   const [results, setResults] = useState([]);
+  const [resultsV2, setResultsV2] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedIdx, setExpandedIdx] = useState(null);
@@ -34,6 +50,28 @@ export default function StrategyTest() {
     }
   };
 
+  const runAllTestsV2 = async () => {
+    setLoading(true);
+    setError(null);
+    setResultsV2([]);
+
+    try {
+      const allResults = [];
+      for (const count of testCounts) {
+        const response = await base44.functions.invoke('strategyBettingTestV2', { gamesToSimulate: count, strategyName: selectedStrategy });
+        allResults.push({
+          gameCount: count,
+          ...response.data,
+        });
+        setResultsV2([...allResults]);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white p-6">
       <div className="max-w-6xl mx-auto">
@@ -42,18 +80,76 @@ export default function StrategyTest() {
           <Link to="/" className="text-blue-400 hover:text-blue-300 text-sm mb-4 inline-block">
             ← Back to Game
           </Link>
-          <h1 className="text-4xl font-bold mb-2">Strategy Betting Test</h1>
-          <p className="text-gray-400 mb-4">
-            Testing a fixed strategy: bet $50 on hands 2, 5, 6, 7, 8, 9 + contrarian LOW/HIGH when 4+ cards of one type showing
-          </p>
-          <button
-            onClick={runAllTests}
-            disabled={loading}
-            className="px-6 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold disabled:bg-gray-700 flex items-center gap-2"
-          >
-            <Play className="w-4 h-4" />
-            {loading ? 'Running Tests...' : 'Run All Tests'}
-          </button>
+          <h1 className="text-4xl font-bold mb-4">Strategy Betting Test</h1>
+
+          {/* Tab buttons */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => { setActiveTab('ST1'); setExpandedIdx(null); }}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                activeTab === 'ST1'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+              }`}
+            >
+              ST1: Original
+            </button>
+            <button
+              onClick={() => { setActiveTab('ST2'); setExpandedIdx(null); }}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                activeTab === 'ST2'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+              }`}
+            >
+              ST2: Multi-Strategy
+            </button>
+          </div>
+
+          {/* ST1 Content */}
+          {activeTab === 'ST1' && (
+            <div className="space-y-4">
+              <p className="text-gray-400">
+                Testing a fixed strategy: bet $50 on hands 2, 5, 6, 7, 8, 9 + contrarian LOW/HIGH when 4+ cards of one type showing
+              </p>
+              <button
+                onClick={runAllTests}
+                disabled={loading}
+                className="px-6 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold disabled:bg-gray-700 flex items-center gap-2"
+              >
+                <Play className="w-4 h-4" />
+                {loading ? 'Running Tests...' : 'Run All Tests'}
+              </button>
+            </div>
+          )}
+
+          {/* ST2 Content */}
+          {activeTab === 'ST2' && (
+            <div className="space-y-4">
+              <div className="flex gap-4 items-end">
+                <div className="flex-1">
+                  <label className="block text-sm text-gray-300 mb-2">Select Strategy:</label>
+                  <select
+                    value={selectedStrategy}
+                    onChange={(e) => setSelectedStrategy(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:border-blue-500 outline-none"
+                  >
+                    {STRATEGIES.map(s => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={runAllTestsV2}
+                  disabled={loading}
+                  className="px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold disabled:bg-gray-700 flex items-center gap-2"
+                >
+                  <Play className="w-4 h-4" />
+                  {loading ? 'Running...' : 'Run Tests'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Error */}
@@ -64,7 +160,7 @@ export default function StrategyTest() {
         )}
 
         {/* Results Table */}
-        {results.length > 0 && (
+        {activeTab === 'ST1' && results.length > 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
             <div className="p-4 border-b border-slate-700">
               <h2 className="text-2xl font-bold">Results</h2>
@@ -321,6 +417,105 @@ export default function StrategyTest() {
                     <p className="text-gray-400 text-sm">Avg ROI</p>
                     <p className={`text-2xl font-bold ${results.reduce((s, r) => s + parseFloat(r.roi), 0) / results.length >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {(results.reduce((s, r) => s + parseFloat(r.roi), 0) / results.length).toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* ST2 Results Table */}
+        {activeTab === 'ST2' && resultsV2.length > 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
+            <div className="p-4 border-b border-slate-700">
+              <h2 className="text-2xl font-bold">
+                Results: {STRATEGIES.find(s => s.value === selectedStrategy)?.label}
+              </h2>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-700 bg-slate-900/50">
+                    <th className="px-4 py-3 text-left">Games</th>
+                    <th className="px-4 py-3 text-right">Total Profit</th>
+                    <th className="px-4 py-3 text-right">Avg Per Game</th>
+                    <th className="px-4 py-3 text-right">Final Balance</th>
+                    <th className="px-4 py-3 text-right">ROI</th>
+                    <th className="px-4 py-3 text-center">Peak Bankroll</th>
+                    <th className="px-4 py-3 text-center">Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resultsV2.map((result, idx) => {
+                    const profit = parseFloat(result.totalProfit);
+                    const roi = parseFloat(result.roi);
+                    const playerWon = profit > 0;
+
+                    return (
+                      <motion.tr
+                        key={idx}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer`}
+                        onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
+                      >
+                        <td className="px-4 py-3 font-bold">
+                          {result.gameCount.toLocaleString()}
+                          {result.stoppedEarly && (
+                            <span className="text-xs text-red-400 block">(stopped at {result.gamesActuallyPlayed})</span>
+                          )}
+                        </td>
+                        <td className={`px-4 py-3 text-right font-bold ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                          {playerWon ? '+' : ''}{profit.toFixed(2)}
+                        </td>
+                        <td className={`px-4 py-3 text-right ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                          {playerWon ? '+' : ''}{parseFloat(result.avgProfitPerGame).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-right">${parseFloat(result.finalBalance).toFixed(2)}</td>
+                        <td className={`px-4 py-3 text-right font-bold ${roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {roi >= 0 ? '+' : ''}{roi}%
+                        </td>
+                        <td className="px-4 py-3 text-center text-yellow-400 font-bold">
+                          ${parseFloat(result.maxBankrollEver).toFixed(0)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {expandedIdx === idx ? <ChevronUp className="w-4 h-4 mx-auto" /> : <ChevronDown className="w-4 h-4 mx-auto" />}
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ST2 Summary */}
+            {resultsV2.length > 0 && (
+              <div className="p-6 border-t border-slate-700 bg-slate-900/30">
+                <h3 className="text-xl font-bold mb-4">Summary</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-gray-400 text-sm">Total Tested</p>
+                    <p className="text-2xl font-bold">{resultsV2.reduce((s, r) => s + r.gameCount, 0).toLocaleString()} games</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Cumulative P/L</p>
+                    <p className={`text-2xl font-bold ${resultsV2.reduce((s, r) => s + parseFloat(r.totalProfit), 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {resultsV2.reduce((s, r) => s + parseFloat(r.totalProfit), 0) >= 0 ? '+' : ''}${resultsV2.reduce((s, r) => s + parseFloat(r.totalProfit), 0).toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Best Peak</p>
+                    <p className="text-2xl font-bold text-yellow-400">
+                      ${Math.max(...resultsV2.map(r => parseFloat(r.maxBankrollEver))).toFixed(0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Avg ROI</p>
+                    <p className={`text-2xl font-bold ${resultsV2.reduce((s, r) => s + parseFloat(r.roi), 0) / resultsV2.length >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {(resultsV2.reduce((s, r) => s + parseFloat(r.roi), 0) / resultsV2.length).toFixed(1)}%
                     </p>
                   </div>
                 </div>
