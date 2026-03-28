@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
       { name: 'Random', handBetProb: 0.5, rankBetProb: 0.5, rbBetProb: 0.5, lhBetProb: 0.5 },
     ];
 
+    const MAX_STORED_GAMES = 100;
     const games = [];
     let totalBets = 0;
     let totalPayouts = 0;
@@ -158,16 +159,19 @@ Deno.serve(async (req) => {
       totalBets += gameBets;
       totalPayouts += gamePayouts;
 
-      games.push({
-        gameNumber: game + 1,
-        playerCount,
-        players: playerDetails,
-        totalBets: gameBets,
-        totalPayouts: gamePayouts,
-        houseProfit: gameProfit,
-        rtp: ((gamePayouts / gameBets) * 100).toFixed(2) + '%',
-        cumulativeRTP: ((totalPayouts / totalBets) * 100).toFixed(2) + '%',
-      });
+      // Only store detail records for the first MAX_STORED_GAMES to avoid memory limits
+      if (game < MAX_STORED_GAMES) {
+        games.push({
+          gameNumber: game + 1,
+          playerCount,
+          players: playerDetails,
+          totalBets: gameBets,
+          totalPayouts: gamePayouts,
+          houseProfit: gameProfit,
+          rtp: ((gamePayouts / gameBets) * 100).toFixed(2) + '%',
+          cumulativeRTP: ((totalPayouts / totalBets) * 100).toFixed(2) + '%',
+        });
+      }
     }
 
     const overallRTP = ((totalPayouts / totalBets) * 100).toFixed(2);
