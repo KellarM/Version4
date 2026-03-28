@@ -79,6 +79,11 @@ Deno.serve(async (req) => {
     let maxProfitEver = 0;
     let maxProfitGameNumber = 0;
 
+    let maxBankrollEver = STARTING_BALANCE;
+    let maxBankrollGameNumber = 0;
+    const doublingMilestones = {}; // { 2000: gameNum, 4000: gameNum, ... }
+    let nextMilestone = STARTING_BALANCE * 2; // Next doubling to track
+
     let balance = STARTING_BALANCE;
 
     for (let game = 0; game < gamesToSimulate; game++) {
@@ -183,6 +188,18 @@ Deno.serve(async (req) => {
         maxProfitEver = currentProfit;
         maxProfitGameNumber = gamesActuallyPlayed;
       }
+
+      // Track max bankroll and doubling milestones
+      if (balance > maxBankrollEver) {
+        maxBankrollEver = balance;
+        maxBankrollGameNumber = gamesActuallyPlayed;
+      }
+
+      // Track doubling milestones (starting from $2k, $4k, $8k, etc.)
+      while (balance >= nextMilestone && !doublingMilestones[nextMilestone]) {
+        doublingMilestones[nextMilestone] = gamesActuallyPlayed;
+        nextMilestone *= 2;
+      }
     }
 
     const avgProfit = gamesActuallyPlayed > 0 ? totalProfit / gamesActuallyPlayed : 0;
@@ -198,6 +215,9 @@ Deno.serve(async (req) => {
       finalBalance: balance.toFixed(2),
       maxProfitEver: maxProfitEver.toFixed(2),
       maxProfitGameNumber,
+      maxBankrollEver: maxBankrollEver.toFixed(2),
+      maxBankrollGameNumber,
+      doublingMilestones,
       roi: roi + '%',
       strategy: 'Bet $50 on hands 2,5,6,7,8,9 + contrarian LOW/HIGH when 4+ cards of one type (scales down denomination if needed)',
       stats: {

@@ -161,11 +161,19 @@ export default function StrategyTest() {
                                           <span className="text-gray-300">Final Balance</span>
                                           <span className="font-bold text-white">${parseFloat(result.finalBalance).toFixed(2)}</span>
                                         </div>
-                                        <div className="flex justify-between">
+                                        <div className="flex justify-between border-b border-gray-700 pb-2 mb-2">
                                           <span className="text-gray-300">ROI</span>
                                           <span className={`font-bold text-lg ${roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                                             {roi >= 0 ? '+' : ''}{roi}%
                                           </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Peak Bankroll</span>
+                                          <span className="font-bold text-yellow-400">${parseFloat(result.maxBankrollEver).toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Peak at Game #</span>
+                                          <span className="font-bold text-yellow-300">{result.maxBankrollGameNumber}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -213,6 +221,24 @@ export default function StrategyTest() {
                                       </div>
                                     </div>
                                   </div>
+
+                                  {/* Doubling Milestones */}
+                                  {Object.keys(result.doublingMilestones).length > 0 && (
+                                    <div className="rounded-lg bg-slate-700/50 p-4 border border-slate-600 mt-4">
+                                      <p className="text-sm font-bold text-gray-300 mb-3">Bankroll Doubling Milestones</p>
+                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                        {Object.entries(result.doublingMilestones)
+                                          .sort(([a], [b]) => parseFloat(a) - parseFloat(b))
+                                          .map(([amount, gameNum]) => (
+                                            <div key={amount} className="text-center p-2 rounded bg-slate-600/50">
+                                              <p className="text-xs text-gray-400">Reached</p>
+                                              <p className="text-lg font-bold text-green-400">${parseFloat(amount).toLocaleString()}</p>
+                                              <p className="text-xs text-gray-500">Game #{gameNum}</p>
+                                            </div>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  )}
 
                                   {/* Stats Breakdown */}
                                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
