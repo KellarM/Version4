@@ -279,40 +279,52 @@ export default function HandByHandAnalysis() {
                                         </div>
                                       </div>
 
-                                      <div className="space-y-2">
-                                        {player.bets.hand && (
-                                          <div className="grid grid-cols-12 gap-2 text-xs bg-blue-900/20 p-3 rounded border border-blue-800/30">
-                                            <div className="col-span-2 font-bold text-blue-400">Card Hand</div>
-                                            <div className="col-span-2 text-gray-300">{player.bets.hand.cards}</div>
-                                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.hand.amount}</div>
-                                            <div className="col-span-3 text-gray-300">Won: ${player.bets.hand.winAmount.toFixed(2)}</div>
-                                            <div className={`col-span-3 text-right font-bold ${player.bets.hand.won ? 'text-green-400' : 'text-red-400'}`}>
-                                              {player.bets.hand.won ? '✓ WIN' : '✗ LOSS'}
-                                            </div>
+                                      <div className="space-y-1">
+                                        {player.bets.hands && (
+                                          <div className="space-y-1">
+                                            {player.bets.hands.map((hand, idx) => (
+                                              <div key={idx} className="grid grid-cols-12 gap-2 text-xs bg-blue-900/20 p-2 rounded border border-blue-800/30">
+                                                <div className="col-span-2 font-bold text-blue-400">H#{hand.handId}</div>
+                                                <div className="col-span-2 text-gray-300">{hand.cards}</div>
+                                                <div className="col-span-2 text-yellow-400">Bet: ${hand.amount}</div>
+                                                <div className="col-span-3 text-gray-300">Won: ${hand.winAmount.toFixed(2)}</div>
+                                                <div className={`col-span-3 text-right font-bold ${hand.won ? 'text-green-400' : 'text-red-400'}`}>
+                                                  {hand.won ? '✓ WIN' : '✗ LOSS'}
+                                                </div>
+                                              </div>
+                                            ))}
                                           </div>
                                         )}
 
-                                        {player.bets.rank && (
-                                          <div className="grid grid-cols-12 gap-2 text-xs bg-purple-900/20 p-3 rounded border border-purple-800/30">
-                                            <div className="col-span-2 font-bold text-purple-400">Rank Hand</div>
-                                            <div className="col-span-2 text-gray-300">{player.bets.rank.name}</div>
-                                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.rank.amount}</div>
-                                            <div className="col-span-3 text-gray-300">Won: ${player.bets.rank.winAmount.toFixed(2)}</div>
-                                            <div className={`col-span-3 text-right font-bold ${player.bets.rank.won ? 'text-green-400' : 'text-red-400'}`}>
-                                              {player.bets.rank.won ? '✓ WIN' : '✗ LOSS'}
-                                            </div>
+                                        {player.bets.ranks && (
+                                          <div className="space-y-1">
+                                            {player.bets.ranks.map((rank, idx) => (
+                                              <div key={idx} className="grid grid-cols-12 gap-2 text-xs bg-purple-900/20 p-2 rounded border border-purple-800/30">
+                                                <div className="col-span-2 font-bold text-purple-400">{rank.rank.slice(0, 8)}</div>
+                                                <div className="col-span-2 text-gray-300">Rank</div>
+                                                <div className="col-span-2 text-yellow-400">Bet: ${rank.amount}</div>
+                                                <div className="col-span-3 text-gray-300">Won: ${rank.winAmount.toFixed(2)}</div>
+                                                <div className={`col-span-3 text-right font-bold ${rank.won ? 'text-green-400' : 'text-red-400'}`}>
+                                                  {rank.won ? '✓ WIN' : '✗ LOSS'}
+                                                </div>
+                                              </div>
+                                            ))}
                                           </div>
                                         )}
 
-                                        {player.bets.color && (
-                                          <div className="grid grid-cols-12 gap-2 text-xs bg-red-900/20 p-3 rounded border border-red-800/30">
-                                            <div className="col-span-2 font-bold text-red-400">Red/Black</div>
-                                            <div className="col-span-2 text-gray-300">{player.bets.color.type}</div>
-                                            <div className="col-span-2 text-yellow-400">Bet: ${player.bets.color.amount}</div>
-                                            <div className="col-span-3 text-gray-300">Won: ${player.bets.color.winAmount.toFixed(2)}</div>
-                                            <div className={`col-span-3 text-right font-bold ${player.bets.color.won ? 'text-green-400' : 'text-red-400'}`}>
-                                              {player.bets.color.won ? '✓ WIN' : '✗ LOSS'}
-                                            </div>
+                                        {player.bets.colors && (
+                                          <div className="space-y-1">
+                                            {player.bets.colors.map((color, idx) => (
+                                              <div key={idx} className="grid grid-cols-12 gap-2 text-xs bg-red-900/20 p-2 rounded border border-red-800/30">
+                                                <div className="col-span-2 font-bold text-red-400">{color.colorKey}</div>
+                                                <div className="col-span-2 text-gray-300">Color</div>
+                                                <div className="col-span-2 text-yellow-400">Bet: ${color.amount}</div>
+                                                <div className="col-span-3 text-gray-300">Won: ${color.winAmount.toFixed(2)}</div>
+                                                <div className={`col-span-3 text-right font-bold ${color.won ? 'text-green-400' : 'text-red-400'}`}>
+                                                  {color.won ? '✓ WIN' : '✗ LOSS'}
+                                                </div>
+                                              </div>
+                                            ))}
                                           </div>
                                         )}
 

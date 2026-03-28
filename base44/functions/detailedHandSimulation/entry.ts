@@ -15,28 +15,28 @@ Deno.serve(async (req) => {
     const SUITS_MAP = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
     // Must exactly match lib/gameEngine.js FIXED_HANDS
     const FIXED_HANDS = [
-      { id: 1,  payout: 7.80,  cards: [{ rank: 'A',  suit: 'diamonds' }, { rank: '10', suit: 'hearts'   }] },
-      { id: 2,  payout: 6.50,  cards: [{ rank: 'K',  suit: 'clubs'    }, { rank: 'K',  suit: 'spades'   }] },
-      { id: 3,  payout: 8.20,  cards: [{ rank: 'Q',  suit: 'clubs'    }, { rank: 'J',  suit: 'spades'   }] },
-      { id: 4,  payout: 7.60,  cards: [{ rank: 'Q',  suit: 'spades'   }, { rank: '10', suit: 'spades'   }] },
-      { id: 5,  payout: 8.00,  cards: [{ rank: 'J',  suit: 'clubs'    }, { rank: '9',  suit: 'clubs'    }] },
-      { id: 6,  payout: 9.80,  cards: [{ rank: '8',  suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }] },
-      { id: 7,  payout: 7.20,  cards: [{ rank: '7',  suit: 'diamonds' }, { rank: '7',  suit: 'spades'   }] },
-      { id: 8,  payout: 11.50, cards: [{ rank: '4',  suit: 'hearts'   }, { rank: '2',  suit: 'hearts'   }] },
-      { id: 9,  payout: 7.00,  cards: [{ rank: '3',  suit: 'clubs'    }, { rank: '3',  suit: 'hearts'   }] },
-      { id: 10, payout: 9.40,  cards: [{ rank: 'A',  suit: 'hearts'   }, { rank: '5',  suit: 'diamonds' }] },
+      { id: 1,  payout: 8.10,  cards: [{ rank: 'A',  suit: 'diamonds' }, { rank: '10', suit: 'hearts'   }] },
+      { id: 2,  payout: 6.75,  cards: [{ rank: 'K',  suit: 'clubs'    }, { rank: 'K',  suit: 'spades'   }] },
+      { id: 3,  payout: 8.52,  cards: [{ rank: 'Q',  suit: 'clubs'    }, { rank: 'J',  suit: 'spades'   }] },
+      { id: 4,  payout: 7.90,  cards: [{ rank: 'Q',  suit: 'spades'   }, { rank: '10', suit: 'spades'   }] },
+      { id: 5,  payout: 8.31,  cards: [{ rank: 'J',  suit: 'clubs'    }, { rank: '9',  suit: 'clubs'    }] },
+      { id: 6,  payout: 10.18, cards: [{ rank: '8',  suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }] },
+      { id: 7,  payout: 7.48,  cards: [{ rank: '7',  suit: 'diamonds' }, { rank: '7',  suit: 'spades'   }] },
+      { id: 8,  payout: 11.95, cards: [{ rank: '4',  suit: 'hearts'   }, { rank: '2',  suit: 'hearts'   }] },
+      { id: 9,  payout: 7.27,  cards: [{ rank: '3',  suit: 'clubs'    }, { rank: '3',  suit: 'hearts'   }] },
+      { id: 10, payout: 9.77,  cards: [{ rank: 'A',  suit: 'hearts'   }, { rank: '5',  suit: 'diamonds' }] },
     ];
 
     const rankPayoutMap = {
       'Royal Flush': null,
       'Straight Flush': null,
-      'Four of a Kind': 3.78,
+      'Four of a Kind': 3.79,
       'Full House': 0.98,
       'Flush': 1.30,
-      'Straight': 1.89,
+      'Straight': 1.90,
       'Three of a Kind': 0.98,
-      'Two Pair': 4.82,
-      'One Pair': 5.86,
+      'Two Pair': 4.83,
+      'One Pair': 5.87,
     };
 
     const rankFrequencies = {
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       'One Pair': 0.42256,
     };
 
-    const rbPayoutMap = { '3R': 0.70, '3B': 0.70, '4R': 4.53, '4B': 4.53, '5R': 17.75, '5B': 17.75 };
+    const rbPayoutMap = { '3R': 0.78, '3B': 0.78, '4R': 5.04, '4B': 5.04, '5R': 19.74, '5B': 19.74 };
 
     // Realistic player strategy profiles — capturing hedging/coverage behavior
     const strategyProfiles = [
@@ -132,80 +132,69 @@ Deno.serve(async (req) => {
         const bet = [5, 10, 25][Math.floor(Math.random() * 3)];
 
         // ── HAND BETS: player covers N hands (strategy-driven count) ──
-        const numHands = Math.min(player.handCount(), 10);
-        if (numHands > 0) {
-          const chosenIds = [];
-          while (chosenIds.length < numHands) {
-            const id = Math.floor(Math.random() * 10) + 1;
-            if (!chosenIds.includes(id)) chosenIds.push(id);
-          }
-          const handResults = chosenIds.map(handId => {
-            const hand = FIXED_HANDS.find(h => h.id === handId);
-            const won = handId === winningHandId;
-            const winAmount = won ? bet * (1 + hand.payout) : 0;
-            const cards = hand.cards.map(c => `${c.rank}${SUITS_MAP[c.suit]}`).join(' / ');
-            playerBet += bet;
-            playerWin += winAmount;
-            return { id: handId, cards, amount: bet, winAmount, won };
-          });
-          bets.hand = {
-            id: chosenIds.join('+'),
-            cards: `${numHands} hands covered`,
-            amount: handResults.reduce((s, h) => s + h.amount, 0),
-            winAmount: handResults.reduce((s, h) => s + h.winAmount, 0),
-            won: handResults.some(h => h.won),
-            count: numHands,
-          };
-        }
+         const numHands = Math.min(player.handCount(), 10);
+         if (numHands > 0) {
+           const chosenIds = [];
+           while (chosenIds.length < numHands) {
+             const id = Math.floor(Math.random() * 10) + 1;
+             if (!chosenIds.includes(id)) chosenIds.push(id);
+           }
+           const handResults = chosenIds.map(handId => {
+             const hand = FIXED_HANDS.find(h => h.id === handId);
+             const won = handId === winningHandId;
+             const winAmount = won ? bet * (1 + hand.payout) : 0;
+             const cards = hand.cards.map(c => `${c.rank}${SUITS_MAP[c.suit]}`).join('/');
+             playerBet += bet;
+             playerWin += winAmount;
+             return { handId, cards, amount: bet, winAmount, won };
+           });
+           bets.hands = handResults;
+         }
 
         // ── RANK BETS: player covers N ranks (strategy-driven count) ──
-        // High-frequency ranks ordered by probability for smart stacking
-        const HIGH_FREQ_RANKS = ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Full House', 'Flush', 'Four of a Kind'];
-        const numRanks = player.rankCount();
-        if (numRanks > 0) {
-          // Smart players pick from high-frequency ranks; casual players pick randomly
-          const rankPool = player.name === 'Casual' || player.name === 'Conservative'
-            ? RANK_KEYS
-            : HIGH_FREQ_RANKS;
-          const chosenRanks = [];
-          while (chosenRanks.length < Math.min(numRanks, rankPool.length)) {
-            const r = rankPool[Math.floor(Math.random() * rankPool.length)];
-            if (!chosenRanks.includes(r)) chosenRanks.push(r);
-          }
-          let rankBetAmt = 0, rankWinAmt = 0, rankWon = false;
-          for (const rank of chosenRanks) {
-            const multiplier = rankPayoutMap[rank];
-            const won = rank === gameRank;
-            const winAmount = won && multiplier !== null ? bet * (1 + multiplier) : 0;
-            playerBet += bet;
-            playerWin += winAmount;
-            rankBetAmt += bet;
-            rankWinAmt += winAmount;
-            if (won) rankWon = true;
-          }
-          bets.rank = { name: chosenRanks.join('+'), amount: rankBetAmt, winAmount: rankWinAmt, won: rankWon, count: chosenRanks.length };
-        }
+         // High-frequency ranks ordered by probability for smart stacking
+         const HIGH_FREQ_RANKS = ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Full House', 'Flush', 'Four of a Kind'];
+         const numRanks = player.rankCount();
+         if (numRanks > 0) {
+           // Smart players pick from high-frequency ranks; casual players pick randomly
+           const rankPool = player.name === 'Casual' || player.name === 'Conservative'
+             ? RANK_KEYS
+             : HIGH_FREQ_RANKS;
+           const chosenRanks = [];
+           while (chosenRanks.length < Math.min(numRanks, rankPool.length)) {
+             const r = rankPool[Math.floor(Math.random() * rankPool.length)];
+             if (!chosenRanks.includes(r)) chosenRanks.push(r);
+           }
+           const rankResults = [];
+           for (const rank of chosenRanks) {
+             const multiplier = rankPayoutMap[rank];
+             const won = rank === gameRank;
+             const winAmount = won && multiplier !== null ? bet * (1 + multiplier) : 0;
+             playerBet += bet;
+             playerWin += winAmount;
+             rankResults.push({ rank, amount: bet, winAmount, won });
+           }
+           bets.ranks = rankResults;
+         }
 
         // ── COLOR BOARD BETS: player covers N color options ──
-        const COLOR_KEYS_ALL = Object.keys(rbPayoutMap);
-        const numColors = Math.min(player.colorCount(), COLOR_KEYS_ALL.length);
-        if (numColors > 0) {
-          // Smart hedgers prioritize 3R+3B (highest probability), then 4R+4B, then 5R+5B
-          const colorPool = ['3R', '3B', '4R', '4B', '5R', '5B'];
-          const chosenColors = colorPool.slice(0, numColors);
-          let colorBetAmt = 0, colorWinAmt = 0, colorWon = false;
-          for (const colorKey of chosenColors) {
-            const won = winningColors.includes(colorKey);
-            const mult = rbPayoutMap[colorKey];
-            const winAmount = won ? bet * (1 + mult) : 0;
-            playerBet += bet;
-            playerWin += winAmount;
-            colorBetAmt += bet;
-            colorWinAmt += winAmount;
-            if (won) colorWon = true;
-          }
-          bets.color = { type: chosenColors.join('+'), amount: colorBetAmt, winAmount: colorWinAmt, won: colorWon, count: numColors };
-        }
+         const COLOR_KEYS_ALL = Object.keys(rbPayoutMap);
+         const numColors = Math.min(player.colorCount(), COLOR_KEYS_ALL.length);
+         if (numColors > 0) {
+           // Smart hedgers prioritize 3R+3B (highest probability), then 4R+4B, then 5R+5B
+           const colorPool = ['3R', '3B', '4R', '4B', '5R', '5B'];
+           const chosenColors = colorPool.slice(0, numColors);
+           const colorResults = [];
+           for (const colorKey of chosenColors) {
+             const won = winningColors.includes(colorKey);
+             const mult = rbPayoutMap[colorKey];
+             const winAmount = won ? bet * (1 + mult) : 0;
+             playerBet += bet;
+             playerWin += winAmount;
+             colorResults.push({ colorKey, amount: bet, winAmount, won });
+           }
+           bets.colors = colorResults;
+         }
 
         // ── LOW/HIGH BET: strategy-driven probability ──
         if (Math.random() < player.lhProb) {
