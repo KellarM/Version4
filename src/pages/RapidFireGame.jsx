@@ -416,8 +416,11 @@ export default function RapidFireGame() {
       if (handResult) {
         const rankBetAmt = prk[handResult.name] || 0;
         if (rankBetAmt > 0) {
-          const ratio = HAND_RANK_PAYOUTS[handResult.name];
-          if (ratio !== null && ratio !== undefined) w += calculatePayout(rankBetAmt, ratio);
+          const rankDef = HAND_RANK_PAYOUTS.find(r => r.name === handResult.name);
+          if (rankDef && rankDef.payout !== 'Progressive') {
+            const ratio = parseFloat(rankDef.payout);
+            w += calculatePayout(rankBetAmt, ratio);
+          }
         }
         // Jackpots — require minimum qualifying bet
         if (handResult.name === 'Royal Flush') {
