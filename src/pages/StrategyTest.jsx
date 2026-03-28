@@ -647,12 +647,12 @@ export default function StrategyTest() {
                                 className="bg-slate-900/80 border-t border-slate-700 p-6"
                               >
                                 <div className="space-y-4">
-                                  <div>
-                                    <h3 className="text-lg font-bold mb-3">Game #{idx + 1} Summary ({result.gamesActuallyPlayed.toLocaleString()} games)</h3>
-                                    {result.stoppedEarly && (
-                                      <p className="text-sm text-red-400 mb-2">⚠ Simulation stopped early: Bankroll depleted at game {result.gamesActuallyPlayed}</p>
-                                    )}
-                                  </div>
+                                   <div>
+                                     <h3 className="text-lg font-bold mb-3">Game #{idx + 1} Summary ({result.gamesActuallyPlayed.toLocaleString()} of {result.gameCount.toLocaleString()} games played)</h3>
+                                     {result.stoppedEarly && (
+                                       <p className="text-sm text-red-400 mb-2">⚠ Simulation stopped early: Bankroll depleted at game {result.gamesActuallyPlayed}</p>
+                                     )}
+                                   </div>
 
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* Player Stats */}
