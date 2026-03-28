@@ -715,8 +715,8 @@ Deno.serve(async (req) => {
             payout: 0,
           });
         }
-      } else {
-        // No bet made on river
+      } else if (!bets.riverHedge && !bets.riverAggressive) {
+        // Only show "No Bet Made" if there's no hedge/aggressive bet either
         betsLog.push({
           position: 'River (No Bet Made)',
           type: 'lowHigh',
