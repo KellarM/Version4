@@ -175,15 +175,15 @@ export default function HandByHandAnalysis() {
                   <p className="text-3xl font-bold">{results.summary.totalGames}</p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Total Bets</p>
-                  <p className="text-2xl font-bold">${(results.summary.totalBets / 1000).toFixed(0)}K</p>
-                </div>
-                <div>
-                  <p className="text-gray-400 text-sm">House Profit</p>
-                  <p className={`text-2xl font-bold ${results.summary.houseProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    ${(results.summary.houseProfit / 1000).toFixed(0)}K
-                  </p>
-                </div>
+                   <p className="text-gray-400 text-sm">Total Bets</p>
+                   <p className="text-2xl font-bold">${results.summary.totalBets >= 1000 ? (results.summary.totalBets / 1000).toFixed(1) + 'K' : results.summary.totalBets.toFixed(2)}</p>
+                 </div>
+                 <div>
+                   <p className="text-gray-400 text-sm">House Profit</p>
+                   <p className={`text-2xl font-bold ${results.summary.houseProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                     {results.summary.houseProfit >= 0 ? '+' : ''}${results.summary.houseProfit >= 1000 || results.summary.houseProfit <= -1000 ? (results.summary.houseProfit / 1000).toFixed(1) + 'K' : results.summary.houseProfit.toFixed(2)}
+                   </p>
+                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Overall RTP</p>
                   <p className={`text-3xl font-bold ${
