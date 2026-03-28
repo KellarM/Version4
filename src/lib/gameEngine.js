@@ -8,16 +8,16 @@ export const SUIT_COLORS = { spades: 'black', hearts: 'red', diamonds: 'red', cl
 // The 10 fixed carded hands (20 locked cards, never in deck)
 // RAPID FIRE TEXAS 10 — Calibrated to 96.5% RTP (10M game Monte Carlo)
 export const FIXED_HANDS = [
-  { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: 11.18 },
-  { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: 5.59 },
-  { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },    { rank: 'J',  suit: 'spades' }],   payout: 11.18 },
-  { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },   { rank: '10', suit: 'spades' }],   payout: 8.85 },
-  { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },    { rank: '9',  suit: 'clubs'  }],   payout: 7.45 },
-  { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }], payout: 5.59 },
-  { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7',  suit: 'spades' }],   payout: 7.45 },
-  { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: 8.85 },
-  { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: 8.85 },
-  { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: 11.18 },
+  { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: 11.22 },
+  { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: 5.61 },
+  { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },    { rank: 'J',  suit: 'spades' }],   payout: 11.22 },
+  { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },   { rank: '10', suit: 'spades' }],   payout: 8.88 },
+  { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },    { rank: '9',  suit: 'clubs'  }],   payout: 7.47 },
+  { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }], payout: 5.61 },
+  { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7',  suit: 'spades' }],   payout: 7.47 },
+  { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: 8.88 },
+  { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: 8.88 },
+  { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: 11.22 },
 ];
 
 // The 32-card dealer deck (52 - 20 fixed)

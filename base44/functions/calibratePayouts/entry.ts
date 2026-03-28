@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     // ── Precomputed constants ─────────────────────────────────────────────
 
     // Must match lib/gameEngine.js FIXED_HANDS payouts exactly
-    const HAND_PAYOUTS = [11.18, 5.59, 11.18, 8.85, 7.45, 5.59, 7.45, 8.85, 8.85, 11.18];
+    const HAND_PAYOUTS = [11.22, 5.61, 11.22, 8.88, 7.47, 5.61, 7.47, 8.88, 8.88, 11.22];
 
     const RANKS = ['Royal Flush','Straight Flush','Four of a Kind','Full House','Flush','Straight','Three of a Kind','Two Pair','One Pair'];
     const RANK_PAYOUTS = [null, null, 5.41, 1.40, 1.86, 2.71, 1.40, 6.90, 8.39];
