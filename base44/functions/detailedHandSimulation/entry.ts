@@ -121,18 +121,34 @@ Deno.serve(async (req) => {
         let playerBet = 0;
         let playerWin = 0;
 
-        // Hand bet — player picks one of the 10 hands; wins if it matches the game's winning hand
+        // Hand bets — player may bet on 1 to 4 hands
         if (Math.random() < player.handBetProb) {
-          const handId = Math.floor(Math.random() * 10) + 1;
-          const bet    = [5, 10, 25][Math.floor(Math.random() * 3)];
-          const hand   = FIXED_HANDS.find(h => h.id === handId);
-          const won    = handId === winningHandId;
-          const winAmount = won ? bet * (1 + hand.payout) : 0;
-          const cards  = hand.cards.map(c => `${c.rank}${SUITS_MAP[c.suit]}`).join(' / ');
-
-          bets.hand = { id: handId, cards, amount: bet, winAmount, won };
-          playerBet += bet;
-          playerWin += winAmount;
+          // Determine how many hands this player bets on (weighted: 1=50%, 2=30%, 3=15%, 4=5%)
+          const handCountRoll = Math.random();
+          const numHands = handCountRoll < 0.50 ? 1 : handCountRoll < 0.80 ? 2 : handCountRoll < 0.95 ? 3 : 4;
+          const chosenIds = [];
+          while (chosenIds.length < numHands) {
+            const id = Math.floor(Math.random() * 10) + 1;
+            if (!chosenIds.includes(id)) chosenIds.push(id);
+          }
+          bets.hands = chosenIds.map(handId => {
+            const bet = [5, 10, 25][Math.floor(Math.random() * 3)];
+            const hand = FIXED_HANDS.find(h => h.id === handId);
+            const won = handId === winningHandId;
+            const winAmount = won ? bet * (1 + hand.payout) : 0;
+            const cards = hand.cards.map(c => `${c.rank}${SUITS_MAP[c.suit]}`).join(' / ');
+            playerBet += bet;
+            playerWin += winAmount;
+            return { id: handId, cards, amount: bet, winAmount, won };
+          });
+          // Keep bets.hand as a summary for backward compat display
+          bets.hand = bets.hands.length === 1 ? bets.hands[0] : {
+            id: chosenIds.join('+'),
+            cards: bets.hands.map(h => h.cards).join(' | '),
+            amount: bets.hands.reduce((s, h) => s + h.amount, 0),
+            winAmount: bets.hands.reduce((s, h) => s + h.winAmount, 0),
+            won: bets.hands.some(h => h.won),
+          };
         }
 
         // Rank bet — player picks a rank; wins if it matches the game's rank

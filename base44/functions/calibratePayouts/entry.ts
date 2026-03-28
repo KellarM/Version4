@@ -89,9 +89,15 @@ Deno.serve(async (req) => {
         const b = BET_AMOUNTS[(Math.random() * 3) | 0];
 
         if (Math.random() < strat[0]) {
-          const chosen = (Math.random() * 10) | 0;
-          handBet += b;
-          if (chosen === winningHand) handPayout += b * (1 + HAND_PAYOUTS[chosen]);
+          // Player bets on 1-4 hands (weighted: 1=50%, 2=30%, 3=15%, 4=5%)
+          const hr = Math.random();
+          const numHands = hr < 0.50 ? 1 : hr < 0.80 ? 2 : hr < 0.95 ? 3 : 4;
+          const chosenHands = new Set();
+          while (chosenHands.size < numHands) chosenHands.add((Math.random() * 10) | 0);
+          for (const chosen of chosenHands) {
+            handBet += b;
+            if (chosen === winningHand) handPayout += b * (1 + HAND_PAYOUTS[chosen]);
+          }
         }
 
         if (Math.random() < strat[1]) {
