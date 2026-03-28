@@ -173,6 +173,38 @@ Deno.serve(async (req) => {
           return { bets, balance };
         },
       },
+      AdaptiveHybrid: {
+        name: 'Adaptive Hybrid (Switches strategies based on results)',
+        execute: (balance, game, previousWins, previousLosses) => {
+          const bets = {};
+          const winRate = previousWins + previousLosses > 0 ? previousWins / (previousWins + previousLosses) : 0;
+          
+          // Hot streak: increase hand bets, reduce hedges
+          if (winRate > 0.55) {
+            const bet = Math.floor(balance / 4);
+            if (balance < bet * 4) return { bets, balance };
+            [2, 5, 6, 8].forEach(id => { bets[`h${id}`] = bet; });
+            bets.strategy = 'Hot Streak';
+          }
+          // Cold streak: increase color/rank diversification
+          else if (winRate < 0.45) {
+            const bet = Math.floor(balance / 8);
+            if (balance < bet * 8) return { bets, balance };
+            [1, 4, 6, 9].forEach(id => { bets[`h${id}`] = bet; });
+            ['One Pair', 'Two Pair'].forEach(r => { bets[`r${r}`] = bet; });
+            bets.strategy = 'Cold Streak - Diversify';
+          }
+          // Balanced: mix of hands and colors
+          else {
+            const bet = Math.floor(balance / 6);
+            if (balance < bet * 6) return { bets, balance };
+            [2, 6, 8].forEach(id => { bets[`h${id}`] = bet; });
+            ['3R', '3B'].forEach(c => { bets[`c${c}`] = bet; });
+            bets.strategy = 'Balanced';
+          }
+          return { bets, balance };
+        },
+      },
     };
 
     const strategy = strategies[strategyName];
@@ -187,12 +219,15 @@ Deno.serve(async (req) => {
     const doublingMilestones = {};
     let nextMilestone = STARTING_BALANCE * 2;
     let balance = STARTING_BALANCE;
+    let winCount = 0, lossCount = 0;
+    let maxLossStreak = 0, currentLossStreak = 0;
+    let maxWinStreak = 0, currentWinStreak = 0;
 
     for (let game = 0; game < gamesToSimulate; game++) {
       if (balance <= 0) break;
       gamesActuallyPlayed++;
 
-      const gameResult = strategy.execute(balance, game);
+      const gameResult = strategy.execute(balance, game, winCount, lossCount);
       const { bets } = gameResult;
 
       // Calculate total bet
@@ -231,8 +266,21 @@ Deno.serve(async (req) => {
         gameWin += Math.floor(totalBet * 0.5);
       }
 
+      const netGame = gameWin - totalBet;
+      if (netGame > 0) {
+        winCount++;
+        currentWinStreak++;
+        currentLossStreak = 0;
+        maxWinStreak = Math.max(maxWinStreak, currentWinStreak);
+      } else {
+        lossCount++;
+        currentLossStreak++;
+        currentWinStreak = 0;
+        maxLossStreak = Math.max(maxLossStreak, currentLossStreak);
+      }
+
       balance += gameWin;
-      totalProfit += gameWin - totalBet;
+      totalProfit += netGame;
 
       // Track peaks and milestones
       if (balance > maxBankrollEver) {
@@ -248,6 +296,8 @@ Deno.serve(async (req) => {
 
     const avgProfit = gamesActuallyPlayed > 0 ? totalProfit / gamesActuallyPlayed : 0;
     const roi = ((totalProfit / STARTING_BALANCE) * 100).toFixed(1);
+    const winRate = gamesActuallyPlayed > 0 ? ((winCount / gamesActuallyPlayed) * 100).toFixed(1) : 0;
+    const maxProfit = totalProfit;
 
     return Response.json({
       success: true,
@@ -262,6 +312,14 @@ Deno.serve(async (req) => {
       maxBankrollGameNumber,
       doublingMilestones,
       roi: roi + '%',
+      stats: {
+        winCount,
+        lossCount,
+        winRate: winRate + '%',
+        maxWinStreak,
+        maxLossStreak,
+        maxProfit: maxProfit.toFixed(2),
+      },
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

@@ -15,7 +15,132 @@ const STRATEGIES = [
   { value: 'RiverFocused', label: 'River Focused' },
   { value: 'BalancedSpread', label: 'Balanced Spread' },
   { value: 'DiversifiedHedge', label: 'Diversified Hedge' },
+  { value: 'AdaptiveHybrid', label: 'Adaptive Hybrid' },
 ];
+
+const STRATEGY_DETAILS = {
+  ST1_Original: {
+    description: 'Static strategy betting on high-payout hands with river hedging',
+    steps: [
+      'Bet $50 on hands 2, 5, 6, 7, 8, 9 (fixed)',
+      'These hands have solid base payouts (6.75 to 10.18)',
+      'Add river hedge: when 4+ cards showing same color, bet $300 on opposite color',
+      'Scales down bet denomination if balance drops (50→25→10→5)',
+      'River hedging reduces variance and locks in small wins',
+    ],
+    adaptation: 'None—uses fixed bet amounts. Scales denomination when bankroll drops.',
+  },
+  ConservativeHedger: {
+    description: 'Full color board coverage with 4-hand base coverage',
+    steps: [
+      'Select 4 hands (3, 6, 8, 10) based on payout potential',
+      'Bet equally across all 6 color board options (3R, 3B, 4R, 4B, 5R, 5B)',
+      'Guarantees a payout on color board almost every game',
+      'High coverage reduces risk but caps upside per win',
+      'Effective for steady, low-variance growth',
+    ],
+    adaptation: 'Adjusts bet size based on balance: $25 when tight, $50 when flush.',
+  },
+  RankStacker: {
+    description: 'Targets high-frequency poker hand ranks with selective hand coverage',
+    steps: [
+      'Covers hands 6 & 8 (high payout hands)',
+      'Bets on 5 high-frequency hand ranks: One Pair, Two Pair, Three of a Kind, Straight, Full House',
+      'These ranks appear in ~60% of games',
+      'Concentrates capital on likely outcomes',
+      'Good for consistent, compounding wins',
+    ],
+    adaptation: 'Scales bets (30–5) based on available balance and frequency',
+  },
+  FlushHunter: {
+    description: 'Specialist strategy targeting Flush outcomes',
+    steps: [
+      'Bets hands 3, 4, 5 (3 mid-tier hands)',
+      'Adds Flush rank bet to catch flush outcomes',
+      'Adds river hedge to reduce downside risk',
+      'When Flush hits, payout is 1.30x + hand win + river hedge',
+      'Combines specific rank targeting with hand diversification',
+    ],
+    adaptation: 'Increases hand bet size when balance grows; hedges every round.',
+  },
+  StraightHunter: {
+    description: 'Targets Straight outcomes with complementary hand coverage',
+    steps: [
+      'Bets hands 4, 5, 7 (building complementary positions)',
+      'Adds Straight rank bet (1.9x payout)',
+      'River hedge enabled for downside protection',
+      'Straight frequency is ~4.6%, so selective targeting pays off',
+      'Balanced approach: specific rank + hand diversification',
+    ],
+    adaptation: 'Scales bet denomination (50→25→10) if balance drops.',
+  },
+  ColorBoardSpecialist: {
+    description: 'Heavy color board focus with light hand betting',
+    steps: [
+      'Light hand coverage: bets hands 1 & 4 only',
+      'Full color board coverage: all 6 color outcomes',
+      'River hedging for extra downside protection',
+      'Optimizes for color board high-probability (3R/3B at 50%)',
+      'Best when color payouts are favorable',
+    ],
+    adaptation: 'Micro-bets (15–20) across many outcomes to spread risk.',
+  },
+  HighPayoutFocus: {
+    description: 'Aggressive strategy targeting premium hand and rank outcomes',
+    steps: [
+      'Targets hands 6 & 8 (highest payouts: 10.18x, 11.95x)',
+      'Ranks: Three of a Kind (0.98x), Full House (0.98x), Four of a Kind (3.79x)',
+      'Concentrates bets on top payouts',
+      'Higher variance but better upside when hot',
+      'Ideal for aggressive players with adequate bankroll',
+    ],
+    adaptation: 'Scales aggressively with balance—increases bets when winning.',
+  },
+  RiverFocused: {
+    description: 'Minimal hand betting with aggressive river outcomes',
+    steps: [
+      'Bets only hand 8 (11.95x payout hand)',
+      'Focuses on river-based outcomes',
+      'River aggressive mode: bets up to 35% of total as river hedge',
+      'Extreme concentration; wins big or loses big',
+      'Requires discipline and adequate bankroll',
+    ],
+    adaptation: 'Highly adaptive: bet size responds to balance (50→25→10→5).',
+  },
+  BalancedSpread: {
+    description: 'Diversified betting across all categories with equal weighting',
+    steps: [
+      'Hands: 2, 6, 8 (mix of mid and high payouts)',
+      'Ranks: One Pair, Flush, Straight (high-frequency + mid-payout)',
+      'Color: 3R & 4R (cover low and mid probability)',
+      'River hedge enabled',
+      'Balanced approach minimizes variance while maintaining upside',
+    ],
+    adaptation: 'Scales to 10 equal bet units: (30 per unit when flush, down to 5).',
+  },
+  DiversifiedHedge: {
+    description: 'Maximum diversification with micro-bets across 12 outcomes',
+    steps: [
+      'Hands: 1, 3, 5, 7, 9, 10 (all low/mid payout hands)',
+      'Ranks: One Pair, Two Pair (ultra-frequent)',
+      'Colors: 3R & 3B (50% probability, lowest payout)',
+      '12 small bets = high coverage, low variance',
+      'Optimal for survival and steady growth with minimal risk',
+    ],
+    adaptation: 'Micro-bets (15) spread across 12 outcomes; scales with balance.',
+  },
+  AdaptiveHybrid: {
+    description: 'Dynamic strategy that switches modes based on win rate',
+    steps: [
+      'Win rate > 55%: Hot Streak mode → increase hand bets (2,5,6,8)',
+      'Win rate < 45%: Cold Streak mode → diversify colors & ranks',
+      'Win rate 45–55%: Balanced mode → mix hands + colors',
+      'Recalculates after each game based on recent history',
+      'Exploits momentum and adjusts to variance automatically',
+    ],
+    adaptation: 'Fundamental: strategy switches every game based on performance.',
+  },
+};
 
 export default function StrategyTest() {
   const [activeTab, setActiveTab] = useState('ST1');
@@ -83,7 +208,7 @@ export default function StrategyTest() {
           <h1 className="text-4xl font-bold mb-4">Strategy Betting Test</h1>
 
           {/* Tab buttons */}
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-6 flex-wrap">
             <button
               onClick={() => { setActiveTab('ST1'); setExpandedIdx(null); }}
               className={`px-4 py-2 rounded-lg font-semibold transition-all ${
@@ -103,6 +228,16 @@ export default function StrategyTest() {
               }`}
             >
               ST2: Multi-Strategy
+            </button>
+            <button
+              onClick={() => { setActiveTab('Details'); setExpandedIdx(null); }}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                activeTab === 'Details'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+              }`}
+            >
+              📋 Strategy Details
             </button>
           </div>
 
@@ -454,37 +589,160 @@ export default function StrategyTest() {
                     const playerWon = profit > 0;
 
                     return (
-                      <motion.tr
-                        key={idx}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer`}
-                        onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
-                      >
-                        <td className="px-4 py-3 font-bold">
-                          {result.gameCount.toLocaleString()}
-                          {result.stoppedEarly && (
-                            <span className="text-xs text-red-400 block">(stopped at {result.gamesActuallyPlayed})</span>
-                          )}
-                        </td>
-                        <td className={`px-4 py-3 text-right font-bold ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
-                          {playerWon ? '+' : ''}{profit.toFixed(2)}
-                        </td>
-                        <td className={`px-4 py-3 text-right ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
-                          {playerWon ? '+' : ''}{parseFloat(result.avgProfitPerGame).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-right">${parseFloat(result.finalBalance).toFixed(2)}</td>
-                        <td className={`px-4 py-3 text-right font-bold ${roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {roi >= 0 ? '+' : ''}{roi}%
-                        </td>
-                        <td className="px-4 py-3 text-center text-yellow-400 font-bold">
-                          ${parseFloat(result.maxBankrollEver).toFixed(0)}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {expandedIdx === idx ? <ChevronUp className="w-4 h-4 mx-auto" /> : <ChevronDown className="w-4 h-4 mx-auto" />}
-                        </td>
-                      </motion.tr>
+                      <>
+                        <motion.tr
+                          key={idx}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer ${expandedIdx === idx ? 'bg-slate-700/50' : ''}`}
+                          onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
+                        >
+                          <td className="px-4 py-3 font-bold">
+                            {result.gameCount.toLocaleString()}
+                            {result.stoppedEarly && (
+                              <span className="text-xs text-red-400 block">(stopped at {result.gamesActuallyPlayed})</span>
+                            )}
+                          </td>
+                          <td className={`px-4 py-3 text-right font-bold ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                            {playerWon ? '+' : ''}{profit.toFixed(2)}
+                          </td>
+                          <td className={`px-4 py-3 text-right ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                            {playerWon ? '+' : ''}{parseFloat(result.avgProfitPerGame).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-right">${parseFloat(result.finalBalance).toFixed(2)}</td>
+                          <td className={`px-4 py-3 text-right font-bold ${roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {roi >= 0 ? '+' : ''}{roi}%
+                          </td>
+                          <td className="px-4 py-3 text-center text-yellow-400 font-bold">
+                            ${parseFloat(result.maxBankrollEver).toFixed(0)}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {expandedIdx === idx ? <ChevronUp className="w-4 h-4 mx-auto" /> : <ChevronDown className="w-4 h-4 mx-auto" />}
+                          </td>
+                        </motion.tr>
+
+                        {/* Expanded Details */}
+                        {expandedIdx === idx && (
+                          <tr>
+                            <td colSpan="7" className="p-0">
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="bg-slate-900/80 border-t border-slate-700 p-6"
+                              >
+                                <div className="space-y-4">
+                                  <div>
+                                    <h3 className="text-lg font-bold mb-3">Game #{idx + 1} Summary ({result.gamesActuallyPlayed.toLocaleString()} games)</h3>
+                                    {result.stoppedEarly && (
+                                      <p className="text-sm text-red-400 mb-2">⚠ Simulation stopped early: Bankroll depleted at game {result.gamesActuallyPlayed}</p>
+                                    )}
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Player Stats */}
+                                    <div className={`rounded-lg border-2 p-4 ${playerWon ? 'border-green-600 bg-green-900/20' : 'border-red-600 bg-red-900/20'}`}>
+                                      <div className="flex items-center justify-between mb-3">
+                                        <h4 className={`text-lg font-bold ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                                          {playerWon ? '🎉 PLAYER WINS' : '❌ PLAYER LOSES'}
+                                        </h4>
+                                      </div>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Starting Balance</span>
+                                          <span className="font-bold text-white">$1,000.00</span>
+                                        </div>
+                                        <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
+                                          <span className="text-gray-300">Total Profit/Loss</span>
+                                          <span className={`font-bold text-lg ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                                            {playerWon ? '+' : ''}{profit.toFixed(2)}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Final Balance</span>
+                                          <span className="font-bold text-white">${parseFloat(result.finalBalance).toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between border-b border-gray-700 pb-2 mb-2">
+                                          <span className="text-gray-300">ROI</span>
+                                          <span className={`font-bold text-lg ${roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                            {roi >= 0 ? '+' : ''}{roi}%
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Win Rate</span>
+                                          <span className="font-bold text-blue-400">{result.stats?.winRate || '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Max Win Streak</span>
+                                          <span className="font-bold text-green-400">{result.stats?.maxWinStreak || 0}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Casino Stats */}
+                                    <div className={`rounded-lg border-2 p-4 ${!playerWon ? 'border-green-600 bg-green-900/20' : 'border-red-600 bg-red-900/20'}`}>
+                                      <div className="flex items-center justify-between mb-3">
+                                        <h4 className={`text-lg font-bold ${!playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                                          {!playerWon ? '🏆 CASINO WINS' : '📉 CASINO LOSES'}
+                                        </h4>
+                                      </div>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">House Edge</span>
+                                          <span className="font-bold text-white">{(100 - roi).toFixed(1)}%</span>
+                                        </div>
+                                        <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
+                                          <span className="text-gray-300">Casino Profit/Loss</span>
+                                          <span className={`font-bold text-lg ${!playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                                            {!playerWon ? '+' : ''}{(-profit).toFixed(2)}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Avg Per Game</span>
+                                          <span className={`font-bold ${!playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                                            {!playerWon ? '+' : ''}{(-parseFloat(result.avgProfitPerGame)).toFixed(2)}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between border-b border-gray-700 pb-2 mb-2">
+                                          <span className="text-gray-300">Games Played</span>
+                                          <span className="font-bold text-white">{result.gamesActuallyPlayed.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Loss Rate</span>
+                                          <span className="font-bold text-red-400">{result.stats?.lossCount ? `${((result.stats.lossCount / result.gamesActuallyPlayed) * 100).toFixed(1)}%` : '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Max Loss Streak</span>
+                                          <span className="font-bold text-red-400">{result.stats?.maxLossStreak || 0}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Doubling Milestones */}
+                                  {result.doublingMilestones && Object.keys(result.doublingMilestones).length > 0 && (
+                                    <div className="rounded-lg bg-slate-700/50 p-4 border border-slate-600 mt-4">
+                                      <p className="text-sm font-bold text-gray-300 mb-3">Bankroll Doubling Milestones</p>
+                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                        {Object.entries(result.doublingMilestones)
+                                          .sort(([a], [b]) => parseFloat(a) - parseFloat(b))
+                                          .map(([amount, gameNum]) => (
+                                            <div key={amount} className="text-center p-2 rounded bg-slate-600/50">
+                                              <p className="text-xs text-gray-400">Reached</p>
+                                              <p className="text-lg font-bold text-green-400">${parseFloat(amount).toLocaleString()}</p>
+                                              <p className="text-xs text-gray-500">Game #{gameNum}</p>
+                                            </div>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </motion.div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
                     );
                   })}
                 </tbody>
@@ -520,6 +778,87 @@ export default function StrategyTest() {
                   </div>
                 </div>
               </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Details Tab */}
+        {activeTab === 'Details' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+              <label className="block text-sm text-gray-300 mb-3">Select Strategy to View Details:</label>
+              <select
+                value={selectedStrategy}
+                onChange={(e) => setSelectedStrategy(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:border-blue-500 outline-none"
+              >
+                {STRATEGIES.map(s => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {STRATEGY_DETAILS[selectedStrategy] && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-600/30 rounded-lg p-6 space-y-4"
+              >
+                {/* Strategy Name & Description */}
+                <div>
+                  <h2 className="text-2xl font-bold text-purple-300 mb-2">
+                    {STRATEGIES.find(s => s.value === selectedStrategy)?.label}
+                  </h2>
+                  <p className="text-gray-300 text-base italic">
+                    {STRATEGY_DETAILS[selectedStrategy].description}
+                  </p>
+                </div>
+
+                {/* Steps */}
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-3">📋 Strategy Steps:</h3>
+                  <ol className="space-y-2 list-decimal list-inside">
+                    {STRATEGY_DETAILS[selectedStrategy].steps.map((step, idx) => (
+                      <li key={idx} className="text-gray-300 leading-relaxed">
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                {/* Adaptation Info */}
+                <div className="bg-slate-700/50 rounded-lg p-4 border-l-4 border-purple-500">
+                  <h3 className="text-lg font-bold text-purple-300 mb-2">🎯 Adaptation & Scaling:</h3>
+                  <p className="text-gray-300">{STRATEGY_DETAILS[selectedStrategy].adaptation}</p>
+                </div>
+
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-4 border-t border-slate-700">
+                  <div className="bg-slate-700/30 rounded p-3">
+                    <p className="text-xs text-gray-400 mb-1">Risk Level</p>
+                    <p className="text-lg font-bold text-white">
+                      {selectedStrategy.includes('Diversif') || selectedStrategy === 'ConservativeHedger' ? '🟢 Low' :
+                       selectedStrategy.includes('Balanced') ? '🟡 Medium' :
+                       selectedStrategy.includes('High') || selectedStrategy === 'RiverFocused' ? '🔴 High' : '🟡 Medium'}
+                    </p>
+                  </div>
+                  <div className="bg-slate-700/30 rounded p-3">
+                    <p className="text-xs text-gray-400 mb-1">Bet Count</p>
+                    <p className="text-lg font-bold text-white">
+                      {selectedStrategy === 'RiverFocused' ? '1-2' :
+                       selectedStrategy === 'ST1_Original' ? '6+' :
+                       selectedStrategy.includes('Diversif') ? '12' : '4-8'}
+                    </p>
+                  </div>
+                  <div className="bg-slate-700/30 rounded p-3">
+                    <p className="text-xs text-gray-400 mb-1">Variance</p>
+                    <p className="text-lg font-bold text-white">
+                      {selectedStrategy.includes('Diversif') || selectedStrategy === 'ConservativeHedger' ? 'Low' :
+                       selectedStrategy === 'BalancedSpread' || selectedStrategy === 'Adaptive' ? 'Medium' : 'High'}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
             )}
           </motion.div>
         )}
