@@ -62,13 +62,28 @@ Deno.serve(async (req) => {
     const colorBetsArr    = new Float64Array(6);
     const colorPayoutsArr = new Float64Array(6);
 
-    const STRATS = [
-      [0.9, 0.8, 0.7, 0.6],
-      [0.4, 0.3, 0.2, 0.3],
-      [0.7, 0.6, 0.5, 0.8],
-      [0.5, 0.5, 0.5, 0.5],
-    ];
     const BET_AMOUNTS = [5, 10, 25];
+
+    // Realistic strategy profiles matching detailedHandSimulation
+    // Each profile: [handCount fn, rankCount fn, colorCount, lhProb, betBothLHProb]
+    // handCount / rankCount are avg values; we use them to draw random counts
+    const STRAT_PROFILES = [
+      // Casual: 1 hand, maybe 1 rank, rarely color
+      { hMin: 1, hMax: 1, rMin: 0, rMax: 1, rProb: 0.4, cCount: 0, cProb: 0.2, lhProb: 0.2, bothLH: 0.0 },
+      // Hedger: 4-6 hands, no ranks, 2 colors (3R+3B), high LH prob
+      { hMin: 4, hMax: 6, rMin: 0, rMax: 0, rProb: 0.0, cCount: 2, cProb: 1.0, lhProb: 0.9, bothLH: 0.3 },
+      // RankStacker: 1 hand, 4-6 ranks (high-freq), 1 color
+      { hMin: 1, hMax: 1, rMin: 4, rMax: 6, rProb: 1.0, cCount: 1, cProb: 1.0, lhProb: 0.5, bothLH: 0.0 },
+      // SpreadBettor: 3-5 hands, 3-5 ranks, 3-4 colors, high LH
+      { hMin: 3, hMax: 5, rMin: 3, rMax: 5, rProb: 1.0, cCount: 4, cProb: 1.0, lhProb: 0.8, bothLH: 0.3 },
+      // ColorPusher: 1 hand, 1 rank, all 6 colors, medium LH
+      { hMin: 1, hMax: 1, rMin: 1, rMax: 1, rProb: 1.0, cCount: 6, cProb: 1.0, lhProb: 0.7, bothLH: 0.0 },
+      // Conservative: 1 hand, maybe 1 rank, no color
+      { hMin: 1, hMax: 1, rMin: 0, rMax: 1, rProb: 0.5, cCount: 0, cProb: 0.0, lhProb: 0.3, bothLH: 0.0 },
+    ];
+
+    // High-frequency rank indices for smart players (One Pair=8, Two Pair=7, Trips=6, Straight=5, Full House=3)
+    const HIGH_FREQ_RANK_IDX = [8, 7, 6, 5, 3, 4]; // ordered by frequency
 
     // ── Monte Carlo loop ──────────────────────────────────────────────────
     for (let g = 0; g < gamesToSimulate; g++) {
@@ -85,51 +100,72 @@ Deno.serve(async (req) => {
       const playerCount = ((Math.random() * 5) | 0) + 1;
 
       for (let pl = 0; pl < playerCount; pl++) {
-        const strat = STRATS[(Math.random() * 4) | 0];
+        const sp = STRAT_PROFILES[(Math.random() * STRAT_PROFILES.length) | 0];
         const b = BET_AMOUNTS[(Math.random() * 3) | 0];
 
-        if (Math.random() < strat[0]) {
-          // Player bets on 1-4 hands (weighted: 1=50%, 2=30%, 3=15%, 4=5%)
-          const hr = Math.random();
-          const numHands = hr < 0.50 ? 1 : hr < 0.80 ? 2 : hr < 0.95 ? 3 : 4;
-          const chosenHands = new Set();
-          while (chosenHands.size < numHands) chosenHands.add((Math.random() * 10) | 0);
-          for (const chosen of chosenHands) {
-            handBet += b;
-            if (chosen === winningHand) handPayout += b * (1 + HAND_PAYOUTS[chosen]);
+        // ── Hand bets: cover hMin..hMax hands ──
+        const numHands = sp.hMin + ((Math.random() * (sp.hMax - sp.hMin + 1)) | 0);
+        const chosenHands = new Set();
+        while (chosenHands.size < numHands) chosenHands.add((Math.random() * 10) | 0);
+        for (const chosen of chosenHands) {
+          handBet += b;
+          if (chosen === winningHand) handPayout += b * (1 + HAND_PAYOUTS[chosen]);
+        }
+
+        // ── Rank bets: smart players stack high-frequency ranks ──
+        if (Math.random() < sp.rProb) {
+          const numRanks = sp.rMin + ((Math.random() * (sp.rMax - sp.rMin + 1)) | 0);
+          const chosenRanks = new Set();
+          // Smart (hedger/spread) profiles use high-freq ranks first
+          const rankPool = (sp.hMin >= 3 || sp.rMin >= 3)
+            ? HIGH_FREQ_RANK_IDX
+            : Array.from({ length: 9 }, (_, i) => i);
+          let attempts = 0;
+          while (chosenRanks.size < numRanks && attempts < 20) {
+            chosenRanks.add(rankPool[(Math.random() * rankPool.length) | 0]);
+            attempts++;
+          }
+          for (const chosen of chosenRanks) {
+            const mult = RANK_PAYOUTS[chosen];
+            rankBet += b;
+            rankBetsArr[chosen] += b;
+            if (chosen === gameRank && mult !== null) {
+              const p = b * (1 + mult);
+              rankPayout += p;
+              rankPayoutsArr[chosen] += p;
+            }
           }
         }
 
-        if (Math.random() < strat[1]) {
-          const chosen = (Math.random() * 9) | 0;
-          const mult = RANK_PAYOUTS[chosen];
-          rankBet += b;
-          rankBetsArr[chosen] += b;
-          if (chosen === gameRank && mult !== null) {
-            const p = b * (1 + mult);
-            rankPayout += p;
-            rankPayoutsArr[chosen] += p;
+        // ── Color board bets: smart players start with 3R+3B ──
+        if (Math.random() < sp.cProb && sp.cCount > 0) {
+          // Priority order: 3R, 3B (highest win prob), then 4R, 4B, then 5R, 5B
+          const colorOrder = [0, 1, 2, 3, 4, 5]; // indices into COLOR_KEYS
+          const numColors = Math.min(sp.cCount, 6);
+          for (let ci = 0; ci < numColors; ci++) {
+            const cidx = colorOrder[ci];
+            const chosenKey = COLOR_KEYS[cidx];
+            colorBet += b;
+            colorBetsArr[cidx] += b;
+            if (winningColors.includes(chosenKey)) {
+              const p = b * (1 + COLOR_PAYOUTS[chosenKey]);
+              colorPayout += p;
+              colorPayoutsArr[cidx] += p;
+            }
           }
         }
 
-        if (Math.random() < strat[2]) {
-          // Player picks one of the 6 color keys
-          const chosenKey = COLOR_KEYS[(Math.random() * 6) | 0];
-          const cidx = COLOR_KEYS.indexOf(chosenKey);
-          colorBet += b;
-          colorBetsArr[cidx] += b;
-          // Wins if the chosen key is in the cumulative winning set
-          if (winningColors.includes(chosenKey)) {
-            const p = b * (1 + COLOR_PAYOUTS[chosenKey]);
-            colorPayout += p;
-            colorPayoutsArr[cidx] += p;
+        // ── Low/High bets ──
+        if (Math.random() < sp.lhProb) {
+          if (Math.random() < sp.bothLH) {
+            // Bet both LOW and HIGH — guarantees one wins
+            lhBet += b * 2;
+            lhPayout += b * (1 + LH_PAYOUT); // one side always wins
+          } else {
+            const chosen = Math.random() < 0.5 ? 0 : 1;
+            lhBet += b;
+            if (chosen === gameLH) lhPayout += b * (1 + LH_PAYOUT);
           }
-        }
-
-        if (Math.random() < strat[3]) {
-          const chosen = Math.random() < 0.5 ? 0 : 1;
-          lhBet += b;
-          if (chosen === gameLH) lhPayout += b * (1 + LH_PAYOUT);
         }
       }
     }

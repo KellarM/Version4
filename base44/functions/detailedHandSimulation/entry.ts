@@ -30,13 +30,13 @@ Deno.serve(async (req) => {
     const rankPayoutMap = {
       'Royal Flush': null,
       'Straight Flush': null,
-      'Four of a Kind': 5.41,
-      'Full House': 1.40,
-      'Flush': 1.86,
-      'Straight': 2.71,
-      'Three of a Kind': 1.40,
-      'Two Pair': 6.90,
-      'One Pair': 8.39,
+      'Four of a Kind': 3.78,
+      'Full House': 0.98,
+      'Flush': 1.30,
+      'Straight': 1.89,
+      'Three of a Kind': 0.98,
+      'Two Pair': 4.82,
+      'One Pair': 5.86,
     };
 
     const rankFrequencies = {
@@ -53,12 +53,20 @@ Deno.serve(async (req) => {
 
     const rbPayoutMap = { '3R': 1.26, '3B': 1.26, '4R': 4.9, '4B': 4.9, '5R': 19.2, '5B': 19.2 };
 
-    // Player strategy profiles
+    // Realistic player strategy profiles — capturing hedging/coverage behavior
     const strategyProfiles = [
-      { name: 'Aggressive', handBetProb: 0.9, rankBetProb: 0.8, rbBetProb: 0.7, lhBetProb: 0.6 },
-      { name: 'Conservative', handBetProb: 0.4, rankBetProb: 0.3, rbBetProb: 0.2, lhBetProb: 0.3 },
-      { name: 'Cunning', handBetProb: 0.7, rankBetProb: 0.6, rbBetProb: 0.5, lhBetProb: 0.8 },
-      { name: 'Random', handBetProb: 0.5, rankBetProb: 0.5, rbBetProb: 0.5, lhBetProb: 0.5 },
+      // Casual: bets 1-2 hands randomly, maybe a rank, rarely color
+      { name: 'Casual',      handCount: () => 1, rankCount: () => Math.random() < 0.4 ? 1 : 0, colorCount: () => Math.random() < 0.2 ? 1 : 0, lhProb: 0.2 },
+      // Coverage Hedger: bets 4-6 hands to guarantee a winner most rounds + color hedge
+      { name: 'Hedger',      handCount: () => 4 + Math.floor(Math.random() * 3), rankCount: () => 0, colorCount: () => 2, lhProb: 0.9 },
+      // Rank Stacker: covers top 4-6 high-frequency ranks (pairs, two pair, trips, full house, straight)
+      { name: 'RankStacker', handCount: () => 1, rankCount: () => 4 + Math.floor(Math.random() * 3), colorCount: () => 1, lhProb: 0.5 },
+      // Spread Bettor: covers multiple hands + multiple ranks + color board + river
+      { name: 'SpreadBettor',handCount: () => 3 + Math.floor(Math.random() * 3), rankCount: () => 3 + Math.floor(Math.random() * 3), colorCount: () => 3 + Math.floor(Math.random() * 3), lhProb: 0.8 },
+      // Color Pusher: bets all 6 color options to always collect something on color board
+      { name: 'ColorPusher', handCount: () => 1, rankCount: () => 1, colorCount: () => 6, lhProb: 0.7 },
+      // Conservative: small selective bets
+      { name: 'Conservative',handCount: () => 1, rankCount: () => Math.random() < 0.5 ? 1 : 0, colorCount: () => 0, lhProb: 0.3 },
     ];
 
     // Color board probabilities: P(exactly k of 5 red) = C(5,k) * 0.5^5
@@ -108,7 +116,7 @@ Deno.serve(async (req) => {
       const playerCount = Math.floor(Math.random() * 5) + 1;
       const players = Array.from({ length: playerCount }, () => {
         const strategy = strategyProfiles[Math.floor(Math.random() * strategyProfiles.length)];
-        return { strategy: strategy.name, ...strategy };
+        return { ...strategy };
       });
 
       let gameBets = 0;
@@ -121,18 +129,17 @@ Deno.serve(async (req) => {
         let playerBet = 0;
         let playerWin = 0;
 
-        // Hand bets — player may bet on 1 to 4 hands
-        if (Math.random() < player.handBetProb) {
-          // Determine how many hands this player bets on (weighted: 1=50%, 2=30%, 3=15%, 4=5%)
-          const handCountRoll = Math.random();
-          const numHands = handCountRoll < 0.50 ? 1 : handCountRoll < 0.80 ? 2 : handCountRoll < 0.95 ? 3 : 4;
+        const bet = [5, 10, 25][Math.floor(Math.random() * 3)];
+
+        // ── HAND BETS: player covers N hands (strategy-driven count) ──
+        const numHands = Math.min(player.handCount(), 10);
+        if (numHands > 0) {
           const chosenIds = [];
           while (chosenIds.length < numHands) {
             const id = Math.floor(Math.random() * 10) + 1;
             if (!chosenIds.includes(id)) chosenIds.push(id);
           }
-          bets.hands = chosenIds.map(handId => {
-            const bet = [5, 10, 25][Math.floor(Math.random() * 3)];
+          const handResults = chosenIds.map(handId => {
             const hand = FIXED_HANDS.find(h => h.id === handId);
             const won = handId === winningHandId;
             const winAmount = won ? bet * (1 + hand.payout) : 0;
@@ -141,53 +148,84 @@ Deno.serve(async (req) => {
             playerWin += winAmount;
             return { id: handId, cards, amount: bet, winAmount, won };
           });
-          // Keep bets.hand as a summary for backward compat display
-          bets.hand = bets.hands.length === 1 ? bets.hands[0] : {
+          bets.hand = {
             id: chosenIds.join('+'),
-            cards: bets.hands.map(h => h.cards).join(' | '),
-            amount: bets.hands.reduce((s, h) => s + h.amount, 0),
-            winAmount: bets.hands.reduce((s, h) => s + h.winAmount, 0),
-            won: bets.hands.some(h => h.won),
+            cards: `${numHands} hands covered`,
+            amount: handResults.reduce((s, h) => s + h.amount, 0),
+            winAmount: handResults.reduce((s, h) => s + h.winAmount, 0),
+            won: handResults.some(h => h.won),
+            count: numHands,
           };
         }
 
-        // Rank bet — player picks a rank; wins if it matches the game's rank
-        if (Math.random() < player.rankBetProb) {
-          const rank       = RANK_KEYS[Math.floor(Math.random() * RANK_KEYS.length)];
-          const bet        = [5, 10, 25][Math.floor(Math.random() * 3)];
-          const won        = rank === gameRank;
-          const multiplier = rankPayoutMap[rank];
-          const winAmount  = won && multiplier !== null ? bet * (1 + multiplier) : 0;
-
-          bets.rank = { name: rank, amount: bet, winAmount, won };
-          playerBet += bet;
-          playerWin += winAmount;
+        // ── RANK BETS: player covers N ranks (strategy-driven count) ──
+        // High-frequency ranks ordered by probability for smart stacking
+        const HIGH_FREQ_RANKS = ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Full House', 'Flush', 'Four of a Kind'];
+        const numRanks = player.rankCount();
+        if (numRanks > 0) {
+          // Smart players pick from high-frequency ranks; casual players pick randomly
+          const rankPool = player.name === 'Casual' || player.name === 'Conservative'
+            ? RANK_KEYS
+            : HIGH_FREQ_RANKS;
+          const chosenRanks = [];
+          while (chosenRanks.length < Math.min(numRanks, rankPool.length)) {
+            const r = rankPool[Math.floor(Math.random() * rankPool.length)];
+            if (!chosenRanks.includes(r)) chosenRanks.push(r);
+          }
+          let rankBetAmt = 0, rankWinAmt = 0, rankWon = false;
+          for (const rank of chosenRanks) {
+            const multiplier = rankPayoutMap[rank];
+            const won = rank === gameRank;
+            const winAmount = won && multiplier !== null ? bet * (1 + multiplier) : 0;
+            playerBet += bet;
+            playerWin += winAmount;
+            rankBetAmt += bet;
+            rankWinAmt += winAmount;
+            if (won) rankWon = true;
+          }
+          bets.rank = { name: chosenRanks.join('+'), amount: rankBetAmt, winAmount: rankWinAmt, won: rankWon, count: chosenRanks.length };
         }
 
-        // Color board bet — player picks one color key; wins if it's in the game's winning keys
-        if (Math.random() < player.rbBetProb) {
-          const colorKeys  = Object.keys(rbPayoutMap);
-          const colorKey   = colorKeys[Math.floor(Math.random() * colorKeys.length)];
-          const bet        = [5, 10, 25][Math.floor(Math.random() * 3)];
-          const won        = winningColors.includes(colorKey);
-          const mult       = rbPayoutMap[colorKey];
-          const winAmount  = won ? bet * (1 + mult) : 0;
-
-          bets.color = { type: colorKey, amount: bet, winAmount, won };
-          playerBet += bet;
-          playerWin += winAmount;
+        // ── COLOR BOARD BETS: player covers N color options ──
+        const COLOR_KEYS_ALL = Object.keys(rbPayoutMap);
+        const numColors = Math.min(player.colorCount(), COLOR_KEYS_ALL.length);
+        if (numColors > 0) {
+          // Smart hedgers prioritize 3R+3B (highest probability), then 4R+4B, then 5R+5B
+          const colorPool = ['3R', '3B', '4R', '4B', '5R', '5B'];
+          const chosenColors = colorPool.slice(0, numColors);
+          let colorBetAmt = 0, colorWinAmt = 0, colorWon = false;
+          for (const colorKey of chosenColors) {
+            const won = winningColors.includes(colorKey);
+            const mult = rbPayoutMap[colorKey];
+            const winAmount = won ? bet * (1 + mult) : 0;
+            playerBet += bet;
+            playerWin += winAmount;
+            colorBetAmt += bet;
+            colorWinAmt += winAmount;
+            if (won) colorWon = true;
+          }
+          bets.color = { type: chosenColors.join('+'), amount: colorBetAmt, winAmount: colorWinAmt, won: colorWon, count: numColors };
         }
 
-        // Low/High bet — player picks LOW or HIGH; wins if it matches the game's river result
-        if (Math.random() < player.lhBetProb) {
-          const type      = Math.random() < 0.5 ? 'LOW' : 'HIGH';
-          const bet       = [5, 10, 25][Math.floor(Math.random() * 3)];
-          const won       = type === gameLH;
-          const winAmount = won ? bet * 1.83 : 0;
-
-          bets.lowHigh = { type, amount: bet, winAmount, won };
-          playerBet += bet;
-          playerWin += winAmount;
+        // ── LOW/HIGH BET: strategy-driven probability ──
+        if (Math.random() < player.lhProb) {
+          // Smart players (hedgers/spread bettors) may bet BOTH Low and High to guarantee a hit
+          const betBoth = (player.name === 'SpreadBettor' || player.name === 'Hedger') && Math.random() < 0.3;
+          if (betBoth) {
+            // Bet both LOW and HIGH — one always wins (0.83:1), net is guaranteed small loss but covers risk
+            const lowWon = gameLH === 'LOW';
+            const highWon = gameLH === 'HIGH';
+            playerBet += bet * 2;
+            playerWin += (lowWon ? bet * 1.83 : 0) + (highWon ? bet * 1.83 : 0);
+            bets.lowHigh = { type: 'LOW+HIGH', amount: bet * 2, winAmount: bet * 1.83, won: true };
+          } else {
+            const type = Math.random() < 0.5 ? 'LOW' : 'HIGH';
+            const won = type === gameLH;
+            const winAmount = won ? bet * 1.83 : 0;
+            playerBet += bet;
+            playerWin += winAmount;
+            bets.lowHigh = { type, amount: bet, winAmount, won };
+          }
         }
 
         playerDetails.push({

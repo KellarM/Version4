@@ -371,19 +371,19 @@ export default function RapidFireGame() {
   };
 
   const settle = (finalComm, leader, winRB, winLH, leaderHand, handResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets) => {
-    // Calibrated Payouts (targeting 96.5% RTP — derived from 10M game Monte Carlo)
+    // Calibrated Payouts (targeting 96.5% RTP — derived with realistic multi-bet hedging player model)
     const rankPayoutMap = {
       'Royal Flush': null,
       'Straight Flush': null,
-      'Four of a Kind': 5.41,
-      'Full House': 1.40,
-      'Flush': 1.86,
-      'Straight': 2.71,
-      'Three of a Kind': 1.40,
-      'Two Pair': 6.90,
-      'One Pair': 8.39,
+      'Four of a Kind': 3.78,
+      'Full House': 0.98,
+      'Flush': 1.30,
+      'Straight': 1.89,
+      'Three of a Kind': 0.98,
+      'Two Pair': 4.82,
+      'One Pair': 5.86,
     };
-    const rbPayoutMap = { '3R': 1.26, '3B': 1.26, '4R': 4.9, '4B': 4.9, '5R': 19.2, '5B': 19.2 };
+    const rbPayoutMap = { '3R': 1.16, '3B': 1.16, '4R': 4.53, '4B': 4.53, '5R': 17.75, '5B': 17.75 };
 
     let totalBetsAllPlayers = 0;
     let totalWinningsAllPlayers = 0;

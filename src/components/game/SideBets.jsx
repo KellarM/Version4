@@ -3,14 +3,14 @@ import { cardColor, isLowCard } from '@/lib/gameEngine';
 
 // Left col = Red (3R top → 5R bottom), Right col = Black (3B top → 5B bottom)
 const RED_OPTIONS   = [
-  { key: '3R', label: '3 Red', payout: '1.26:1' },
-  { key: '4R', label: '4 Red', payout: '4.90:1' },
-  { key: '5R', label: '5 Red', payout: '19.20:1' },
+  { key: '3R', label: '3 Red', payout: '1.16:1' },
+  { key: '4R', label: '4 Red', payout: '4.53:1' },
+  { key: '5R', label: '5 Red', payout: '17.75:1' },
 ];
 const BLACK_OPTIONS = [
-  { key: '3B', label: '3 Black', payout: '1.26:1' },
-  { key: '4B', label: '4 Black', payout: '4.90:1' },
-  { key: '5B', label: '5 Black', payout: '19.20:1' },
+  { key: '3B', label: '3 Black', payout: '1.16:1' },
+  { key: '4B', label: '4 Black', payout: '4.53:1' },
+  { key: '5B', label: '5 Black', payout: '17.75:1' },
 ];
 
 // Per-player chip colors
