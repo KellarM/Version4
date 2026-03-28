@@ -312,14 +312,14 @@ export default function StrategyTest() {
         {activeTab === 'ST1' && results.length > 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
             <div className="p-4 border-b border-slate-700">
-              <h2 className="text-2xl font-bold">Results</h2>
+              <h2 className="text-2xl font-bold">Results — ST1: Original Strategy</h2>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-700 bg-slate-900/50">
-                    <th className="px-4 py-3 text-left">Games</th>
+                    <th className="px-4 py-3 text-left">Games Played / Requested</th>
                     <th className="px-4 py-3 text-right">Total Profit</th>
                     <th className="px-4 py-3 text-right">Avg Per Game</th>
                     <th className="px-4 py-3 text-right">Final Balance</th>
@@ -341,13 +341,13 @@ export default function StrategyTest() {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: idx * 0.05 }}
-                          className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer ${expandedIdx === idx ? 'bg-slate-700/50' : ''}`}
+                          className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer ${expandedIdx === idx ? 'bg-slate-700/50' : ''} ${result.stoppedEarly ? 'bg-red-900/20' : ''}`}
                           onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
                         >
-                          <td className="px-4 py-3 font-bold">
-                            {result.gameCount.toLocaleString()}
+                          <td className={`px-4 py-3 font-bold ${result.stoppedEarly ? 'text-red-400' : 'text-white'}`}>
+                            {result.gamesActuallyPlayed.toLocaleString()} / {result.gameCount.toLocaleString()}
                             {result.stoppedEarly && (
-                              <span className="text-xs text-red-400 block">(stopped at {result.gamesActuallyPlayed})</span>
+                              <span className="text-xs text-red-400 block">⚠️ BANKRUPT</span>
                             )}
                           </td>
                           <td className={`px-4 py-3 text-right font-bold ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
@@ -587,7 +587,7 @@ export default function StrategyTest() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-700 bg-slate-900/50">
-                    <th className="px-4 py-3 text-left">Games</th>
+                    <th className="px-4 py-3 text-left">Games Played / Requested</th>
                     <th className="px-4 py-3 text-right">Total Profit</th>
                     <th className="px-4 py-3 text-right">Avg Per Game</th>
                     <th className="px-4 py-3 text-right">Final Balance</th>
@@ -609,13 +609,13 @@ export default function StrategyTest() {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: idx * 0.05 }}
-                          className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer ${expandedIdx === idx ? 'bg-slate-700/50' : ''}`}
+                          className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer ${expandedIdx === idx ? 'bg-slate-700/50' : ''} ${result.stoppedEarly ? 'bg-red-900/20' : ''}`}
                           onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
                         >
-                          <td className="px-4 py-3 font-bold">
-                            {result.gameCount.toLocaleString()}
+                          <td className={`px-4 py-3 font-bold ${result.stoppedEarly ? 'text-red-400' : 'text-white'}`}>
+                            {result.gamesActuallyPlayed.toLocaleString()} / {result.gameCount.toLocaleString()}
                             {result.stoppedEarly && (
-                              <span className="text-xs text-red-400 block">(stopped at {result.gamesActuallyPlayed})</span>
+                              <span className="text-xs text-red-400 block">⚠️ BANKRUPT</span>
                             )}
                           </td>
                           <td className={`px-4 py-3 text-right font-bold ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
