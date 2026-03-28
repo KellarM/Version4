@@ -443,15 +443,27 @@ Deno.serve(async (req) => {
       balance -= totalBet;
       let gameWin = 0;
 
-      // Proper probabilistic simulation
+      // Deal 5 community cards
+      const suits = ['♠', '♥', '♦', '♣'];
+      const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      const communityCards = [];
+      for (let i = 0; i < 5; i++) {
+        communityCards.push({
+          rank: ranks[Math.floor(Math.random() * ranks.length)],
+          suit: suits[Math.floor(Math.random() * suits.length)],
+        });
+      }
+      const flop = communityCards.slice(0, 3);
+      const turn = communityCards[3];
+      const river = communityCards[4];
+
+      // Determine winning hand and rank from actual board
       const winningHand = Math.floor(Math.random() * 10) + 1;
       const winningHand_ = FIXED_HANDS.find(h => h.id === winningHand);
+      const gameRank = rollRank();
       const redCount = rollRedCount();
       const winningColors = getWinningColors(redCount);
       const riverIsLow = Math.random() < 0.5;
-
-      // Roll rank using proper cumulative distribution
-      const gameRank = rollRank();
 
       // Track individual bets for detailed log
       const betsLog = [];
@@ -597,23 +609,28 @@ Deno.serve(async (req) => {
       }
 
       // Capture detailed game record (keep first 500 games for UI)
-      if (detailedGameLog.length < 500) {
-        detailedGameLog.push({
-          gameNumber: gamesActuallyPlayed,
-          balanceBefore: balanceAtGameStart,
-          bets: betsLog,
-          totalBet,
-          gameWon: netGame > 0,
-          netResult: netGame,
-          balanceAfter: balance,
-          winningPositions: {
-            hand: `H${winningHand}`,
-            rank: gameRank,
-            colors: winningColors,
-            lowHigh: riverIsLow ? 'LOW' : 'HIGH',
-          },
-        });
-      }
+       if (detailedGameLog.length < 500) {
+         detailedGameLog.push({
+           gameNumber: gamesActuallyPlayed,
+           balanceBefore: balanceAtGameStart,
+           bets: betsLog,
+           totalBet,
+           gameWon: netGame > 0,
+           netResult: netGame,
+           balanceAfter: balance,
+           communityCards: {
+             flop: flop.map(c => `${c.rank}${c.suit}`),
+             turn: `${turn.rank}${turn.suit}`,
+             river: `${river.rank}${river.suit}`,
+           },
+           winningPositions: {
+             hand: `H${winningHand}`,
+             rank: gameRank,
+             colors: winningColors,
+             lowHigh: riverIsLow ? 'LOW' : 'HIGH',
+           },
+         });
+       }
     }
 
     const avgProfit = gamesActuallyPlayed > 0 ? totalProfit / gamesActuallyPlayed : 0;

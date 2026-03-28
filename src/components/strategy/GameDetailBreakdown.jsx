@@ -155,6 +155,35 @@ export default function GameDetailBreakdown({ gameLog, onClose }) {
                             </div>
                           </div>
 
+                          {/* Community Cards */}
+                          {game.communityCards && (
+                            <div className="border-t border-slate-600 pt-2 mt-2">
+                              <div className="font-bold text-yellow-400 mb-2">
+                                Community Cards:
+                              </div>
+                              <div className="space-y-2 text-gray-300">
+                                <div>
+                                  <span className="text-gray-400 text-xs">Flop:</span>{' '}
+                                  <span className="font-mono text-sm font-bold">
+                                    {game.communityCards.flop.join(' ')}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400 text-xs">Turn:</span>{' '}
+                                  <span className="font-mono text-sm font-bold">
+                                    {game.communityCards.turn}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400 text-xs">River:</span>{' '}
+                                  <span className="font-mono text-sm font-bold">
+                                    {game.communityCards.river}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Winning positions */}
                           <div className="border-t border-slate-600 pt-2 mt-2">
                             <div className="font-bold text-yellow-400 mb-1">
