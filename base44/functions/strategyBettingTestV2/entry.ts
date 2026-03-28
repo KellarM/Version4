@@ -575,10 +575,6 @@ Deno.serve(async (req) => {
       Object.entries(bets).forEach(([key, val]) => {
         if (typeof val === 'number') totalBet += val;
       });
-      // Add low/high bet if present
-      if (pLowHighBet && pLowHighBet.amount > 0) {
-        totalBet += pLowHighBet.amount;
-      }
 
       if (balance < totalBet) break;
       balance -= totalBet;
@@ -689,30 +685,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Low/High bets
-      if (pLowHighBet && pLowHighBet.amount > 0) {
-        const riverBetAmount = pLowHighBet.amount;
-        const won = winningLowHigh === pLowHighBet.type;
-        if (won) {
-          const payout = riverBetAmount * (1 + LOW_HIGH_PAYOUT);
-          gameWin += payout;
-          betsLog.push({
-            position: `River ${pLowHighBet.type}`,
-            type: 'lowHigh',
-            bet: riverBetAmount,
-            won: true,
-            payout,
-          });
-        } else {
-          betsLog.push({
-            position: `River ${pLowHighBet.type}`,
-            type: 'lowHigh',
-            bet: riverBetAmount,
-            won: false,
-            payout: 0,
-          });
-        }
-      }
+
 
       // River hedge/aggressive (optional payouts - use table bet as reference)
       if (bets.riverHedge && Math.random() < 0.5) {
