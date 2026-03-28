@@ -405,8 +405,7 @@ export default function RapidFireGame() {
         leader.handIds.forEach(wid => {
           const bet = ph[wid] || 0;
           if (bet > 0) {
-            const hand = FIXED_HANDS.find(h => h.id === wid);
-            w += bet + bet * hand.payout;
+            w += bet + bet * 8.50;
           }
         });
       }
