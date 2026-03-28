@@ -474,15 +474,18 @@ export default function RapidFireGame() {
                          Object.values(snapRedBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
                          Object.values(snapRankBets[i] || {}).reduce((s, v) => s + v, 0) +
                          (snapLowHighBets[i]?.amount || 0);
-        
+
         const playerWin = playerWinnings[i] || 0;
         const multiplier = playerBet > 0 ? playerWin / playerBet : 0;
 
-        updated[i] = updated[i] || { totalBets: 0, totalWins: 0, roundsWon: 0, highestMultiplier: 0 };
-        updated[i].totalBets += playerBet;
-        updated[i].totalWins += playerWin;
-        if (playerWin > playerBet) updated[i].roundsWon += 1;
-        if (multiplier > updated[i].highestMultiplier) updated[i].highestMultiplier = multiplier;
+        const prev_i = updated[i] || { totalBets: 0, totalWins: 0, roundsPlayed: 0, roundsWon: 0, highestMultiplier: 0 };
+        updated[i] = {
+          totalBets: prev_i.totalBets + playerBet,
+          totalWins: prev_i.totalWins + playerWin,
+          roundsPlayed: prev_i.roundsPlayed + (playerBet > 0 ? 1 : 0),
+          roundsWon: prev_i.roundsWon + (playerWin > playerBet ? 1 : 0),
+          highestMultiplier: Math.max(prev_i.highestMultiplier, multiplier),
+        };
       }
       return updated;
     });
@@ -533,6 +536,7 @@ export default function RapidFireGame() {
     setRoundsPlayed(0);
     setCasinoProfit(0);
     setHistory([]);
+    setPlayerStats({});
     setRoyalFlushJackpot(10000);
     setStraightFlushJackpot(2000);
     setActivePlayer(0);

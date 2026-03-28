@@ -45,10 +45,10 @@ export default function PlayerStatsPanel({ isOpen, onClose, playerStats, playerC
             {/* Stats Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {Array.from({ length: playerCount }, (_, i) => {
-                const stats = playerStats[i] || { totalBets: 0, totalWins: 0, roundsWon: 0, highestMultiplier: 0 };
+                const stats = playerStats[i] || { totalBets: 0, totalWins: 0, roundsPlayed: 0, roundsWon: 0, highestMultiplier: 0 };
                 const color = PLAYER_CHIP_COLORS[i % PLAYER_CHIP_COLORS.length];
                 const roi = stats.totalBets > 0 ? (((stats.totalWins - stats.totalBets) / stats.totalBets) * 100).toFixed(1) : 0;
-                const winRate = stats.totalBets > 0 ? ((stats.roundsWon / (stats.totalBets > 0 ? Math.ceil(stats.totalBets / 10) : 1)) * 100).toFixed(0) : 0;
+                const winRate = stats.roundsPlayed > 0 ? ((stats.roundsWon / stats.roundsPlayed) * 100).toFixed(0) : 0;
 
                 return (
                   <motion.div
@@ -88,6 +88,10 @@ export default function PlayerStatsPanel({ isOpen, onClose, playerStats, playerC
                       <div className="flex justify-between">
                         <span className="opacity-80">Best Multiplier</span>
                         <span className="font-bold">{stats.highestMultiplier > 0 ? `${stats.highestMultiplier.toFixed(1)}x` : '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="opacity-80">Rounds Played</span>
+                        <span className="font-bold">{stats.roundsPlayed || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="opacity-80">Winning Rounds</span>
