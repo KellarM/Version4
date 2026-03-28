@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       'One Pair': 0.42256,
     };
 
-    const rbPayoutMap = { '3R': 1.22, '3B': 1.22, '4R': 4.75, '4B': 4.75, '5R': 18.60, '5B': 18.60 };
+    const rbPayoutMap = { '3R': 1.26, '3B': 1.26, '4R': 4.9, '4B': 4.9, '5R': 19.2, '5B': 19.2 };
 
     // Player strategy profiles
     const strategyProfiles = [
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
           const type      = Math.random() < 0.5 ? 'LOW' : 'HIGH';
           const bet       = [5, 10, 25][Math.floor(Math.random() * 3)];
           const won       = type === gameLH;
-          const winAmount = won ? bet * 1.75 : 0;
+          const winAmount = won ? bet * 1.83 : 0;
 
           bets.lowHigh = { type, amount: bet, winAmount, won };
           playerBet += bet;

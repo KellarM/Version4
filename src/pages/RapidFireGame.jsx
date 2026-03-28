@@ -383,7 +383,7 @@ export default function RapidFireGame() {
       'Two Pair': 6.90,
       'One Pair': 8.39,
     };
-    const rbPayoutMap = { '3R': 1.22, '3B': 1.22, '4R': 4.75, '4B': 4.75, '5R': 18.60, '5B': 18.60 };
+    const rbPayoutMap = { '3R': 1.26, '3B': 1.26, '4R': 4.9, '4B': 4.9, '5R': 19.2, '5B': 19.2 };
 
     let totalBetsAllPlayers = 0;
     let totalWinningsAllPlayers = 0;
@@ -418,7 +418,7 @@ export default function RapidFireGame() {
       });
 
       // Low/High (calibrated: 0.75:1 payout)
-      if (plh && winLH === plh.type) w += plh.amount * (1 + 0.75);
+      if (plh && winLH === plh.type) w += plh.amount * (1 + 0.83);
 
       // Rank bets (VERSION 2: 93.80% RTP)
       if (handResult) {
