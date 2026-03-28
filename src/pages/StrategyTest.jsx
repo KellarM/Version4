@@ -194,6 +194,45 @@ export default function StrategyTest() {
                                     </div>
                                   </div>
 
+                                  {/* Stats Breakdown */}
+                                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+                                    <div className="rounded-lg bg-slate-700/50 p-3 border border-slate-600">
+                                      <p className="text-xs text-gray-400">4 Low Triggered</p>
+                                      <p className="text-lg font-bold text-blue-400">{result.stats?.fourLowTriggered || 0}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-slate-700/50 p-3 border border-slate-600">
+                                      <p className="text-xs text-gray-400">4 High Triggered</p>
+                                      <p className="text-lg font-bold text-blue-400">{result.stats?.fourHighTriggered || 0}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-slate-700/50 p-3 border border-slate-600">
+                                      <p className="text-xs text-gray-400">River Became 5 Low</p>
+                                      <p className="text-lg font-bold text-red-400">{result.stats?.riverBecameFiveLow || 0}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-slate-700/50 p-3 border border-slate-600">
+                                      <p className="text-xs text-gray-400">River Became 5 High</p>
+                                      <p className="text-lg font-bold text-red-400">{result.stats?.riverBecameFiveHigh || 0}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-slate-700/50 p-3 border border-slate-600">
+                                      <p className="text-xs text-gray-400">River Wins</p>
+                                      <p className="text-lg font-bold text-green-400">{result.stats?.riverWins || 0}</p>
+                                    </div>
+                                  </div>
+
+                                  {/* Winning Hand Breakdown */}
+                                  {result.stats?.winningHandBreakdown && (
+                                    <div className="mt-4 rounded-lg bg-slate-700/50 p-4 border border-slate-600">
+                                      <p className="text-sm font-bold text-gray-300 mb-3">Winning Hands (Our Bets: 2, 5, 6, 7, 8, 9)</p>
+                                      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                                        {Object.entries(result.stats.winningHandBreakdown).map(([handId, count]) => (
+                                          <div key={handId} className="text-center p-2 rounded bg-slate-600/50">
+                                            <p className="text-xs text-gray-400">H{handId}</p>
+                                            <p className="text-lg font-bold text-yellow-400">{count}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
                                   <div className="mt-4 p-3 rounded-lg bg-slate-700/50 border border-slate-600">
                                     <p className="text-xs text-gray-400">
                                       <span className="font-bold">Strategy:</span> {result.strategy}

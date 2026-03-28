@@ -71,6 +71,12 @@ Deno.serve(async (req) => {
     let totalProfit = 0;
     const results = [];
 
+    // Tracking stats
+    let winningHandCounts = {};
+    BETTING_HANDS.forEach(id => { winningHandCounts[id] = 0; });
+    
+    let fourLowCount = 0, fourHighCount = 0, fiveLowCount = 0, fiveHighCount = 0, riverWinCount = 0;
+
     for (let game = 0; game < gamesToSimulate; game++) {
       let balance = STARTING_BALANCE;
 
@@ -94,6 +100,11 @@ Deno.serve(async (req) => {
       const winningHandId = Math.floor(Math.random() * 10) + 1;
       const winningHand = FIXED_HANDS.find(h => h.id === winningHandId);
       
+      // Track if winning hand is one of our bets
+      if (BETTING_HANDS.includes(winningHandId)) {
+        winningHandCounts[winningHandId]++;
+      }
+      
       // Pay out winning hands if they match
       BETTING_HANDS.forEach(handId => {
         if (handId === winningHandId) {
@@ -106,6 +117,7 @@ Deno.serve(async (req) => {
       // Phase 2: LOW/HIGH betting (contrarian strategy)
       const maxAvailable = balance - 0; // Can bet all remaining if needed
       if (lowCount >= 4 && highCount < 4 && maxAvailable > 0) {
+        fourLowCount++;
         // 4+ low showing, bet on HIGH (opposite)
         const lhBet = Math.min(300, maxAvailable); // Reasonable max bet
         balance -= lhBet;
@@ -113,12 +125,16 @@ Deno.serve(async (req) => {
 
         // River card (random)
         const riverIsLow = Math.random() < 0.5;
-        if (!riverIsLow) { // We bet on HIGH, so HIGH wins
+        if (riverIsLow) {
+          fiveLowCount++; // River made it 5 low, player lost max bet
+        } else {
+          riverWinCount++; // River was high, player won
           const payout = lhBet * (1 + LH_PAYOUT);
           balance += payout;
           gameProfit += payout;
         }
       } else if (highCount >= 4 && lowCount < 4 && maxAvailable > 0) {
+        fourHighCount++;
         // 4+ high showing, bet on LOW (opposite)
         const lhBet = Math.min(300, maxAvailable);
         balance -= lhBet;
@@ -126,7 +142,10 @@ Deno.serve(async (req) => {
 
         // River card (random)
         const riverIsLow = Math.random() < 0.5;
-        if (riverIsLow) { // We bet on LOW, so LOW wins
+        if (!riverIsLow) {
+          fiveHighCount++; // River made it 5 high, player lost max bet
+        } else {
+          riverWinCount++; // River was low, player won
           const payout = lhBet * (1 + LH_PAYOUT);
           balance += payout;
           gameProfit += payout;
@@ -147,6 +166,14 @@ Deno.serve(async (req) => {
       finalBalance: (STARTING_BALANCE + totalProfit).toFixed(2),
       roi: roi + '%',
       strategy: 'Bet $50 on hands 2,5,6,7,8,9 + contrarian LOW/HIGH when 4+ cards of one type',
+      stats: {
+        winningHandBreakdown: winningHandCounts,
+        fourLowTriggered: fourLowCount,
+        fourHighTriggered: fourHighCount,
+        riverBecameFiveLow: fiveLowCount,
+        riverBecameFiveHigh: fiveHighCount,
+        riverWins: riverWinCount,
+      },
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
