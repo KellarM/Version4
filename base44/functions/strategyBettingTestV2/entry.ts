@@ -94,6 +94,7 @@ Deno.serve(async (req) => {
           if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 300 ? Math.floor(balance / 6) : 50;
+          if (handBet < 1) return null; // Can't place meaningful bets
           if (balance < handBet * 6) return null;
           
           [2, 5, 6, 7, 8, 9].forEach(id => { bets[`h${id}`] = handBet; });
@@ -107,6 +108,7 @@ Deno.serve(async (req) => {
           if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 200 ? Math.floor(balance / 8) : 25;
+          if (handBet < 1) return null; // Can't place meaningful bets
           const totalBetsNeeded = (4 + 4) * handBet; // 4 hands + 4 colors
           if (balance < totalBetsNeeded) return null; // Signal bankrupt
           
@@ -121,6 +123,7 @@ Deno.serve(async (req) => {
           if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 200 ? Math.floor(balance / 7) : 30;
+          if (handBet < 1) return null; // Can't place meaningful bets
           const totalBetsNeeded = (2 + 5) * handBet; // 2 hands + 5 ranks
           if (balance < totalBetsNeeded) return null;
           
@@ -137,6 +140,7 @@ Deno.serve(async (req) => {
           if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
+          if (handBet < 1) return null; // Can't place meaningful bets
           const totalBetsNeeded = (2 + 1) * handBet; // 2 hands + 1 rank
           if (balance < totalBetsNeeded) return null;
           
@@ -152,6 +156,7 @@ Deno.serve(async (req) => {
           if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
+          if (handBet < 1) return null; // Can't place meaningful bets
           const totalBetsNeeded = (3 + 1) * handBet; // 3 hands + 1 rank
           if (balance < totalBetsNeeded) return null;
           
@@ -167,6 +172,7 @@ Deno.serve(async (req) => {
           if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 200 ? Math.floor(balance / 9) : 20;
+          if (handBet < 1) return null; // Can't place meaningful bets
           const totalBetsNeeded = (2 + 6) * handBet; // 2 hands + 6 colors
           if (balance < totalBetsNeeded) return null;
           
@@ -182,6 +188,7 @@ Deno.serve(async (req) => {
           if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
+          if (handBet < 1) return null; // Can't place meaningful bets
           const totalBetsNeeded = (2 + 3) * handBet; // 2 hands + 3 ranks
           if (balance < totalBetsNeeded) return null;
           
@@ -198,6 +205,7 @@ Deno.serve(async (req) => {
           if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 100 ? Math.floor(balance / 2) : 50;
+          if (handBet < 1) return null; // Can't place meaningful bets
           if (balance < handBet * 2) return null;
           
           bets['h8'] = handBet;
@@ -211,6 +219,7 @@ Deno.serve(async (req) => {
           if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const smallBet = balance < 300 ? Math.floor(balance / 10) : 30;
+          if (smallBet < 1) return null; // Can't place meaningful bets
           const totalBetsNeeded = (3 + 3 + 2) * smallBet; // 3 hands + 3 ranks + 2 colors
           if (balance < totalBetsNeeded) return null;
           
@@ -227,6 +236,7 @@ Deno.serve(async (req) => {
           if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const microBet = balance < 200 ? Math.floor(balance / 12) : 15;
+          if (microBet < 1) return null; // Can't place meaningful bets
           const totalBetsNeeded = (6 + 2 + 2) * microBet; // 6 hands + 2 ranks + 2 colors
           if (balance < totalBetsNeeded) return null;
           
@@ -246,14 +256,14 @@ Deno.serve(async (req) => {
           // Hot streak: increase hand bets, reduce hedges
           if (winRate > 0.55) {
             const bet = Math.floor(balance / 4);
-            if (balance < bet * 4) return null;
+            if (bet < 1 || balance < bet * 4) return null;
             [2, 5, 6, 8].forEach(id => { bets[`h${id}`] = bet; });
             bets.strategy = 'Hot Streak';
           }
           // Cold streak: increase color/rank diversification
           else if (winRate < 0.45) {
             const bet = Math.floor(balance / 8);
-            if (balance < bet * 8) return null;
+            if (bet < 1 || balance < bet * 8) return null;
             [1, 4, 6, 9].forEach(id => { bets[`h${id}`] = bet; });
             ['One Pair', 'Two Pair'].forEach(r => { bets[`r${r}`] = bet; });
             bets.strategy = 'Cold Streak - Diversify';
@@ -261,7 +271,7 @@ Deno.serve(async (req) => {
           // Balanced: mix of hands and colors
           else {
             const bet = Math.floor(balance / 6);
-            if (balance < bet * 6) return null;
+            if (bet < 1 || balance < bet * 6) return null;
             [2, 6, 8].forEach(id => { bets[`h${id}`] = bet; });
             ['3R', '3B'].forEach(c => { bets[`c${c}`] = bet; });
             bets.strategy = 'Balanced';
