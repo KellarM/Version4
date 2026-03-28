@@ -575,6 +575,10 @@ Deno.serve(async (req) => {
       Object.entries(bets).forEach(([key, val]) => {
         if (typeof val === 'number') totalBet += val;
       });
+      // Include river hedge bet amount if specified (default $0 if flag only)
+      if (bets.riverHedge === true) {
+        totalBet += 0; // riverHedge is a flag, not a dollar amount
+      }
 
       if (balance < totalBet) break;
       balance -= totalBet;
@@ -687,7 +691,42 @@ Deno.serve(async (req) => {
 
 
 
-      // River hedge/aggressive (optional payouts - use table bet as reference)
+      // River Low/High bet tracking
+      const riverLowHighBetAmount = (bets.riverLow || bets.riverHigh) ? (bets.riverLow || bets.riverHigh) : 0;
+      if (riverLowHighBetAmount > 0) {
+        const betType = bets.riverLow ? 'LOW' : 'HIGH';
+        const isWinner = winningLowHigh === betType;
+        if (isWinner) {
+          const payout = riverLowHighBetAmount * (1 + 0.83); // LOW_HIGH_PAYOUT
+          gameWin += payout;
+          betsLog.push({
+            position: `River ${betType}($${riverLowHighBetAmount})`,
+            type: 'lowHigh',
+            bet: riverLowHighBetAmount,
+            won: true,
+            payout,
+          });
+        } else {
+          betsLog.push({
+            position: `River ${betType}($${riverLowHighBetAmount})`,
+            type: 'lowHigh',
+            bet: riverLowHighBetAmount,
+            won: false,
+            payout: 0,
+          });
+        }
+      } else {
+        // No bet made on river
+        betsLog.push({
+          position: 'River (No Bet Made)',
+          type: 'lowHigh',
+          bet: 0,
+          won: false,
+          payout: 0,
+        });
+      }
+      
+      // Legacy river hedge/aggressive (optional payouts - use table bet as reference)
       if (bets.riverHedge && Math.random() < 0.5) {
         const riverPayout = Math.floor(totalBet * 0.15);
         gameWin += riverPayout;
