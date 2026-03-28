@@ -380,10 +380,10 @@ export default function RapidFireGame() {
       'Flush': 1.88,
       'Straight': 2.73,
       'Three of a Kind': 1.41,
-      'Two Pair': 6.95,
+      'Two Pair': 6.96,
       'One Pair': 8.46,
     };
-    const rbPayoutMap = { '3R': 0.72, '3B': 0.72, '4R': 2.8, '4B': 2.8, '5R': 10.96, '5B': 10.96 };
+    const rbPayoutMap = { '3R': 1.07, '3B': 1.07, '4R': 4.17, '4B': 4.17, '5R': 16.33, '5B': 16.33 };
 
     let totalBetsAllPlayers = 0;
     let totalWinningsAllPlayers = 0;
@@ -417,8 +417,8 @@ export default function RapidFireGame() {
         if (bet > 0) w += bet + bet * (rbPayoutMap[key] || 1);
       });
 
-      // Low/High (calibrated: 0.50:1 payout)
-      if (plh && winLH === plh.type) w += plh.amount * (1 + 0.50);
+      // Low/High (calibrated: 0.64:1 payout)
+      if (plh && winLH === plh.type) w += plh.amount * (1 + 0.64);
 
       // Rank bets (VERSION 2: 93.80% RTP)
       if (handResult) {
