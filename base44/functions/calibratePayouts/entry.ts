@@ -15,10 +15,10 @@ Deno.serve(async (req) => {
     // ── Precomputed constants ─────────────────────────────────────────────
 
     // Must match lib/gameEngine.js FIXED_HANDS payouts exactly
-    const HAND_PAYOUTS = [8.12, 4.06, 8.12, 6.43, 5.41, 4.06, 5.41, 6.43, 6.43, 8.12];
+    const HAND_PAYOUTS = [11.18, 5.59, 11.18, 8.85, 7.45, 5.59, 7.45, 8.85, 8.85, 11.18];
 
     const RANKS = ['Royal Flush','Straight Flush','Four of a Kind','Full House','Flush','Straight','Three of a Kind','Two Pair','One Pair'];
-    const RANK_PAYOUTS = [null, null, 5.8, 1.5, 2.0, 2.9, 1.5, 7.4, 9.0];
+    const RANK_PAYOUTS = [null, null, 5.41, 1.40, 1.86, 2.71, 1.40, 6.90, 8.39];
     const RANK_FREQ    = [0.000154, 0.00139, 0.00168, 0.02596, 0.00327, 0.04619, 0.02113, 0.04754, 0.42257];
     const RANK_CUM = [];
     let cum = 0;
@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
     // Live game payouts (matching settle() in RapidFireGame)
     const COLOR_KEYS    = ['3R','3B','4R','4B','5R','5B'];
-    const COLOR_PAYOUTS = { '3R': 0.72, '3B': 0.72, '4R': 2.8, '4B': 2.8, '5R': 10.96, '5B': 10.96 };
+    const COLOR_PAYOUTS = { '3R': 1.22, '3B': 1.22, '4R': 4.75, '4B': 4.75, '5R': 18.60, '5B': 18.60 };
 
     function rollRedCount() {
       const r = Math.random();
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
       return winners;
     }
 
-    const LH_PAYOUT = 0.50; // matches settle() in RapidFireGame
+    const LH_PAYOUT = 0.75; // matches settle() in RapidFireGame
 
     // ── Accumulators ──────────────────────────────────────────────────────
     let handBet = 0, handPayout = 0;

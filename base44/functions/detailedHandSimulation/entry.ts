@@ -15,28 +15,28 @@ Deno.serve(async (req) => {
     const SUITS_MAP = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
     // Must exactly match lib/gameEngine.js FIXED_HANDS
     const FIXED_HANDS = [
-      { id: 1,  payout: 10.78, cards: [{ rank: 'A',  suit: 'diamonds' }, { rank: '10', suit: 'hearts'   }] },
-      { id: 2,  payout: 5.39,  cards: [{ rank: 'K',  suit: 'clubs'    }, { rank: 'K',  suit: 'spades'   }] },
-      { id: 3,  payout: 10.78, cards: [{ rank: 'Q',  suit: 'clubs'    }, { rank: 'J',  suit: 'spades'   }] },
-      { id: 4,  payout: 8.53,  cards: [{ rank: 'Q',  suit: 'spades'   }, { rank: '10', suit: 'spades'   }] },
-      { id: 5,  payout: 7.18,  cards: [{ rank: 'J',  suit: 'clubs'    }, { rank: '9',  suit: 'clubs'    }] },
-      { id: 6,  payout: 5.39,  cards: [{ rank: '8',  suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }] },
-      { id: 7,  payout: 7.18,  cards: [{ rank: '7',  suit: 'diamonds' }, { rank: '7',  suit: 'spades'   }] },
-      { id: 8,  payout: 8.53,  cards: [{ rank: '4',  suit: 'hearts'   }, { rank: '2',  suit: 'hearts'   }] },
-      { id: 9,  payout: 8.53,  cards: [{ rank: '3',  suit: 'clubs'    }, { rank: '3',  suit: 'hearts'   }] },
-      { id: 10, payout: 10.78, cards: [{ rank: 'A',  suit: 'hearts'   }, { rank: '5',  suit: 'diamonds' }] },
+      { id: 1,  payout: 11.18, cards: [{ rank: 'A',  suit: 'diamonds' }, { rank: '10', suit: 'hearts'   }] },
+      { id: 2,  payout: 5.59,  cards: [{ rank: 'K',  suit: 'clubs'    }, { rank: 'K',  suit: 'spades'   }] },
+      { id: 3,  payout: 11.18, cards: [{ rank: 'Q',  suit: 'clubs'    }, { rank: 'J',  suit: 'spades'   }] },
+      { id: 4,  payout: 8.85,  cards: [{ rank: 'Q',  suit: 'spades'   }, { rank: '10', suit: 'spades'   }] },
+      { id: 5,  payout: 7.45,  cards: [{ rank: 'J',  suit: 'clubs'    }, { rank: '9',  suit: 'clubs'    }] },
+      { id: 6,  payout: 5.59,  cards: [{ rank: '8',  suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }] },
+      { id: 7,  payout: 7.45,  cards: [{ rank: '7',  suit: 'diamonds' }, { rank: '7',  suit: 'spades'   }] },
+      { id: 8,  payout: 8.85,  cards: [{ rank: '4',  suit: 'hearts'   }, { rank: '2',  suit: 'hearts'   }] },
+      { id: 9,  payout: 8.85,  cards: [{ rank: '3',  suit: 'clubs'    }, { rank: '3',  suit: 'hearts'   }] },
+      { id: 10, payout: 11.18, cards: [{ rank: 'A',  suit: 'hearts'   }, { rank: '5',  suit: 'diamonds' }] },
     ];
 
     const rankPayoutMap = {
       'Royal Flush': null,
       'Straight Flush': null,
-      'Four of a Kind': 5.45,
-      'Full House': 1.41,
-      'Flush': 1.88,
-      'Straight': 2.73,
-      'Three of a Kind': 1.41,
-      'Two Pair': 6.95,
-      'One Pair': 8.46,
+      'Four of a Kind': 5.41,
+      'Full House': 1.40,
+      'Flush': 1.86,
+      'Straight': 2.71,
+      'Three of a Kind': 1.40,
+      'Two Pair': 6.90,
+      'One Pair': 8.39,
     };
 
     const rankFrequencies = {
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       'One Pair': 0.42256,
     };
 
-    const rbPayoutMap = { '3R': 1.07, '3B': 1.07, '4R': 4.17, '4B': 4.17, '5R': 16.33, '5B': 16.33 };
+    const rbPayoutMap = { '3R': 1.22, '3B': 1.22, '4R': 4.75, '4B': 4.75, '5R': 18.60, '5B': 18.60 };
 
     // Player strategy profiles
     const strategyProfiles = [
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
           const type      = Math.random() < 0.5 ? 'LOW' : 'HIGH';
           const bet       = [5, 10, 25][Math.floor(Math.random() * 3)];
           const won       = type === gameLH;
-          const winAmount = won ? bet * 1.64 : 0;
+          const winAmount = won ? bet * 1.75 : 0;
 
           bets.lowHigh = { type, amount: bet, winAmount, won };
           playerBet += bet;
