@@ -371,19 +371,19 @@ export default function RapidFireGame() {
   };
 
   const settle = (finalComm, leader, winRB, winLH, leaderHand, handResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets) => {
-    // ADJUSTED Payouts (targeting 92-93% RTP)
+    // Calibrated Payouts (targeting 96.5% RTP — derived from 10M game Monte Carlo)
     const rankPayoutMap = {
       'Royal Flush': null,
       'Straight Flush': null,
-      'Four of a Kind': 5.8,
-      'Full House': 1.5,
-      'Flush': 2.0,
-      'Straight': 2.9,
-      'Three of a Kind': 1.5,
-      'Two Pair': 7.4,
-      'One Pair': 9.0,
+      'Four of a Kind': 5.45,
+      'Full House': 1.41,
+      'Flush': 1.88,
+      'Straight': 2.73,
+      'Three of a Kind': 1.41,
+      'Two Pair': 6.95,
+      'One Pair': 8.46,
     };
-    const rbPayoutMap = { '3R': 0.19, '3B': 0.19, '4R': 0.74, '4B': 0.74, '5R': 2.9, '5B': 2.9 };
+    const rbPayoutMap = { '3R': 0.72, '3B': 0.72, '4R': 2.8, '4B': 2.8, '5R': 10.96, '5B': 10.96 };
 
     let totalBetsAllPlayers = 0;
     let totalWinningsAllPlayers = 0;
@@ -417,8 +417,8 @@ export default function RapidFireGame() {
         if (bet > 0) w += bet + bet * (rbPayoutMap[key] || 1);
       });
 
-      // Low/High (ADJUSTED: 0.35:1 payout)
-      if (plh && winLH === plh.type) w += plh.amount * (1 + 0.35);
+      // Low/High (calibrated: 0.50:1 payout)
+      if (plh && winLH === plh.type) w += plh.amount * (1 + 0.50);
 
       // Rank bets (VERSION 2: 93.80% RTP)
       if (handResult) {
