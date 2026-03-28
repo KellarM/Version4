@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
            for (const colorKey of chosenColors) {
              const won = winningColors.includes(colorKey);
              const mult = rbPayoutMap[colorKey];
-             const winAmount = won ? bet * mult : 0;
+             const winAmount = won ? bet * (1 + mult) : 0;
              playerBet += bet;
              playerWin += winAmount;
              colorResults.push({ colorKey, amount: bet, winAmount, won });
@@ -205,12 +205,12 @@ Deno.serve(async (req) => {
             const lowWon = gameLH === 'LOW';
             const highWon = gameLH === 'HIGH';
             playerBet += bet * 2;
-            playerWin += (lowWon ? bet * 0.88 : 0) + (highWon ? bet * 0.88 : 0);
-            bets.lowHigh = { type: 'LOW+HIGH', amount: bet * 2, winAmount: bet * 0.88, won: true };
+            playerWin += (lowWon ? bet * 1.88 : 0) + (highWon ? bet * 1.88 : 0);
+            bets.lowHigh = { type: 'LOW+HIGH', amount: bet * 2, winAmount: bet * 1.88, won: true };
           } else {
             const type = Math.random() < 0.5 ? 'LOW' : 'HIGH';
             const won = type === gameLH;
-            const winAmount = won ? bet * 0.88 : 0;
+            const winAmount = won ? bet * 1.88 : 0;
             playerBet += bet;
             playerWin += winAmount;
             bets.lowHigh = { type, amount: bet, winAmount, won };
