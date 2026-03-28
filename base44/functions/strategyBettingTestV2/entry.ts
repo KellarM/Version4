@@ -205,6 +205,126 @@ Deno.serve(async (req) => {
           return { bets, balance };
         },
       },
+      MetaAdaptive: {
+        name: 'Meta Adaptive (AI-driven multi-strategy mixer targeting 95-98% RTP)',
+        execute: (balance, game, previousWins, previousLosses, recentGameHistory = []) => {
+          const bets = {};
+          const totalGames = previousWins + previousLosses;
+          const winRate = totalGames > 0 ? previousWins / totalGames : 0.5;
+          
+          // Calculate volatility: variance in recent results (last 20 games)
+          let volatility = 0;
+          if (recentGameHistory && recentGameHistory.length > 0) {
+            const recent = recentGameHistory.slice(-20);
+            const avgWin = recent.reduce((s, r) => s + (r ? 1 : 0), 0) / recent.length;
+            volatility = recent.reduce((s, r) => s + Math.pow((r ? 1 : 0) - avgWin, 2), 0) / recent.length;
+          }
+          
+          // Momentum: recent wins vs losses (last 10 games)
+          let momentum = 0;
+          if (recentGameHistory && recentGameHistory.length >= 10) {
+            const recent10 = recentGameHistory.slice(-10);
+            momentum = recent10.filter(r => r).length - recent10.filter(r => !r).length;
+          }
+          
+          // Bankroll pressure: how depleted we are
+          const bankrollHealth = balance / 1000; // Original starting balance
+          const underPressure = bankrollHealth < 0.5;
+          
+          // Decision tree: select best base strategy + mixing coefficient
+          let baseStrategy = 'ST1_Original';
+          let mixCoeff = 0.5;
+          let secondaryStrategy = 'BalancedSpread';
+          
+          // Hot hot hot: pure aggressive
+          if (winRate > 0.58 && momentum > 5 && !underPressure) {
+            baseStrategy = 'HighPayoutFocus';
+            mixCoeff = 0.8;
+            secondaryStrategy = 'RiverFocused';
+          }
+          // Hot: mostly aggressive, some hedging
+          else if (winRate > 0.52 && momentum >= 0) {
+            baseStrategy = 'FlushHunter';
+            mixCoeff = 0.6;
+            secondaryStrategy = 'ConservativeHedger';
+          }
+          // Neutral-hot: balanced
+          else if (winRate > 0.48 && volatility < 0.3) {
+            baseStrategy = 'BalancedSpread';
+            mixCoeff = 0.5;
+            secondaryStrategy = 'RankStacker';
+          }
+          // Cold but stable: diversify & hedge
+          else if (winRate < 0.48 && volatility < 0.35) {
+            baseStrategy = 'DiversifiedHedge';
+            mixCoeff = 0.6;
+            secondaryStrategy = 'ConservativeHedger';
+          }
+          // Highly volatile cold streak: aggressive rank focus
+          else if (volatility > 0.35 && winRate < 0.45) {
+            baseStrategy = 'RankStacker';
+            mixCoeff = 0.7;
+            secondaryStrategy = 'ColorBoardSpecialist';
+          }
+          // Bankroll under pressure: conservative everywhere
+          else if (underPressure) {
+            baseStrategy = 'ConservativeHedger';
+            mixCoeff = 0.5;
+            secondaryStrategy = 'DiversifiedHedge';
+          }
+          
+          // Generate mixed bet structure: (baseStrategy * mixCoeff) + (secondaryStrategy * (1 - mixCoeff))
+          const baseBet = Math.floor(balance / 10);
+          if (balance < baseBet * 5) return { bets, balance };
+          
+          // Primary strategy allocation
+          if (baseStrategy === 'ST1_Original') {
+            [2, 5, 6, 7, 8, 9].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff); });
+          } else if (baseStrategy === 'HighPayoutFocus') {
+            [6, 8].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff * 1.5); });
+            ['Three of a Kind', 'Full House'].forEach(r => { bets[`r${r}`] = Math.floor(baseBet * mixCoeff); });
+          } else if (baseStrategy === 'FlushHunter') {
+            [3, 4, 5].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff); });
+            bets['rFlush'] = Math.floor(baseBet * mixCoeff);
+          } else if (baseStrategy === 'RankStacker') {
+            [6, 8].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff); });
+            ['One Pair', 'Two Pair', 'Flush'].forEach(r => { bets[`r${r}`] = Math.floor(baseBet * mixCoeff); });
+          } else if (baseStrategy === 'BalancedSpread') {
+            [2, 6, 8].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff); });
+            ['One Pair', 'Flush'].forEach(r => { bets[`r${r}`] = Math.floor(baseBet * mixCoeff); });
+          } else if (baseStrategy === 'DiversifiedHedge') {
+            [1, 3, 5, 7, 9].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff * 0.6); });
+            ['One Pair', 'Two Pair'].forEach(r => { bets[`r${r}`] = Math.floor(baseBet * mixCoeff * 0.6); });
+          } else if (baseStrategy === 'ConservativeHedger') {
+            [3, 6, 8, 10].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff); });
+            ['3R', '3B'].forEach(c => { bets[`c${c}`] = Math.floor(baseBet * mixCoeff * 0.7); });
+          } else if (baseStrategy === 'ColorBoardSpecialist') {
+            [1, 4].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff); });
+            ['3R', '3B', '4R', '4B'].forEach(c => { bets[`c${c}`] = Math.floor(baseBet * mixCoeff * 0.8); });
+          } else if (baseStrategy === 'RiverFocused') {
+            bets['h8'] = Math.floor(baseBet * mixCoeff * 2);
+            bets['riverAggressive'] = true;
+          }
+          
+          // Secondary strategy allocation (blended)
+          const secondBet = Math.floor(baseBet * (1 - mixCoeff));
+          if (secondaryStrategy === 'ConservativeHedger') {
+            [3, 6].forEach(id => { bets[`h${id}`] = (bets[`h${id}`] || 0) + secondBet; });
+            ['3R', '3B'].forEach(c => { bets[`c${c}`] = (bets[`c${c}`] || 0) + Math.floor(secondBet * 0.7); });
+          } else if (secondaryStrategy === 'RankStacker') {
+            ['One Pair', 'Two Pair'].forEach(r => { bets[`r${r}`] = (bets[`r${r}`] || 0) + secondBet; });
+          } else if (secondaryStrategy === 'ColorBoardSpecialist') {
+            ['3R', '3B'].forEach(c => { bets[`c${c}`] = (bets[`c${c}`] || 0) + Math.floor(secondBet * 0.6); });
+          } else if (secondaryStrategy === 'RiverFocused') {
+            bets['riverHedge'] = true;
+          } else if (secondaryStrategy === 'DiversifiedHedge') {
+            [1, 5, 9].forEach(id => { bets[`h${id}`] = (bets[`h${id}`] || 0) + Math.floor(secondBet * 0.5); });
+          }
+          
+          bets.strategy = `${baseStrategy}(${(mixCoeff * 100).toFixed(0)}%) + ${secondaryStrategy}(${((1-mixCoeff)*100).toFixed(0)}%) [WR:${(winRate*100).toFixed(1)}% Vol:${volatility.toFixed(2)} Mom:${momentum}]`;
+          return { bets, balance };
+        },
+      },
     };
 
     const strategy = strategies[strategyName];
@@ -222,12 +342,13 @@ Deno.serve(async (req) => {
     let winCount = 0, lossCount = 0;
     let maxLossStreak = 0, currentLossStreak = 0;
     let maxWinStreak = 0, currentWinStreak = 0;
+    const recentGameHistory = [];
 
     for (let game = 0; game < gamesToSimulate; game++) {
       if (balance <= 0) break;
       gamesActuallyPlayed++;
 
-      const gameResult = strategy.execute(balance, game, winCount, lossCount);
+      const gameResult = strategy.execute(balance, game, winCount, lossCount, recentGameHistory);
       const { bets } = gameResult;
 
       // Calculate total bet
@@ -267,7 +388,8 @@ Deno.serve(async (req) => {
       }
 
       const netGame = gameWin - totalBet;
-      if (netGame > 0) {
+      const gameWon = netGame > 0;
+      if (gameWon) {
         winCount++;
         currentWinStreak++;
         currentLossStreak = 0;
@@ -278,6 +400,9 @@ Deno.serve(async (req) => {
         currentWinStreak = 0;
         maxLossStreak = Math.max(maxLossStreak, currentLossStreak);
       }
+
+      recentGameHistory.push(gameWon);
+      if (recentGameHistory.length > 100) recentGameHistory.shift();
 
       balance += gameWin;
       totalProfit += netGame;

@@ -16,6 +16,7 @@ const STRATEGIES = [
   { value: 'BalancedSpread', label: 'Balanced Spread' },
   { value: 'DiversifiedHedge', label: 'Diversified Hedge' },
   { value: 'AdaptiveHybrid', label: 'Adaptive Hybrid' },
+  { value: 'MetaAdaptive', label: '🤖 MetaAdaptive (AI-Mixer)' },
 ];
 
 const STRATEGY_DETAILS = {
@@ -139,6 +140,19 @@ const STRATEGY_DETAILS = {
       'Exploits momentum and adjusts to variance automatically',
     ],
     adaptation: 'Fundamental: strategy switches every game based on performance.',
+  },
+  MetaAdaptive: {
+    description: 'AI-driven multi-strategy mixer that dynamically selects & blends all 10 strategies targeting 95–98% RTP',
+    steps: [
+      'Monitors win rate, volatility, momentum, and bankroll health in real-time',
+      'Win rate > 58% & momentum > 5: Aggressive mix (HighPayoutFocus 80% + RiverFocused 20%)',
+      'Win rate 52–58%: Growth mode (FlushHunter 60% + ConservativeHedger 40%)',
+      'Win rate 48–52% & volatility < 0.3: Balanced blend (BalancedSpread 50% + RankStacker 50%)',
+      'Win rate < 48% & volatility high: Defense (RankStacker 70% + ColorBoardSpecialist 30%)',
+      'Bankroll under pressure (< 50%): Conservative (ConservativeHedger 50% + DiversifiedHedge 50%)',
+      'Blends two complementary strategies every round with adaptive mixing coefficient',
+    ],
+    adaptation: 'Transforms every 1-2 games. Exploits ALL 10 strategies simultaneously via weighted mixing & momentum sensing.',
   },
 };
 
@@ -837,7 +851,8 @@ export default function StrategyTest() {
                   <div className="bg-slate-700/30 rounded p-3">
                     <p className="text-xs text-gray-400 mb-1">Risk Level</p>
                     <p className="text-lg font-bold text-white">
-                      {selectedStrategy.includes('Diversif') || selectedStrategy === 'ConservativeHedger' ? '🟢 Low' :
+                      {selectedStrategy === 'MetaAdaptive' ? '⚡ Adaptive' :
+                       selectedStrategy.includes('Diversif') || selectedStrategy === 'ConservativeHedger' ? '🟢 Low' :
                        selectedStrategy.includes('Balanced') ? '🟡 Medium' :
                        selectedStrategy.includes('High') || selectedStrategy === 'RiverFocused' ? '🔴 High' : '🟡 Medium'}
                     </p>
@@ -845,7 +860,8 @@ export default function StrategyTest() {
                   <div className="bg-slate-700/30 rounded p-3">
                     <p className="text-xs text-gray-400 mb-1">Bet Count</p>
                     <p className="text-lg font-bold text-white">
-                      {selectedStrategy === 'RiverFocused' ? '1-2' :
+                      {selectedStrategy === 'MetaAdaptive' ? 'Mixed' :
+                       selectedStrategy === 'RiverFocused' ? '1-2' :
                        selectedStrategy === 'ST1_Original' ? '6+' :
                        selectedStrategy.includes('Diversif') ? '12' : '4-8'}
                     </p>
@@ -853,7 +869,8 @@ export default function StrategyTest() {
                   <div className="bg-slate-700/30 rounded p-3">
                     <p className="text-xs text-gray-400 mb-1">Variance</p>
                     <p className="text-lg font-bold text-white">
-                      {selectedStrategy.includes('Diversif') || selectedStrategy === 'ConservativeHedger' ? 'Low' :
+                      {selectedStrategy === 'MetaAdaptive' ? 'Auto-Optimized' :
+                       selectedStrategy.includes('Diversif') || selectedStrategy === 'ConservativeHedger' ? 'Low' :
                        selectedStrategy === 'BalancedSpread' || selectedStrategy === 'Adaptive' ? 'Medium' : 'High'}
                     </p>
                   </div>
