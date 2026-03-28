@@ -10,17 +10,18 @@ Deno.serve(async (req) => {
     const gamesToSimulate = body.gamesToSimulate || 100;
     const strategyName = body.strategyName || 'BalancedSpread';
 
+    const SUITS = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
     const FIXED_HANDS = [
-      { id: 1,  payout: 8.10 },
-      { id: 2,  payout: 6.75 },
-      { id: 3,  payout: 8.52 },
-      { id: 4,  payout: 7.90 },
-      { id: 5,  payout: 8.31 },
-      { id: 6,  payout: 10.18 },
-      { id: 7,  payout: 7.48 },
-      { id: 8,  payout: 11.95 },
-      { id: 9,  payout: 7.27 },
-      { id: 10, payout: 9.77 },
+      { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: 8.10 },
+      { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: 6.75 },
+      { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },    { rank: 'J',  suit: 'spades' }],   payout: 8.52 },
+      { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },   { rank: '10', suit: 'spades' }],   payout: 7.90 },
+      { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },    { rank: '9',  suit: 'clubs'  }],   payout: 8.31 },
+      { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }], payout: 10.18 },
+      { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7',  suit: 'spades' }],   payout: 7.48 },
+      { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: 11.95 },
+      { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: 7.27 },
+      { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: 9.77 },
     ];
 
     const STARTING_BALANCE = 1000;
@@ -472,8 +473,9 @@ Deno.serve(async (req) => {
       if (bets[`h${winningHand}`]) {
         const payout = bets[`h${winningHand}`] * (1 + winningHand_.payout);
         gameWin += payout;
+        const cardDisplay = `${winningHand_.cards[0].rank}${SUITS[winningHand_.cards[0].suit]} / ${winningHand_.cards[1].rank}${SUITS[winningHand_.cards[1].suit]}`;
         betsLog.push({
-          position: `Hand ${winningHand}`,
+          position: `Hand ${winningHand} ${cardDisplay}`,
           type: 'hand',
           bet: bets[`h${winningHand}`],
           won: true,
@@ -483,8 +485,11 @@ Deno.serve(async (req) => {
       // Log losing hand bets
       for (const [key, amount] of Object.entries(bets)) {
         if (key.startsWith('h') && key !== `h${winningHand}` && amount > 0) {
+          const handId = parseInt(key.slice(1));
+          const hand = FIXED_HANDS.find(h => h.id === handId);
+          const cardDisplay = hand ? `${hand.cards[0].rank}${SUITS[hand.cards[0].suit]} / ${hand.cards[1].rank}${SUITS[hand.cards[1].suit]}` : '';
           betsLog.push({
-            position: `Hand ${key.slice(1)}`,
+            position: `Hand ${handId} ${cardDisplay}`,
             type: 'hand',
             bet: amount,
             won: false,
@@ -624,7 +629,7 @@ Deno.serve(async (req) => {
              river: `${river.rank}${river.suit}`,
            },
            winningPositions: {
-             hand: `H${winningHand}`,
+             hand: `H${winningHand} ${winningHand_.cards[0].rank}${SUITS[winningHand_.cards[0].suit]} / ${winningHand_.cards[1].rank}${SUITS[winningHand_.cards[1].suit]}`,
              rank: gameRank,
              colors: winningColors,
              lowHigh: riverIsLow ? 'LOW' : 'HIGH',
