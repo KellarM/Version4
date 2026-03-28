@@ -759,17 +759,52 @@ export default function StrategyTest() {
                                       </div>
                                     </div>
                                   )}
-                                </div>
-                              </motion.div>
-                            </td>
-                          </tr>
-                        )}
-                      </>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+
+                                  {/* Strategy-specific breakdown */}
+                                  {result.stats && (
+                                    <div className="mt-4 rounded-lg bg-slate-700/50 p-4 border border-slate-600">
+                                      <p className="text-sm font-bold text-gray-300 mb-3">Strategy Performance</p>
+                                      <div className="space-y-2 text-sm">
+                                        {result.stats.winCount !== undefined && (
+                                          <>
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-400">Wins</span>
+                                              <span className="font-bold text-green-400">{result.stats.winCount}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-400">Losses</span>
+                                              <span className="font-bold text-red-400">{result.stats.lossCount}</span>
+                                            </div>
+                                          </>
+                                        )}
+                                        {result.stats.maxProfit !== undefined && (
+                                          <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
+                                            <span className="text-gray-400">Max Profit Peak</span>
+                                            <span className="font-bold text-yellow-400">${parseFloat(result.stats.maxProfit).toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {result.strategy && (
+                                    <div className="mt-4 p-3 rounded-lg bg-slate-700/50 border border-slate-600">
+                                      <p className="text-xs text-gray-400">
+                                        <span className="font-bold">Strategy Mix:</span> {result.strategy}
+                                      </p>
+                                    </div>
+                                  )}
+                                  </div>
+                                  </motion.div>
+                                  </td>
+                                  </tr>
+                                  )}
+                                  </>
+                                  );
+                                  })}
+                                  </tbody>
+                                  </table>
+                                  </div>
 
             {/* ST2 Summary */}
             {resultsV2.length > 0 && (
