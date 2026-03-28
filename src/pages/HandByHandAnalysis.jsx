@@ -85,14 +85,14 @@ export default function HandByHandAnalysis() {
         {/* Controls */}
         <div className="mb-8 flex gap-3 flex-wrap">
           <div className="flex gap-3 flex-wrap">
-            {[10, 25, 50, 75, 100, 1000, 5000].map(count => (
+            {[10, 25, 50, 75, 100, 1000, 5000, 1000000, 2000000].map(count => (
               <button
                 key={count}
                 onClick={() => runSimulation(count, false)}
                 disabled={loading}
                 className="px-6 py-3 rounded-lg font-semibold transition-all bg-slate-700 hover:bg-slate-600 text-gray-300 disabled:bg-gray-700"
               >
-                {loading ? 'Simulating...' : `${count} Games`}
+                {loading ? 'Simulating...' : `${count >= 1000000 ? (count / 1000000) + 'M' : count} Games`}
               </button>
             ))}
           </div>
@@ -114,7 +114,7 @@ export default function HandByHandAnalysis() {
                     animate={{ opacity: 1, y: 0 }}
                     className="absolute top-full mt-2 right-0 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-10"
                   >
-                    {[10, 25, 50, 75, 100, 1000, 5000].map(count => (
+                    {[10, 25, 50, 75, 100, 1000, 5000, 1000000, 2000000].map(count => (
                       <button
                         key={count}
                         onClick={() => {
@@ -124,7 +124,7 @@ export default function HandByHandAnalysis() {
                         disabled={loading}
                         className="block w-full px-6 py-2 text-left text-gray-300 hover:bg-slate-700 text-sm first:rounded-t-lg last:rounded-b-lg"
                       >
-                        {count} Games
+                        {count >= 1000000 ? (count / 1000000) + 'M' : count} Games
                       </button>
                     ))}
                   </motion.div>
