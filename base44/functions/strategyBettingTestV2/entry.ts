@@ -118,7 +118,8 @@ Deno.serve(async (req) => {
         execute: (balance) => {
           const bets = {};
           const handBet = balance < 200 ? Math.floor(balance / 7) : 30;
-          if (balance < handBet * 7) return { bets, balance };
+          const totalBetsNeeded = (2 + 5) * handBet; // 2 hands + 5 ranks
+          if (balance < totalBetsNeeded) return null;
           
           [6, 8].forEach(id => { bets[`h${id}`] = handBet; });
           ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Full House'].forEach(r => {
@@ -132,9 +133,9 @@ Deno.serve(async (req) => {
         execute: (balance) => {
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
-          if (balance < handBet * 5) return { bets, balance };
+          const totalBetsNeeded = (2 + 1) * handBet; // 2 hands + 1 rank
+          if (balance < totalBetsNeeded) return null;
           
-          // Hands with flush potential: 6(8♦6♦), 3(Q♣J♠—no), 8(4♥2♥)
           [6, 8].forEach(id => { bets[`h${id}`] = handBet; });
           bets['rFlush'] = handBet;
           bets['riverHedge'] = true;
@@ -146,9 +147,9 @@ Deno.serve(async (req) => {
         execute: (balance) => {
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
-          if (balance < handBet * 5) return { bets, balance };
+          const totalBetsNeeded = (3 + 1) * handBet; // 3 hands + 1 rank
+          if (balance < totalBetsNeeded) return null;
           
-          // Hands with potential for straights: 1(AK), 5(J9), 10(A5)
           [1, 5, 10].forEach(id => { bets[`h${id}`] = handBet; });
           bets['rStraight'] = handBet;
           bets['riverHedge'] = true;
@@ -160,7 +161,8 @@ Deno.serve(async (req) => {
         execute: (balance) => {
           const bets = {};
           const handBet = balance < 200 ? Math.floor(balance / 9) : 20;
-          if (balance < handBet * 9) return { bets, balance };
+          const totalBetsNeeded = (2 + 6) * handBet; // 2 hands + 6 colors
+          if (balance < totalBetsNeeded) return null;
           
           [1, 4].forEach(id => { bets[`h${id}`] = handBet; });
           ['3R', '3B', '4R', '4B', '5R', '5B'].forEach(c => { bets[`c${c}`] = handBet; });
@@ -173,7 +175,8 @@ Deno.serve(async (req) => {
         execute: (balance) => {
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
-          if (balance < handBet * 5) return { bets, balance };
+          const totalBetsNeeded = (2 + 3) * handBet; // 2 hands + 3 ranks
+          if (balance < totalBetsNeeded) return null;
           
           [6, 8].forEach(id => { bets[`h${id}`] = handBet; });
           ['Three of a Kind', 'Full House', 'Four of a Kind'].forEach(r => {
@@ -199,7 +202,8 @@ Deno.serve(async (req) => {
         execute: (balance) => {
           const bets = {};
           const smallBet = balance < 300 ? Math.floor(balance / 10) : 30;
-          if (balance < smallBet * 10) return { bets, balance };
+          const totalBetsNeeded = (3 + 3 + 2) * smallBet; // 3 hands + 3 ranks + 2 colors
+          if (balance < totalBetsNeeded) return null;
           
           [2, 6, 8].forEach(id => { bets[`h${id}`] = smallBet; });
           ['One Pair', 'Flush', 'Straight'].forEach(r => { bets[`r${r}`] = smallBet; });
@@ -213,7 +217,8 @@ Deno.serve(async (req) => {
         execute: (balance) => {
           const bets = {};
           const microBet = balance < 200 ? Math.floor(balance / 12) : 15;
-          if (balance < microBet * 12) return { bets, balance };
+          const totalBetsNeeded = (6 + 2 + 2) * microBet; // 6 hands + 2 ranks + 2 colors
+          if (balance < totalBetsNeeded) return null;
           
           [1, 3, 5, 7, 9, 10].forEach(id => { bets[`h${id}`] = microBet; });
           ['One Pair', 'Two Pair'].forEach(r => { bets[`r${r}`] = microBet; });
@@ -230,14 +235,14 @@ Deno.serve(async (req) => {
           // Hot streak: increase hand bets, reduce hedges
           if (winRate > 0.55) {
             const bet = Math.floor(balance / 4);
-            if (balance < bet * 4) return { bets, balance };
+            if (balance < bet * 4) return null;
             [2, 5, 6, 8].forEach(id => { bets[`h${id}`] = bet; });
             bets.strategy = 'Hot Streak';
           }
           // Cold streak: increase color/rank diversification
           else if (winRate < 0.45) {
             const bet = Math.floor(balance / 8);
-            if (balance < bet * 8) return { bets, balance };
+            if (balance < bet * 8) return null;
             [1, 4, 6, 9].forEach(id => { bets[`h${id}`] = bet; });
             ['One Pair', 'Two Pair'].forEach(r => { bets[`r${r}`] = bet; });
             bets.strategy = 'Cold Streak - Diversify';
@@ -245,7 +250,7 @@ Deno.serve(async (req) => {
           // Balanced: mix of hands and colors
           else {
             const bet = Math.floor(balance / 6);
-            if (balance < bet * 6) return { bets, balance };
+            if (balance < bet * 6) return null;
             [2, 6, 8].forEach(id => { bets[`h${id}`] = bet; });
             ['3R', '3B'].forEach(c => { bets[`c${c}`] = bet; });
             bets.strategy = 'Balanced';
@@ -323,7 +328,7 @@ Deno.serve(async (req) => {
           
           // Generate mixed bet structure: (baseStrategy * mixCoeff) + (secondaryStrategy * (1 - mixCoeff))
           const baseBet = Math.floor(balance / 10);
-          if (balance < baseBet * 5) return { bets, balance };
+          if (balance < baseBet * 5) return null;
           
           // Primary strategy allocation
           if (baseStrategy === 'ST1_Original') {
