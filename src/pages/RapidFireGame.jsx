@@ -705,20 +705,6 @@ export default function RapidFireGame() {
             📊 Stats
           </button>
           <Link
-            to="/simulation"
-            className="ml-2 px-2 py-1 rounded-lg border border-blue-700/60 bg-blue-900/30 text-blue-300 text-xs font-bold hover:bg-blue-800/50 transition-all"
-            title="Open simulation mode"
-          >
-            🔬 Simulate
-          </Link>
-          <Link
-            to="/detailed-simulation"
-            className="ml-1 px-2 py-1 rounded-lg border border-purple-700/60 bg-purple-900/30 text-purple-300 text-xs font-bold hover:bg-purple-800/50 transition-all"
-            title="Detailed category analysis"
-          >
-            📊 Analysis
-          </Link>
-          <Link
             to="/analysis"
             className="ml-1 px-2 py-1 rounded-lg border border-green-700/60 bg-green-900/30 text-green-300 text-xs font-bold hover:bg-green-800/50 transition-all"
             title="Hand-by-hand breakdown"
