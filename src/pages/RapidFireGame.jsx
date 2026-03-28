@@ -6,6 +6,7 @@ import {
   resolveRedBlack, resolveLowHigh, cardColor, isLowCard,
   SUITS, cardDisplay
 } from '@/lib/gameEngine';
+import { HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } from '@/lib/payoutConstants';
 import FixedHandCard from '@/components/game/FixedHandCard';
 import CommunityCards from '@/components/game/CommunityCards';
 import SideBets from '@/components/game/SideBets';
@@ -371,8 +372,7 @@ export default function RapidFireGame() {
   };
 
   const settle = (finalComm, leader, winRB, winLH, leaderHand, handResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets) => {
-    // Import centralized payouts for consistency
-    const { HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } = require('@/lib/payoutConstants');
+    // Use centralized payouts (imported at top of file)
 
     let totalBetsAllPlayers = 0;
     let totalWinningsAllPlayers = 0;
