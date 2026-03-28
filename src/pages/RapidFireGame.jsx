@@ -371,19 +371,8 @@ export default function RapidFireGame() {
   };
 
   const settle = (finalComm, leader, winRB, winLH, leaderHand, handResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets) => {
-    // Calibrated Payouts (targeting 96.5% RTP — derived with realistic multi-bet hedging player model)
-    const rankPayoutMap = {
-      'Royal Flush': null,
-      'Straight Flush': null,
-      'Four of a Kind': 3.79,
-      'Full House': 0.98,
-      'Flush': 1.30,
-      'Straight': 1.90,
-      'Three of a Kind': 0.98,
-      'Two Pair': 4.83,
-      'One Pair': 5.87,
-    };
-    const rbPayoutMap = { '3R': 0.78, '3B': 0.78, '4R': 5.04, '4B': 5.04, '5R': 19.74, '5B': 19.74 };
+    // Import centralized payouts for consistency
+    const { HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } = require('@/lib/payoutConstants');
 
     let totalBetsAllPlayers = 0;
     let totalWinningsAllPlayers = 0;
@@ -406,7 +395,7 @@ export default function RapidFireGame() {
           const bet = ph[wid] || 0;
           if (bet > 0) {
             const hand = FIXED_HANDS.find(h => h.id === wid);
-            w += bet + bet * hand.payout;
+            w += calculatePayout(bet, hand.payout);
           }
         });
       }
@@ -414,18 +403,21 @@ export default function RapidFireGame() {
       // Red/Black
       winRB.forEach(key => {
         const bet = prb[key] || 0;
-        if (bet > 0) w += bet + bet * (rbPayoutMap[key] || 1);
+        if (bet > 0) {
+          const ratio = COLOR_BOARD_PAYOUTS[key];
+          w += calculatePayout(bet, ratio);
+        }
       });
 
-      // Low/High (calibrated: 0.88:1 payout)
-      if (plh && winLH === plh.type) w += plh.amount * (1 + 0.88);
+      // Low/High
+      if (plh && winLH === plh.type) w += calculatePayout(plh.amount, LOW_HIGH_PAYOUT);
 
-      // Rank bets (VERSION 2: 93.80% RTP)
+      // Rank bets
       if (handResult) {
         const rankBetAmt = prk[handResult.name] || 0;
         if (rankBetAmt > 0) {
-          const multiplier = rankPayoutMap[handResult.name];
-          if (multiplier !== null && multiplier !== undefined) w += rankBetAmt + rankBetAmt * multiplier;
+          const ratio = HAND_RANK_PAYOUTS[handResult.name];
+          if (ratio !== null && ratio !== undefined) w += calculatePayout(rankBetAmt, ratio);
         }
         // Jackpots — require minimum qualifying bet
         if (handResult.name === 'Royal Flush') {

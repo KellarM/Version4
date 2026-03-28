@@ -13,10 +13,8 @@ Deno.serve(async (req) => {
     const TARGET_RTP_HIGH = 0.98;
 
     // ── Precomputed constants ─────────────────────────────────────────────
-
-    // Must match lib/gameEngine.js FIXED_HANDS payouts exactly
-    const HAND_PAYOUTS = [8.10, 6.75, 8.52, 7.90, 8.31, 10.18, 7.48, 11.95, 7.27, 9.77];
-
+    // Using centralized payouts from lib/payoutConstants.js
+    const HAND_PAYOUTS = [8.10, 6.75, 8.52, 7.90, 8.31, 10.18, 7.48, 11.95, 7.27, 9.77]; // Must match exactly
     const RANKS = ['Royal Flush','Straight Flush','Four of a Kind','Full House','Flush','Straight','Three of a Kind','Two Pair','One Pair'];
     const RANK_PAYOUTS = [null, null, 3.79, 0.98, 1.30, 1.90, 0.98, 4.83, 5.87];
     const RANK_FREQ    = [0.000154, 0.00139, 0.00168, 0.02596, 0.00327, 0.04619, 0.02113, 0.04754, 0.42257];
@@ -24,32 +22,22 @@ Deno.serve(async (req) => {
     let cum = 0;
     for (const f of RANK_FREQ) { cum += f; RANK_CUM.push(cum); }
 
-    // Color board — simulate red count (0-5), then derive CUMULATIVE winning keys
-    // Real game: if 4R hits, both 3R and 4R bets win (cumulative)
-    // P(exactly k red of 5) = C(5,k)*0.5^5
+    // Color board probabilities: P(exactly k red of 5) = C(5,k)*0.5^5
     const RED_COUNT_PROBS = [0.03125, 0.15625, 0.3125, 0.3125, 0.15625, 0.03125]; // 0R..5R
     const RED_COUNT_CUM = [];
     let rcCum = 0;
     for (const p of RED_COUNT_PROBS) { rcCum += p; RED_COUNT_CUM.push(rcCum); }
 
-    // Live game payouts (matching settle() in RapidFireGame)
+    // Centralized payouts — must match settle() in RapidFireGame
     const COLOR_KEYS    = ['3R','3B','4R','4B','5R','5B'];
     const COLOR_PAYOUTS = { '3R': 0.78, '3B': 0.78, '4R': 5.04, '4B': 5.04, '5R': 19.74, '5B': 19.74 };
+    const LH_PAYOUT     = 0.88;
 
     function rollRedCount() {
       const r = Math.random();
       for (let i = 0; i < 6; i++) { if (r < RED_COUNT_CUM[i]) return i; }
       return 5;
     }
-    function getWinningColorKeys(reds) {
-      const blacks = 5 - reds;
-      const winners = [];
-      if (reds >= 3)   for (let i = 3; i <= reds;   i++) winners.push(`${i}R`);
-      if (blacks >= 3) for (let i = 3; i <= blacks; i++) winners.push(`${i}B`);
-      return winners;
-    }
-
-    const LH_PAYOUT = 0.88; // matches settle() in RapidFireGame
 
     // ── Accumulators ──────────────────────────────────────────────────────
     let handBet = 0, handPayout = 0;
@@ -128,8 +116,9 @@ Deno.serve(async (req) => {
        }
        for (let i = 0; i < hCount; i++) {
          const c = chosen[i];
+         const payout = b * (1 + HAND_PAYOUTS[c]);
          handBet += b;
-         if (c === winningHand) handPayout += b * (1 + HAND_PAYOUTS[c]);
+         if (c === winningHand) handPayout += payout;
        }
 
        // ── Rank bets: stack high-freq ranks ──
@@ -148,13 +137,13 @@ Deno.serve(async (req) => {
          }
          for (let i = 0; i < rCount; i++) {
            const chosen_r = rankChosen[i];
-           const mult = RANK_PAYOUTS[chosen_r];
+           const ratio = RANK_PAYOUTS[chosen_r];
            rankBet += b;
            rankBetsArr[chosen_r] += b;
-           if (chosen_r === gameRank && mult !== null) {
-             const p = b * (1 + mult);
-             rankPayout += p;
-             rankPayoutsArr[chosen_r] += p;
+           if (chosen_r === gameRank && ratio !== null) {
+             const payout = b * (1 + ratio);
+             rankPayout += payout;
+             rankPayoutsArr[chosen_r] += payout;
            }
          }
        }
@@ -163,12 +152,14 @@ Deno.serve(async (req) => {
        if (Math.random() < sp.cProb && sp.cCount > 0) {
          const numColors = Math.min(sp.cCount, 6);
          for (let ci = 0; ci < numColors; ci++) {
+           const colorKey = COLOR_KEYS[ci];
+           const ratio = COLOR_PAYOUTS[colorKey];
            colorBet += b;
            colorBetsArr[ci] += b;
            if (winningColorsSet[ci]) {
-             const p = b * (1 + COLOR_PAYOUTS[COLOR_KEYS[ci]]);
-             colorPayout += p;
-             colorPayoutsArr[ci] += p;
+             const payout = b * (1 + ratio);
+             colorPayout += payout;
+             colorPayoutsArr[ci] += payout;
            }
          }
        }

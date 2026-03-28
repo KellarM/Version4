@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
            const handResults = chosenIds.map(handId => {
              const hand = FIXED_HANDS.find(h => h.id === handId);
              const won = handId === winningHandId;
-             const winAmount = won ? bet * (1 + hand.payout) : 0;
+             const winAmount = won ? bet * (1 + hand.payout) : 0;  // Correct formula: bet + (bet * ratio)
              const cards = hand.cards.map(c => `${c.rank}${SUITS_MAP[c.suit]}`).join('/');
              playerBet += bet;
              playerWin += winAmount;
@@ -187,8 +187,8 @@ Deno.serve(async (req) => {
            const colorResults = [];
            for (const colorKey of chosenColors) {
              const won = winningColors.includes(colorKey);
-             const mult = rbPayoutMap[colorKey];
-             const winAmount = won ? bet * (1 + mult) : 0;
+             const ratio = rbPayoutMap[colorKey];
+             const winAmount = won ? bet * (1 + ratio) : 0;  // Correct formula: bet + (bet * ratio)
              playerBet += bet;
              playerWin += winAmount;
              colorResults.push({ colorKey, amount: bet, winAmount, won });
