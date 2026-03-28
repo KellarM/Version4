@@ -99,7 +99,12 @@ export default function StrategyTest() {
                           className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer ${expandedIdx === idx ? 'bg-slate-700/50' : ''}`}
                           onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
                         >
-                          <td className="px-4 py-3 font-bold">{result.gameCount.toLocaleString()}</td>
+                          <td className="px-4 py-3 font-bold">
+                            {result.gameCount.toLocaleString()}
+                            {result.stoppedEarly && (
+                              <span className="text-xs text-red-400 block">(stopped at {result.gamesActuallyPlayed})</span>
+                            )}
+                          </td>
                           <td className={`px-4 py-3 text-right font-bold ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
                             {playerWon ? '+' : ''}{profit.toFixed(2)}
                           </td>
@@ -127,7 +132,10 @@ export default function StrategyTest() {
                               >
                                 <div className="space-y-4">
                                   <div>
-                                    <h3 className="text-lg font-bold mb-3">Game #{idx + 1} Summary ({result.gameCount.toLocaleString()} games)</h3>
+                                    <h3 className="text-lg font-bold mb-3">Game #{idx + 1} Summary ({result.gamesActuallyPlayed.toLocaleString()} of {result.gameCount.toLocaleString()} games played)</h3>
+                                    {result.stoppedEarly && (
+                                      <p className="text-sm text-red-400 mb-2">⚠ Simulation stopped early: Bankroll depleted at game {result.gamesActuallyPlayed}</p>
+                                    )}
                                   </div>
 
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -187,7 +195,11 @@ export default function StrategyTest() {
                                           </span>
                                         </div>
                                         <div className="flex justify-between">
-                                          <span className="text-gray-300">Total Games</span>
+                                          <span className="text-gray-300">Games Actually Played</span>
+                                          <span className="font-bold text-white">{result.gamesActuallyPlayed.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Requested Games</span>
                                           <span className="font-bold text-white">{result.gameCount.toLocaleString()}</span>
                                         </div>
                                       </div>
