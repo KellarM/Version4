@@ -86,32 +86,125 @@ export default function StrategyTest() {
                   {results.map((result, idx) => {
                     const profit = parseFloat(result.totalProfit);
                     const roi = parseFloat(result.roi);
-                    const isPositive = profit >= 0;
+                    const playerWon = profit > 0;
+                    const casinoWon = profit < 0;
 
                     return (
-                      <motion.tr
-                        key={idx}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer"
-                        onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
-                      >
-                        <td className="px-4 py-3 font-bold">{result.gameCount.toLocaleString()}</td>
-                        <td className={`px-4 py-3 text-right font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                          {isPositive ? '+' : ''}{profit.toFixed(2)}
-                        </td>
-                        <td className={`px-4 py-3 text-right ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                          {isPositive ? '+' : ''}{parseFloat(result.avgProfitPerGame).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-right">${parseFloat(result.finalBalance).toFixed(2)}</td>
-                        <td className={`px-4 py-3 text-right font-bold ${roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {roi >= 0 ? '+' : ''}{roi}%
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {expandedIdx === idx ? <ChevronUp className="w-4 h-4 mx-auto" /> : <ChevronDown className="w-4 h-4 mx-auto" />}
-                        </td>
-                      </motion.tr>
+                      <>
+                        <motion.tr
+                          key={idx}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className={`border-b border-slate-700 hover:bg-slate-700/30 cursor-pointer ${expandedIdx === idx ? 'bg-slate-700/50' : ''}`}
+                          onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
+                        >
+                          <td className="px-4 py-3 font-bold">{result.gameCount.toLocaleString()}</td>
+                          <td className={`px-4 py-3 text-right font-bold ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                            {playerWon ? '+' : ''}{profit.toFixed(2)}
+                          </td>
+                          <td className={`px-4 py-3 text-right ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                            {playerWon ? '+' : ''}{parseFloat(result.avgProfitPerGame).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-right">${parseFloat(result.finalBalance).toFixed(2)}</td>
+                          <td className={`px-4 py-3 text-right font-bold ${roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {roi >= 0 ? '+' : ''}{roi}%
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {expandedIdx === idx ? <ChevronUp className="w-4 h-4 mx-auto" /> : <ChevronDown className="w-4 h-4 mx-auto" />}
+                          </td>
+                        </motion.tr>
+
+                        {/* Expanded Details */}
+                        {expandedIdx === idx && (
+                          <tr>
+                            <td colSpan="6" className="p-0">
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="bg-slate-900/80 border-t border-slate-700 p-6"
+                              >
+                                <div className="space-y-4">
+                                  <div>
+                                    <h3 className="text-lg font-bold mb-3">Game #{idx + 1} Summary ({result.gameCount.toLocaleString()} games)</h3>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Player Stats */}
+                                    <div className={`rounded-lg border-2 p-4 ${playerWon ? 'border-green-600 bg-green-900/20' : 'border-red-600 bg-red-900/20'}`}>
+                                      <div className="flex items-center justify-between mb-3">
+                                        <h4 className={`text-lg font-bold ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                                          {playerWon ? '🎉 PLAYER WINS' : '❌ PLAYER LOSES'}
+                                        </h4>
+                                      </div>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Starting Balance</span>
+                                          <span className="font-bold text-white">$1,000.00</span>
+                                        </div>
+                                        <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
+                                          <span className="text-gray-300">Total Profit/Loss</span>
+                                          <span className={`font-bold text-lg ${playerWon ? 'text-green-400' : 'text-red-400'}`}>
+                                            {playerWon ? '+' : ''}{profit.toFixed(2)}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Final Balance</span>
+                                          <span className="font-bold text-white">${parseFloat(result.finalBalance).toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">ROI</span>
+                                          <span className={`font-bold text-lg ${roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                            {roi >= 0 ? '+' : ''}{roi}%
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Casino Stats */}
+                                    <div className={`rounded-lg border-2 p-4 ${casinoWon ? 'border-green-600 bg-green-900/20' : 'border-red-600 bg-red-900/20'}`}>
+                                      <div className="flex items-center justify-between mb-3">
+                                        <h4 className={`text-lg font-bold ${casinoWon ? 'text-green-400' : 'text-red-400'}`}>
+                                          {casinoWon ? '🏆 CASINO WINS' : '📉 CASINO LOSES'}
+                                        </h4>
+                                      </div>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">House Edge</span>
+                                          <span className="font-bold text-white">{(100 - roi).toFixed(1)}%</span>
+                                        </div>
+                                        <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
+                                          <span className="text-gray-300">Casino Profit/Loss</span>
+                                          <span className={`font-bold text-lg ${casinoWon ? 'text-green-400' : 'text-red-400'}`}>
+                                            {casinoWon ? '+' : ''}{(-profit).toFixed(2)}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Avg Per Game</span>
+                                          <span className={`font-bold ${casinoWon ? 'text-green-400' : 'text-red-400'}`}>
+                                            {casinoWon ? '+' : ''}{(-parseFloat(result.avgProfitPerGame)).toFixed(2)}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">Total Games</span>
+                                          <span className="font-bold text-white">{result.gameCount.toLocaleString()}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-4 p-3 rounded-lg bg-slate-700/50 border border-slate-600">
+                                    <p className="text-xs text-gray-400">
+                                      <span className="font-bold">Strategy:</span> {result.strategy}
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
                     );
                   })}
                 </tbody>
