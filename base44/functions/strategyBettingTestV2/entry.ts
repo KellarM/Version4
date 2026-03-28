@@ -105,7 +105,8 @@ Deno.serve(async (req) => {
         execute: (balance) => {
           const bets = {};
           const handBet = balance < 200 ? Math.floor(balance / 8) : 25;
-          if (balance < handBet * 8) return { bets, balance };
+          const totalBetsNeeded = (4 + 4) * handBet; // 4 hands + 4 colors
+          if (balance < totalBetsNeeded) return null; // Signal bankrupt
           
           [3, 6, 8, 10].forEach(id => { bets[`h${id}`] = handBet; });
           ['3R', '3B', '4R', '4B'].forEach(k => { bets[`c${k}`] = handBet; });
@@ -398,6 +399,7 @@ Deno.serve(async (req) => {
       gamesActuallyPlayed++;
 
       const gameResult = strategy.execute(balance, game, winCount, lossCount, recentGameHistory);
+      if (!gameResult || Object.keys(gameResult.bets).length === 0) break; // Strategy can't afford bets
       const { bets } = gameResult;
 
       // Calculate total bet
