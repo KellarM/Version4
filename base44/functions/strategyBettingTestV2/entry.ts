@@ -756,9 +756,9 @@ Deno.serve(async (req) => {
            netResult: netGame,
            balanceAfter: balance,
            communityCards: {
-             flop: flop.map(c => `${c.rank}${c.suit}`),
-             turn: `${turn.rank}${turn.suit}`,
-             river: `${river.rank}${river.suit}`,
+             flop: flop.map(c => `${c.rank}${SUITS[c.suit]}`),
+             turn: `${turn.rank}${SUITS[turn.suit]}`,
+             river: `${river.rank}${SUITS[river.suit]}`,
            },
            winningPositions: {
              hand: `H${winningHand} ${winningHand_.cards[0].rank}${SUITS[winningHand_.cards[0].suit]} / ${winningHand_.cards[1].rank}${SUITS[winningHand_.cards[1].suit]}`,
