@@ -91,6 +91,7 @@ Deno.serve(async (req) => {
       ST1_Original: {
         name: 'ST1: Original (Hands 2,5,6,7,8,9)',
         execute: (balance, game) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 300 ? Math.floor(balance / 6) : 50;
           if (balance < handBet * 6) return null;
@@ -103,6 +104,7 @@ Deno.serve(async (req) => {
       ConservativeHedger: {
         name: 'Conservative Hedger (4 hands + all colors)',
         execute: (balance) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 200 ? Math.floor(balance / 8) : 25;
           const totalBetsNeeded = (4 + 4) * handBet; // 4 hands + 4 colors
@@ -116,6 +118,7 @@ Deno.serve(async (req) => {
       RankStacker: {
         name: 'Rank Stacker (High-freq ranks + 2 hands)',
         execute: (balance) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 200 ? Math.floor(balance / 7) : 30;
           const totalBetsNeeded = (2 + 5) * handBet; // 2 hands + 5 ranks
@@ -131,6 +134,7 @@ Deno.serve(async (req) => {
       FlushHunter: {
         name: 'Flush Hunter (Hands targeting flushes + Flush rank)',
         execute: (balance) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
           const totalBetsNeeded = (2 + 1) * handBet; // 2 hands + 1 rank
@@ -145,6 +149,7 @@ Deno.serve(async (req) => {
       StraightHunter: {
         name: 'Straight Hunter (Hands targeting straights + Straight rank)',
         execute: (balance) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
           const totalBetsNeeded = (3 + 1) * handBet; // 3 hands + 1 rank
@@ -159,6 +164,7 @@ Deno.serve(async (req) => {
       ColorBoardSpecialist: {
         name: 'Color Specialist (Light hands + all colors)',
         execute: (balance) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 200 ? Math.floor(balance / 9) : 20;
           const totalBetsNeeded = (2 + 6) * handBet; // 2 hands + 6 colors
@@ -173,6 +179,7 @@ Deno.serve(async (req) => {
       HighPayoutFocus: {
         name: 'High Payout Focus (Hands 6,8 + Trips/Full House)',
         execute: (balance) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
           const totalBetsNeeded = (2 + 3) * handBet; // 2 hands + 3 ranks
@@ -188,6 +195,7 @@ Deno.serve(async (req) => {
       RiverFocused: {
         name: 'River Focused (1 hand + aggressive river betting)',
         execute: (balance) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const handBet = balance < 100 ? Math.floor(balance / 2) : 50;
           if (balance < handBet * 2) return null;
@@ -200,6 +208,7 @@ Deno.serve(async (req) => {
       BalancedSpread: {
         name: 'Balanced Spread (Equal mix of all bets)',
         execute: (balance) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const smallBet = balance < 300 ? Math.floor(balance / 10) : 30;
           const totalBetsNeeded = (3 + 3 + 2) * smallBet; // 3 hands + 3 ranks + 2 colors
@@ -215,6 +224,7 @@ Deno.serve(async (req) => {
       DiversifiedHedge: {
         name: 'Diversified Hedge (Many small bets, low variance)',
         execute: (balance) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const microBet = balance < 200 ? Math.floor(balance / 12) : 15;
           const totalBetsNeeded = (6 + 2 + 2) * microBet; // 6 hands + 2 ranks + 2 colors
@@ -229,6 +239,7 @@ Deno.serve(async (req) => {
       AdaptiveHybrid: {
         name: 'Adaptive Hybrid (Switches strategies based on results)',
         execute: (balance, game, previousWins, previousLosses) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const winRate = previousWins + previousLosses > 0 ? previousWins / (previousWins + previousLosses) : 0;
           
@@ -261,6 +272,7 @@ Deno.serve(async (req) => {
       MetaAdaptive: {
         name: 'Meta Adaptive (AI-driven multi-strategy mixer targeting 95-98% RTP)',
         execute: (balance, game, previousWins, previousLosses, recentGameHistory = []) => {
+          if (balance < 5) return null; // Bankrupt threshold
           const bets = {};
           const totalGames = previousWins + previousLosses;
           const winRate = totalGames > 0 ? previousWins / totalGames : 0.5;
