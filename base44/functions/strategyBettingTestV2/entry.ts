@@ -336,6 +336,8 @@ Deno.serve(async (req) => {
     let gamesActuallyPlayed = 0;
     let maxBankrollEver = STARTING_BALANCE;
     let maxBankrollGameNumber = 0;
+    let maxProfitEver = 0;
+    let maxProfitGameNumber = 0;
     const doublingMilestones = {};
     let nextMilestone = STARTING_BALANCE * 2;
     let balance = STARTING_BALANCE;
@@ -413,6 +415,11 @@ Deno.serve(async (req) => {
         maxBankrollGameNumber = gamesActuallyPlayed;
       }
 
+      if (totalProfit > maxProfitEver) {
+        maxProfitEver = totalProfit;
+        maxProfitGameNumber = gamesActuallyPlayed;
+      }
+
       while (balance >= nextMilestone && !doublingMilestones[nextMilestone]) {
         doublingMilestones[nextMilestone] = gamesActuallyPlayed;
         nextMilestone *= 2;
@@ -443,7 +450,7 @@ Deno.serve(async (req) => {
         winRate: winRate + '%',
         maxWinStreak,
         maxLossStreak,
-        maxProfit: maxProfit.toFixed(2),
+        maxProfit: maxProfitEver.toFixed(2),
       },
     });
   } catch (error) {
