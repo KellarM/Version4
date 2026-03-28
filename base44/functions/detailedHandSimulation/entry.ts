@@ -216,12 +216,12 @@ Deno.serve(async (req) => {
             const lowWon = gameLH === 'LOW';
             const highWon = gameLH === 'HIGH';
             playerBet += bet * 2;
-            playerWin += (lowWon ? bet * 1.83 : 0) + (highWon ? bet * 1.83 : 0);
-            bets.lowHigh = { type: 'LOW+HIGH', amount: bet * 2, winAmount: bet * 1.83, won: true };
+            playerWin += (lowWon ? bet * 1.88 : 0) + (highWon ? bet * 1.88 : 0);
+            bets.lowHigh = { type: 'LOW+HIGH', amount: bet * 2, winAmount: bet * 1.88, won: true };
           } else {
             const type = Math.random() < 0.5 ? 'LOW' : 'HIGH';
             const won = type === gameLH;
-            const winAmount = won ? bet * 1.83 : 0;
+            const winAmount = won ? bet * 1.88 : 0;
             playerBet += bet;
             playerWin += winAmount;
             bets.lowHigh = { type, amount: bet, winAmount, won };
