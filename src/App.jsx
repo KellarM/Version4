@@ -10,6 +10,7 @@ import RapidFireGame from './pages/RapidFireGame';
 import SimulationMode from './pages/SimulationMode';
 import DetailedSimulation from './pages/DetailedSimulation';
 import HandByHandAnalysis from './pages/HandByHandAnalysis';
+import PayoutCalibration from './pages/PayoutCalibration';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -41,6 +42,7 @@ const AuthenticatedApp = () => {
       <Route path="/simulation" element={<SimulationMode />} />
       <Route path="/detailed-simulation" element={<DetailedSimulation />} />
       <Route path="/analysis" element={<HandByHandAnalysis />} />
+      <Route path="/calibration" element={<PayoutCalibration />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

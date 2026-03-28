@@ -721,6 +721,13 @@ export default function RapidFireGame() {
           >
             🔍 H-by-H
           </Link>
+          <Link
+            to="/calibration"
+            className="ml-1 px-2 py-1 rounded-lg border border-yellow-700/60 bg-yellow-900/30 text-yellow-300 text-xs font-bold hover:bg-yellow-800/50 transition-all"
+            title="Payout calibration engine"
+          >
+            ⚖️ Calibrate
+          </Link>
           <button
             onClick={handleResetGame}
             className="ml-2 px-2 py-1 rounded-lg border border-red-700/60 bg-red-900/30 text-red-300 text-xs font-bold hover:bg-red-800/50 transition-all"
