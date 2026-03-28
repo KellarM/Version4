@@ -256,6 +256,14 @@ export default function HandByHandAnalysis() {
                                 <div className="mb-4">
                                   <h3 className="text-lg font-bold">Game #{game.gameNumber} - Player Breakdown</h3>
                                   <div className="text-sm text-gray-400 mt-1">Players: {game.playerCount} | Total Bets: ${game.totalBets.toFixed(0)} | Payouts: ${game.totalPayouts.toFixed(2)} | House Profit: ${game.houseProfit.toFixed(2)} | RTP: {game.rtp}</div>
+                                  {game.gameOutcome && (
+                                    <div className="mt-3 flex flex-wrap gap-3 text-xs">
+                                      <span className="bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 px-2 py-1 rounded">🏆 Winner: {game.gameOutcome.winningHand}</span>
+                                      <span className="bg-purple-900/40 border border-purple-700/50 text-purple-300 px-2 py-1 rounded">🃏 Rank: {game.gameOutcome.winningRank}</span>
+                                      <span className="bg-red-900/40 border border-red-700/50 text-red-300 px-2 py-1 rounded">🎨 Board: {game.gameOutcome.colorResult} → {game.gameOutcome.winningColorKeys}</span>
+                                      <span className="bg-teal-900/40 border border-teal-700/50 text-teal-300 px-2 py-1 rounded">🎯 River: {game.gameOutcome.riverResult}</span>
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="space-y-3">
                                   {game.players.map((player, pIdx) => (
