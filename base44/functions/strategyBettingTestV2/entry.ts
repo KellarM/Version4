@@ -11,6 +11,106 @@ Deno.serve(async (req) => {
     const strategyName = body.strategyName || 'BalancedSpread';
 
     const SUITS = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
+    const SUIT_COLORS = { spades: 'black', hearts: 'red', diamonds: 'red', clubs: 'black' };
+    
+    function cardColor(card) {
+      return SUIT_COLORS[card.suit];
+    }
+    
+    function rankValue(rank) {
+      const RANK_ORDER = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      return RANK_ORDER.indexOf(rank);
+    }
+    
+    function isLowCard(card) {
+      return rankValue(card.rank) <= rankValue('7');
+    }
+    
+    function getCombinations(arr, k) {
+      if (k === 0) return [[]];
+      if (arr.length < k) return [];
+      const [first, ...rest] = arr;
+      const withFirst = getCombinations(rest, k - 1).map(c => [first, ...c]);
+      const withoutFirst = getCombinations(rest, k);
+      return [...withFirst, ...withoutFirst];
+    }
+
+    function evaluateFiveCards(cards) {
+      const ranks = cards.map(c => rankValue(c.rank)).sort((a, b) => b - a);
+      const suits = cards.map(c => c.suit);
+      const isFlush = suits.every(s => s === suits[0]);
+
+      let isStraight = false;
+      let straightHigh = ranks[0];
+      if (ranks[0] - ranks[4] === 4 && new Set(ranks).size === 5) {
+        isStraight = true;
+      }
+      if (!isStraight && JSON.stringify(ranks) === JSON.stringify([12, 3, 2, 1, 0])) {
+        isStraight = true;
+        straightHigh = 3;
+      }
+
+      const rankCounts = {};
+      ranks.forEach(r => { rankCounts[r] = (rankCounts[r] || 0) + 1; });
+      const counts = Object.values(rankCounts).sort((a, b) => b - a);
+      const countKeys = Object.entries(rankCounts).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+
+      if (isFlush && isStraight) {
+        if (ranks[0] === 12 && ranks[4] === 8) return { rank: 8, name: 'Royal Flush', tiebreak: [straightHigh] };
+        return { rank: 7, name: 'Straight Flush', tiebreak: [straightHigh] };
+      }
+      if (counts[0] === 4) return { rank: 6, name: 'Four of a Kind', tiebreak: countKeys.map(([r]) => parseInt(r)) };
+      if (counts[0] === 3 && counts[1] === 2) return { rank: 5, name: 'Full House', tiebreak: countKeys.map(([r]) => parseInt(r)) };
+      if (isFlush) return { rank: 4, name: 'Flush', tiebreak: ranks };
+      if (isStraight) return { rank: 3, name: 'Straight', tiebreak: [straightHigh] };
+      if (counts[0] === 3) return { rank: 2, name: 'Three of a Kind', tiebreak: countKeys.map(([r]) => parseInt(r)) };
+      if (counts[0] === 2 && counts[1] === 2) return { rank: 1, name: 'Two Pair', tiebreak: countKeys.map(([r]) => parseInt(r)) };
+      if (counts[0] === 2) return { rank: 0, name: 'One Pair', tiebreak: countKeys.map(([r]) => parseInt(r)) };
+      return { rank: -1, name: 'High Card', tiebreak: ranks };
+    }
+
+    function compareHands(a, b) {
+      if (a.rank !== b.rank) return b.rank - a.rank;
+      for (let i = 0; i < Math.min(a.tiebreak.length, b.tiebreak.length); i++) {
+        if (a.tiebreak[i] !== b.tiebreak[i]) return b.tiebreak[i] - a.tiebreak[i];
+      }
+      return 0;
+    }
+
+    function evaluateBestHand(holeCards, communityCards) {
+      const all = [...holeCards, ...communityCards];
+      if (all.length < 2) return { rank: -1, name: 'No Hand', tiebreak: [] };
+      
+      const combos = all.length >= 5 ? getCombinations(all, 5) : [all];
+      let best = null;
+      for (const combo of combos) {
+        const result = evaluateFiveCards(combo);
+        if (!best || compareHands(result, best) < 0) {
+          best = result;
+        }
+      }
+      return best;
+    }
+
+    function findLeadingHand(communityCards) {
+      if (communityCards.length === 0) return null;
+
+      let best = null;
+      let leaders = [];
+
+      for (const hand of FIXED_HANDS) {
+        const eval_ = evaluateBestHand(hand.cards, communityCards);
+        if (!best || compareHands(eval_, best) < 0) {
+          best = eval_;
+          leaders = [hand.id];
+        } else if (compareHands(eval_, best) === 0) {
+          leaders.push(hand.id);
+        }
+      }
+
+      return { handIds: leaders, handResult: best };
+    }
+
     const FIXED_HANDS = [
       { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: 8.10 },
       { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: 6.75 },
@@ -458,13 +558,16 @@ Deno.serve(async (req) => {
       const turn = communityCards[3];
       const river = communityCards[4];
 
-      // Determine winning hand and rank from actual board
-      const winningHand = Math.floor(Math.random() * 10) + 1;
+      // Determine winning hand and rank from actual board evaluation
+      const leader = findLeadingHand(communityCards);
+      const winningHand = leader ? leader.handIds[0] : 1;
       const winningHand_ = FIXED_HANDS.find(h => h.id === winningHand);
-      const gameRank = rollRank();
-      const redCount = rollRedCount();
+      const gameRank = leader ? leader.handResult.name : 'One Pair';
+      
+      // Count actual reds/blacks from community cards
+      const redCount = communityCards.filter(c => cardColor(c) === 'red').length;
       const winningColors = getWinningColors(redCount);
-      const riverIsLow = Math.random() < 0.5;
+      const riverIsLow = isLowCard(communityCards[4]);
 
       // Track individual bets for detailed log
       const betsLog = [];
