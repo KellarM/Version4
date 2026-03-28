@@ -202,6 +202,14 @@ export default function StrategyTest() {
                                           <span className="text-gray-300">Requested Games</span>
                                           <span className="font-bold text-white">{result.gameCount.toLocaleString()}</span>
                                         </div>
+                                        <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
+                                          <span className="text-gray-300">Peak Profit</span>
+                                          <span className="font-bold text-yellow-400">${parseFloat(result.maxProfitEver).toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-300">at Game #</span>
+                                          <span className="font-bold text-yellow-300">{result.maxProfitGameNumber}</span>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>

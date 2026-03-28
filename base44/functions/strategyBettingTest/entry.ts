@@ -69,16 +69,39 @@ Deno.serve(async (req) => {
     }
 
     let totalProfit = 0;
-    const results = [];
+    let gamesActuallyPlayed = 0;
 
     // Tracking stats
     let winningHandCounts = {};
     BETTING_HANDS.forEach(id => { winningHandCounts[id] = 0; });
     
     let fourLowCount = 0, fourHighCount = 0, fiveLowCount = 0, fiveHighCount = 0, riverWinCount = 0;
+    let maxProfitEver = 0;
+    let maxProfitGameNumber = 0;
+
+    let balance = STARTING_BALANCE;
 
     for (let game = 0; game < gamesToSimulate; game++) {
-      let balance = STARTING_BALANCE;
+      // Check if player can afford the minimum bet (if not, stop playing)
+      if (balance <= 0) break;
+
+      gamesActuallyPlayed++;
+
+      // Determine betting denomination based on available balance
+      let betPerHand = HAND_BET;
+      if (balance < HAND_BET * BETTING_HANDS.length) {
+        const denominations = [25, 10, 5, 1];
+        betPerHand = null;
+        for (const denom of denominations) {
+          if (balance >= denom * BETTING_HANDS.length) {
+            betPerHand = denom;
+            break;
+          }
+        }
+        if (betPerHand === null || balance < betPerHand * BETTING_HANDS.length) {
+          break;
+        }
+      }
 
       // Generate 5 community cards (simplified: just count low/high)
       const communityCards = Array.from({ length: 5 }, () => ({
@@ -91,8 +114,8 @@ Deno.serve(async (req) => {
 
       let gameProfit = 0;
 
-      // Phase 1: Bet on 6 fixed hands ($50 each)
-      const handBetTotal = HAND_BET * BETTING_HANDS.length; // $300
+      // Phase 1: Bet on 6 fixed hands
+      const handBetTotal = betPerHand * BETTING_HANDS.length;
       balance -= handBetTotal;
       gameProfit -= handBetTotal;
 
@@ -108,7 +131,7 @@ Deno.serve(async (req) => {
       // Pay out winning hands if they match
       BETTING_HANDS.forEach(handId => {
         if (handId === winningHandId) {
-          const payout = HAND_BET * (1 + winningHand.payout);
+          const payout = betPerHand * (1 + winningHand.payout);
           balance += payout;
           gameProfit += payout;
         }
@@ -153,19 +176,30 @@ Deno.serve(async (req) => {
       }
 
       totalProfit += gameProfit;
+
+      // Track max profit ever and which game it occurred
+      const currentProfit = totalProfit;
+      if (currentProfit > maxProfitEver) {
+        maxProfitEver = currentProfit;
+        maxProfitGameNumber = gamesActuallyPlayed;
+      }
     }
 
-    const avgProfit = totalProfit / gamesToSimulate;
-    const roi = ((avgProfit / STARTING_BALANCE) * 100).toFixed(2);
+    const avgProfit = gamesActuallyPlayed > 0 ? totalProfit / gamesActuallyPlayed : 0;
+    const roi = ((totalProfit / STARTING_BALANCE) * 100).toFixed(1);
 
     return Response.json({
       success: true,
       gamesToSimulate,
+      gamesActuallyPlayed,
+      stoppedEarly: gamesActuallyPlayed < gamesToSimulate,
       totalProfit: totalProfit.toFixed(2),
       avgProfitPerGame: avgProfit.toFixed(2),
-      finalBalance: (STARTING_BALANCE + totalProfit).toFixed(2),
+      finalBalance: balance.toFixed(2),
+      maxProfitEver: maxProfitEver.toFixed(2),
+      maxProfitGameNumber,
       roi: roi + '%',
-      strategy: 'Bet $50 on hands 2,5,6,7,8,9 + contrarian LOW/HIGH when 4+ cards of one type',
+      strategy: 'Bet $50 on hands 2,5,6,7,8,9 + contrarian LOW/HIGH when 4+ cards of one type (scales down denomination if needed)',
       stats: {
         winningHandBreakdown: winningHandCounts,
         fourLowTriggered: fourLowCount,
