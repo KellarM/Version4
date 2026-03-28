@@ -688,11 +688,19 @@ export default function StrategyTest() {
                                           <span className="font-bold text-blue-400">{result.stats?.winRate || '—'}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                          <span className="text-gray-300">Max Win Streak</span>
-                                          <span className="font-bold text-green-400">{result.stats?.maxWinStreak || 0}</span>
+                                           <span className="text-gray-300">Max Win Streak</span>
+                                           <span className="font-bold text-green-400">{result.stats?.maxWinStreak || 0}</span>
+                                         </div>
+                                         <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
+                                           <span className="text-gray-300">Peak Bankroll</span>
+                                           <span className="font-bold text-yellow-400">${parseFloat(result.maxBankrollEver).toFixed(2)}</span>
+                                         </div>
+                                         <div className="flex justify-between">
+                                           <span className="text-gray-300">Peak at Game #</span>
+                                           <span className="font-bold text-yellow-300">{result.maxBankrollGameNumber}</span>
+                                         </div>
                                         </div>
-                                      </div>
-                                    </div>
+                                        </div>
 
                                     {/* Casino Stats */}
                                     <div className={`rounded-lg border-2 p-4 ${!playerWon ? 'border-green-600 bg-green-900/20' : 'border-red-600 bg-red-900/20'}`}>
