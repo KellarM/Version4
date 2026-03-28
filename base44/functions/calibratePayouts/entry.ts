@@ -85,89 +85,107 @@ Deno.serve(async (req) => {
     // High-frequency rank indices for smart players (One Pair=8, Two Pair=7, Trips=6, Straight=5, Full House=3)
     const HIGH_FREQ_RANK_IDX = [8, 7, 6, 5, 3, 4]; // ordered by frequency
 
-    // ── Monte Carlo loop ──────────────────────────────────────────────────
+    // ── Monte Carlo loop (optimized for speed) ─────────────────────────────
+    const colorOrderFixed = [0, 1, 2, 3, 4, 5]; // pre-allocate
+    const highFreqPool = HIGH_FREQ_RANK_IDX;
+    const allRanksPool = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+
     for (let g = 0; g < gamesToSimulate; g++) {
-      const winningHand = (Math.random() * 10) | 0;
+     const winningHand = (Math.random() * 10) | 0;
 
-      const rankRoll = Math.random();
-      let gameRank = 8;
-      for (let r = 0; r < 9; r++) { if (rankRoll < RANK_CUM[r]) { gameRank = r; break; } }
+     const rankRoll = Math.random();
+     let gameRank = 8;
+     for (let r = 0; r < 9; r++) { if (rankRoll < RANK_CUM[r]) { gameRank = r; break; } }
 
-      const gameRedCount   = rollRedCount();
-      const winningColors  = getWinningColorKeys(gameRedCount);
-      const gameLH         = Math.random() < 0.5 ? 0 : 1;
+     const gameRedCount   = rollRedCount();
+     const gameLH         = Math.random() < 0.5 ? 0 : 1;
 
-      const playerCount = ((Math.random() * 5) | 0) + 1;
+     const playerCount = ((Math.random() * 5) | 0) + 1;
 
-      for (let pl = 0; pl < playerCount; pl++) {
-        const sp = STRAT_PROFILES[(Math.random() * STRAT_PROFILES.length) | 0];
-        const b = BET_AMOUNTS[(Math.random() * 3) | 0];
+     for (let pl = 0; pl < playerCount; pl++) {
+       const sp = STRAT_PROFILES[(Math.random() * STRAT_PROFILES.length) | 0];
+       const b = BET_AMOUNTS[(Math.random() * 3) | 0];
 
-        // ── Hand bets: cover hMin..hMax hands ──
-        const numHands = sp.hMin + ((Math.random() * (sp.hMax - sp.hMin + 1)) | 0);
-        const chosenHands = new Set();
-        while (chosenHands.size < numHands) chosenHands.add((Math.random() * 10) | 0);
-        for (const chosen of chosenHands) {
-          handBet += b;
-          if (chosen === winningHand) handPayout += b * (1 + HAND_PAYOUTS[chosen]);
-        }
+       // ── Hand bets: cover hMin..hMax hands (use array instead of Set) ──
+       const numHands = sp.hMin + ((Math.random() * (sp.hMax - sp.hMin + 1)) | 0);
+       const chosen = new Uint8Array(numHands);
+       let hCount = 0;
+       while (hCount < numHands) {
+         const h = (Math.random() * 10) | 0;
+         let found = false;
+         for (let i = 0; i < hCount; i++) { if (chosen[i] === h) { found = true; break; } }
+         if (!found) chosen[hCount++] = h;
+       }
+       for (let i = 0; i < hCount; i++) {
+         const c = chosen[i];
+         handBet += b;
+         if (c === winningHand) handPayout += b * (1 + HAND_PAYOUTS[c]);
+       }
 
-        // ── Rank bets: smart players stack high-frequency ranks ──
-        if (Math.random() < sp.rProb) {
-          const numRanks = sp.rMin + ((Math.random() * (sp.rMax - sp.rMin + 1)) | 0);
-          const chosenRanks = new Set();
-          // Smart (hedger/spread) profiles use high-freq ranks first
-          const rankPool = (sp.hMin >= 3 || sp.rMin >= 3)
-            ? HIGH_FREQ_RANK_IDX
-            : Array.from({ length: 9 }, (_, i) => i);
-          let attempts = 0;
-          while (chosenRanks.size < numRanks && attempts < 20) {
-            chosenRanks.add(rankPool[(Math.random() * rankPool.length) | 0]);
-            attempts++;
-          }
-          for (const chosen of chosenRanks) {
-            const mult = RANK_PAYOUTS[chosen];
-            rankBet += b;
-            rankBetsArr[chosen] += b;
-            if (chosen === gameRank && mult !== null) {
-              const p = b * (1 + mult);
-              rankPayout += p;
-              rankPayoutsArr[chosen] += p;
-            }
-          }
-        }
+       // ── Rank bets: stack high-freq ranks ──
+       if (Math.random() < sp.rProb) {
+         const numRanks = sp.rMin + ((Math.random() * (sp.rMax - sp.rMin + 1)) | 0);
+         const rankChosen = new Uint8Array(numRanks);
+         const rankPool = (sp.hMin >= 3 || sp.rMin >= 3) ? highFreqPool : allRanksPool;
+         let rCount = 0;
+         let attempts = 0;
+         while (rCount < numRanks && attempts < 25) {
+           const r = rankPool[(Math.random() * rankPool.length) | 0];
+           let found = false;
+           for (let i = 0; i < rCount; i++) { if (rankChosen[i] === r) { found = true; break; } }
+           if (!found) rankChosen[rCount++] = r;
+           attempts++;
+         }
+         for (let i = 0; i < rCount; i++) {
+           const chosen_r = rankChosen[i];
+           const mult = RANK_PAYOUTS[chosen_r];
+           rankBet += b;
+           rankBetsArr[chosen_r] += b;
+           if (chosen_r === gameRank && mult !== null) {
+             const p = b * (1 + mult);
+             rankPayout += p;
+             rankPayoutsArr[chosen_r] += p;
+           }
+         }
+       }
 
-        // ── Color board bets: smart players start with 3R+3B ──
-        if (Math.random() < sp.cProb && sp.cCount > 0) {
-          // Priority order: 3R, 3B (highest win prob), then 4R, 4B, then 5R, 5B
-          const colorOrder = [0, 1, 2, 3, 4, 5]; // indices into COLOR_KEYS
-          const numColors = Math.min(sp.cCount, 6);
-          for (let ci = 0; ci < numColors; ci++) {
-            const cidx = colorOrder[ci];
-            const chosenKey = COLOR_KEYS[cidx];
-            colorBet += b;
-            colorBetsArr[cidx] += b;
-            if (winningColors.includes(chosenKey)) {
-              const p = b * (1 + COLOR_PAYOUTS[chosenKey]);
-              colorPayout += p;
-              colorPayoutsArr[cidx] += p;
-            }
-          }
-        }
+       // ── Color board bets ──
+       if (Math.random() < sp.cProb && sp.cCount > 0) {
+         const numColors = Math.min(sp.cCount, 6);
+         // Pre-compute winning color flags (avoid array.includes)
+         const colorWins = new Uint8Array(6);
+         for (let ci = 0; ci < numColors; ci++) {
+           const chosenKey = COLOR_KEYS[ci];
+           for (let wc = 0; wc < gameRedCount; wc++) {
+             if ((`${wc}R` === chosenKey && wc >= 3) || (`${5-wc}B` === chosenKey && (5-wc) >= 3)) {
+               colorWins[ci] = 1;
+               break;
+             }
+           }
+         }
+         for (let ci = 0; ci < numColors; ci++) {
+           colorBet += b;
+           colorBetsArr[ci] += b;
+           if (colorWins[ci]) {
+             const p = b * (1 + COLOR_PAYOUTS[COLOR_KEYS[ci]]);
+             colorPayout += p;
+             colorPayoutsArr[ci] += p;
+           }
+         }
+       }
 
-        // ── Low/High bets ──
-        if (Math.random() < sp.lhProb) {
-          if (Math.random() < sp.bothLH) {
-            // Bet both LOW and HIGH — guarantees one wins
-            lhBet += b * 2;
-            lhPayout += b * (1 + LH_PAYOUT); // one side always wins
-          } else {
-            const chosen = Math.random() < 0.5 ? 0 : 1;
-            lhBet += b;
-            if (chosen === gameLH) lhPayout += b * (1 + LH_PAYOUT);
-          }
-        }
-      }
+       // ── Low/High bets ──
+       if (Math.random() < sp.lhProb) {
+         if (Math.random() < sp.bothLH) {
+           lhBet += b * 2;
+           lhPayout += b * (1 + LH_PAYOUT);
+         } else {
+           const chosen_lh = Math.random() < 0.5 ? 0 : 1;
+           lhBet += b;
+           if (chosen_lh === gameLH) lhPayout += b * (1 + LH_PAYOUT);
+         }
+       }
+     }
     }
 
     // ── Observed RTPs ─────────────────────────────────────────────────────
