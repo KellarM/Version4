@@ -15,16 +15,16 @@ Deno.serve(async (req) => {
     const SUITS_MAP = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
     // Must exactly match lib/gameEngine.js FIXED_HANDS
     const FIXED_HANDS = [
-      { id: 1,  payout: 8.50, cards: [{ rank: 'A',  suit: 'diamonds' }, { rank: '10', suit: 'hearts'   }] },
-      { id: 2,  payout: 8.50, cards: [{ rank: 'K',  suit: 'clubs'    }, { rank: 'K',  suit: 'spades'   }] },
-      { id: 3,  payout: 8.50, cards: [{ rank: 'Q',  suit: 'clubs'    }, { rank: 'J',  suit: 'spades'   }] },
-      { id: 4,  payout: 8.50, cards: [{ rank: 'Q',  suit: 'spades'   }, { rank: '10', suit: 'spades'   }] },
-      { id: 5,  payout: 8.50, cards: [{ rank: 'J',  suit: 'clubs'    }, { rank: '9',  suit: 'clubs'    }] },
-      { id: 6,  payout: 8.50, cards: [{ rank: '8',  suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }] },
-      { id: 7,  payout: 8.50, cards: [{ rank: '7',  suit: 'diamonds' }, { rank: '7',  suit: 'spades'   }] },
-      { id: 8,  payout: 8.50, cards: [{ rank: '4',  suit: 'hearts'   }, { rank: '2',  suit: 'hearts'   }] },
-      { id: 9,  payout: 8.50, cards: [{ rank: '3',  suit: 'clubs'    }, { rank: '3',  suit: 'hearts'   }] },
-      { id: 10, payout: 8.50, cards: [{ rank: 'A',  suit: 'hearts'   }, { rank: '5',  suit: 'diamonds' }] },
+      { id: 1,  payout: 7.80,  cards: [{ rank: 'A',  suit: 'diamonds' }, { rank: '10', suit: 'hearts'   }] },
+      { id: 2,  payout: 6.50,  cards: [{ rank: 'K',  suit: 'clubs'    }, { rank: 'K',  suit: 'spades'   }] },
+      { id: 3,  payout: 8.20,  cards: [{ rank: 'Q',  suit: 'clubs'    }, { rank: 'J',  suit: 'spades'   }] },
+      { id: 4,  payout: 7.60,  cards: [{ rank: 'Q',  suit: 'spades'   }, { rank: '10', suit: 'spades'   }] },
+      { id: 5,  payout: 8.00,  cards: [{ rank: 'J',  suit: 'clubs'    }, { rank: '9',  suit: 'clubs'    }] },
+      { id: 6,  payout: 9.80,  cards: [{ rank: '8',  suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }] },
+      { id: 7,  payout: 7.20,  cards: [{ rank: '7',  suit: 'diamonds' }, { rank: '7',  suit: 'spades'   }] },
+      { id: 8,  payout: 11.50, cards: [{ rank: '4',  suit: 'hearts'   }, { rank: '2',  suit: 'hearts'   }] },
+      { id: 9,  payout: 7.00,  cards: [{ rank: '3',  suit: 'clubs'    }, { rank: '3',  suit: 'hearts'   }] },
+      { id: 10, payout: 9.40,  cards: [{ rank: 'A',  suit: 'hearts'   }, { rank: '5',  suit: 'diamonds' }] },
     ];
 
     const rankPayoutMap = {
