@@ -25,6 +25,37 @@ Deno.serve(async (req) => {
 
     const STARTING_BALANCE = 1000;
 
+    // Poker hand rank frequencies (from Texas Hold'em)
+    const RANK_FREQS = {
+      'One Pair': 0.42256,
+      'Two Pair': 0.04754,
+      'Three of a Kind': 0.02113,
+      'Straight': 0.00462,
+      'Flush': 0.00327,
+      'Full House': 0.00261,
+      'Four of a Kind': 0.00168,
+      'Straight Flush': 0.00139,
+      'Royal Flush': 0.000154,
+    };
+
+    const RANK_PAYOUTS = {
+      'One Pair': 5.87,
+      'Two Pair': 4.83,
+      'Three of a Kind': 0.98,
+      'Straight': 1.90,
+      'Flush': 1.30,
+      'Full House': 0.98,
+      'Four of a Kind': 3.79,
+      'Straight Flush': null,  // Progressive
+      'Royal Flush': null,     // Progressive
+    };
+
+    const COLOR_PAYOUTS = {
+      '3R': 0.78, '3B': 0.78,
+      '4R': 5.04, '4B': 5.04,
+      '5R': 19.74, '5B': 19.74,
+    };
+
     const RED_COUNT_PROBS = [0.03125, 0.15625, 0.3125, 0.3125, 0.15625, 0.03125];
     const RED_COUNT_CUM = [];
     let rcCum = 0;
@@ -36,9 +67,23 @@ Deno.serve(async (req) => {
       return 5;
     }
 
-    function isLow(rank) {
-      const LOW_RANKS = ['2', '3', '4', '5', '6', '7'];
-      return LOW_RANKS.includes(rank);
+    function rollRank() {
+      const r = Math.random();
+      const ranks = Object.keys(RANK_FREQS);
+      let cum = 0;
+      for (const rank of ranks) {
+        cum += RANK_FREQS[rank];
+        if (r < cum) return rank;
+      }
+      return 'One Pair';
+    }
+
+    function getWinningColors(redCount) {
+      const blackCount = 5 - redCount;
+      const winners = [];
+      if (redCount >= 3) for (let i = 3; i <= redCount; i++) winners.push(`${i}R`);
+      if (blackCount >= 3) for (let i = 3; i <= blackCount; i++) winners.push(`${i}B`);
+      return winners;
     }
 
     // Strategy implementations
@@ -82,26 +127,28 @@ Deno.serve(async (req) => {
         },
       },
       FlushHunter: {
-        name: 'Flush Hunter (Hands 3,4,5 + Flush rank)',
+        name: 'Flush Hunter (Hands targeting flushes + Flush rank)',
         execute: (balance) => {
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
           if (balance < handBet * 5) return { bets, balance };
           
-          [3, 4, 5].forEach(id => { bets[`h${id}`] = handBet; });
+          // Hands with flush potential: 6(8♦6♦), 3(Q♣J♠—no), 8(4♥2♥)
+          [6, 8].forEach(id => { bets[`h${id}`] = handBet; });
           bets['rFlush'] = handBet;
           bets['riverHedge'] = true;
           return { bets, balance };
         },
       },
       StraightHunter: {
-        name: 'Straight Hunter (Hands 4,5,7 + Straight rank)',
+        name: 'Straight Hunter (Hands targeting straights + Straight rank)',
         execute: (balance) => {
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
           if (balance < handBet * 5) return { bets, balance };
           
-          [4, 5, 7].forEach(id => { bets[`h${id}`] = handBet; });
+          // Hands with potential for straights: 1(AK), 5(J9), 10(A5)
+          [1, 5, 10].forEach(id => { bets[`h${id}`] = handBet; });
           bets['rStraight'] = handBet;
           bets['riverHedge'] = true;
           return { bets, balance };
@@ -363,25 +410,35 @@ Deno.serve(async (req) => {
       balance -= totalBet;
       let gameWin = 0;
 
-      // Simple payout simulation (each hand has 1/10 chance, ranks have frequency-based chance)
+      // Proper probabilistic simulation
       const winningHand = Math.floor(Math.random() * 10) + 1;
       const winningHand_ = FIXED_HANDS.find(h => h.id === winningHand);
+      const gameRank = rollRank();
+      const redCount = rollRedCount();
+      const winningColors = getWinningColors(redCount);
+      const riverIsLow = Math.random() < 0.5;
 
-      // Hand payouts
+      // Hand payouts (player wins if they bet on winning hand)
       if (bets[`h${winningHand}`]) {
         gameWin += bets[`h${winningHand}`] * (1 + winningHand_.payout);
       }
 
-      // Color payouts (simplified: 50% chance any color wins)
-      if (Math.random() < 0.5) {
-        if (bets['c3R']) gameWin += bets['c3R'] * 1.78;
-        if (bets['c3B']) gameWin += bets['c3B'] * 1.78;
-      } else {
-        if (bets['c4R']) gameWin += bets['c4R'] * 6.04;
-        if (bets['c4B']) gameWin += bets['c4B'] * 6.04;
+      // Rank payouts (player wins if they bet on the rank that hit)
+      if (bets[`r${gameRank}`]) {
+        const rankMult = RANK_PAYOUTS[gameRank];
+        if (rankMult !== null) {
+          gameWin += bets[`r${gameRank}`] * (1 + rankMult);
+        }
       }
 
-      // River payouts (50/50)
+      // Color payouts (cumulative: 4R also wins 3R, 5R also wins 4R and 3R)
+      for (const colorKey of winningColors) {
+        if (bets[`c${colorKey}`]) {
+          gameWin += bets[`c${colorKey}`] * (1 + COLOR_PAYOUTS[colorKey]);
+        }
+      }
+
+      // River hedge/aggressive (optional payouts)
       if (bets.riverHedge && Math.random() < 0.5) {
         gameWin += Math.floor(totalBet * 0.15);
       }
