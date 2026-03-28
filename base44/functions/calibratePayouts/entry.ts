@@ -91,16 +91,26 @@ Deno.serve(async (req) => {
     const allRanksPool = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
     for (let g = 0; g < gamesToSimulate; g++) {
-     const winningHand = (Math.random() * 10) | 0;
+      const winningHand = (Math.random() * 10) | 0;
 
-     const rankRoll = Math.random();
-     let gameRank = 8;
-     for (let r = 0; r < 9; r++) { if (rankRoll < RANK_CUM[r]) { gameRank = r; break; } }
+      const rankRoll = Math.random();
+      let gameRank = 8;
+      for (let r = 0; r < 9; r++) { if (rankRoll < RANK_CUM[r]) { gameRank = r; break; } }
 
-     const gameRedCount   = rollRedCount();
-     const gameLH         = Math.random() < 0.5 ? 0 : 1;
+      const gameRedCount   = rollRedCount();
+      const gameBlackCount = 5 - gameRedCount;
+      const gameLH         = Math.random() < 0.5 ? 0 : 1;
 
-     const playerCount = ((Math.random() * 5) | 0) + 1;
+      // Pre-compute winning color keys (cumulative: 4R also wins 3R, etc.)
+      const winningColorsSet = new Uint8Array(6);
+      if (gameRedCount >= 3)   for (let i = 3; i <= gameRedCount;   i++) winningColorsSet[colorKeyToIdx(`${i}R`)] = 1;
+      if (gameBlackCount >= 3) for (let i = 3; i <= gameBlackCount; i++) winningColorsSet[colorKeyToIdx(`${i}B`)] = 1;
+
+      function colorKeyToIdx(key) {
+        return key === '3R' ? 0 : key === '3B' ? 1 : key === '4R' ? 2 : key === '4B' ? 3 : key === '5R' ? 4 : 5;
+      }
+
+      const playerCount = ((Math.random() * 5) | 0) + 1;
 
      for (let pl = 0; pl < playerCount; pl++) {
        const sp = STRAT_PROFILES[(Math.random() * STRAT_PROFILES.length) | 0];
@@ -152,21 +162,10 @@ Deno.serve(async (req) => {
        // ── Color board bets ──
        if (Math.random() < sp.cProb && sp.cCount > 0) {
          const numColors = Math.min(sp.cCount, 6);
-         // Pre-compute winning color flags (avoid array.includes)
-         const colorWins = new Uint8Array(6);
-         for (let ci = 0; ci < numColors; ci++) {
-           const chosenKey = COLOR_KEYS[ci];
-           for (let wc = 0; wc < gameRedCount; wc++) {
-             if ((`${wc}R` === chosenKey && wc >= 3) || (`${5-wc}B` === chosenKey && (5-wc) >= 3)) {
-               colorWins[ci] = 1;
-               break;
-             }
-           }
-         }
          for (let ci = 0; ci < numColors; ci++) {
            colorBet += b;
            colorBetsArr[ci] += b;
-           if (colorWins[ci]) {
+           if (winningColorsSet[ci]) {
              const p = b * (1 + COLOR_PAYOUTS[COLOR_KEYS[ci]]);
              colorPayout += p;
              colorPayoutsArr[ci] += p;
