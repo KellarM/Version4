@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
         execute: (balance, game) => {
           const bets = {};
           const handBet = balance < 300 ? Math.floor(balance / 6) : 50;
-          if (balance < handBet * 6) return { bets, balance };
+          if (balance < handBet * 6) return null;
           
           [2, 5, 6, 7, 8, 9].forEach(id => { bets[`h${id}`] = handBet; });
           bets.riverHedge = true;
@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
         execute: (balance) => {
           const bets = {};
           const handBet = balance < 100 ? Math.floor(balance / 2) : 50;
-          if (balance < handBet * 2) return { bets, balance };
+          if (balance < handBet * 2) return null;
           
           bets['h8'] = handBet;
           bets['riverAggressive'] = true;
