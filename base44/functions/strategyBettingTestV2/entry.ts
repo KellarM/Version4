@@ -13,6 +13,15 @@ Deno.serve(async (req) => {
     const SUITS = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
     const SUIT_COLORS = { spades: 'black', hearts: 'red', diamonds: 'red', clubs: 'black' };
     
+    function shuffleDeck(deck) {
+      const d = [...deck];
+      for (let i = d.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [d[i], d[j]] = [d[j], d[i]];
+      }
+      return d;
+    }
+    
     function cardColor(card) {
       return SUIT_COLORS[card.suit];
     }
@@ -36,37 +45,45 @@ Deno.serve(async (req) => {
     }
 
     function evaluateFiveCards(cards) {
-      const ranks = cards.map(c => rankValue(c.rank)).sort((a, b) => b - a);
-      const suits = cards.map(c => c.suit);
-      const isFlush = suits.every(s => s === suits[0]);
+    const ranks = cards.map(c => rankValue(c.rank)).sort((a, b) => b - a);
+    const cardRanks = cards.map(c => c.rank);
+    const suits = cards.map(c => c.suit);
 
-      let isStraight = false;
-      let straightHigh = ranks[0];
-      if (ranks[0] - ranks[4] === 4 && new Set(ranks).size === 5) {
-        isStraight = true;
-      }
-      if (!isStraight && JSON.stringify(ranks) === JSON.stringify([12, 3, 2, 1, 0])) {
-        isStraight = true;
-        straightHigh = 3;
-      }
+    // Flush: all same suit
+    const suitCounts = {};
+    suits.forEach(s => { suitCounts[s] = (suitCounts[s] || 0) + 1; });
+    const isFlush = Object.values(suitCounts).some(count => count === 5);
 
-      const rankCounts = {};
-      ranks.forEach(r => { rankCounts[r] = (rankCounts[r] || 0) + 1; });
-      const counts = Object.values(rankCounts).sort((a, b) => b - a);
-      const countKeys = Object.entries(rankCounts).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+    // Straight: consecutive ranks
+    let isStraight = false;
+    let straightHigh = ranks[0];
+    if (ranks[0] - ranks[4] === 4 && new Set(ranks).size === 5) {
+      isStraight = true;
+    }
+    // Wheel: A-2-3-4-5
+    if (!isStraight && JSON.stringify(ranks) === JSON.stringify([12, 3, 2, 1, 0])) {
+      isStraight = true;
+      straightHigh = 3;
+    }
 
-      if (isFlush && isStraight) {
-        if (ranks[0] === 12 && ranks[4] === 8) return { rank: 8, name: 'Royal Flush', tiebreak: [straightHigh] };
-        return { rank: 7, name: 'Straight Flush', tiebreak: [straightHigh] };
-      }
-      if (counts[0] === 4) return { rank: 6, name: 'Four of a Kind', tiebreak: countKeys.map(([r]) => parseInt(r)) };
-      if (counts[0] === 3 && counts[1] === 2) return { rank: 5, name: 'Full House', tiebreak: countKeys.map(([r]) => parseInt(r)) };
-      if (isFlush) return { rank: 4, name: 'Flush', tiebreak: ranks };
-      if (isStraight) return { rank: 3, name: 'Straight', tiebreak: [straightHigh] };
-      if (counts[0] === 3) return { rank: 2, name: 'Three of a Kind', tiebreak: countKeys.map(([r]) => parseInt(r)) };
-      if (counts[0] === 2 && counts[1] === 2) return { rank: 1, name: 'Two Pair', tiebreak: countKeys.map(([r]) => parseInt(r)) };
-      if (counts[0] === 2) return { rank: 0, name: 'One Pair', tiebreak: countKeys.map(([r]) => parseInt(r)) };
-      return { rank: -1, name: 'High Card', tiebreak: ranks };
+    // Pairs/trips/quads
+    const rankCounts = {};
+    ranks.forEach(r => { rankCounts[r] = (rankCounts[r] || 0) + 1; });
+    const counts = Object.values(rankCounts).sort((a, b) => b - a);
+    const countKeys = Object.entries(rankCounts).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+
+    if (isFlush && isStraight) {
+      if (ranks[0] === 12 && ranks[4] === 8) return { rank: 8, name: 'Royal Flush', tiebreak: [straightHigh] };
+      return { rank: 7, name: 'Straight Flush', tiebreak: [straightHigh] };
+    }
+    if (counts[0] === 4) return { rank: 6, name: 'Four of a Kind', tiebreak: countKeys.map(([r]) => parseInt(r)) };
+    if (counts[0] === 3 && counts[1] === 2) return { rank: 5, name: 'Full House', tiebreak: countKeys.map(([r]) => parseInt(r)) };
+    if (isFlush) return { rank: 4, name: 'Flush', tiebreak: ranks };
+    if (isStraight) return { rank: 3, name: 'Straight', tiebreak: [straightHigh] };
+    if (counts[0] === 3) return { rank: 2, name: 'Three of a Kind', tiebreak: countKeys.map(([r]) => parseInt(r)) };
+    if (counts[0] === 2 && counts[1] === 2) return { rank: 1, name: 'Two Pair', tiebreak: countKeys.map(([r]) => parseInt(r)) };
+    if (counts[0] === 2) return { rank: 0, name: 'One Pair', tiebreak: countKeys.map(([r]) => parseInt(r)) };
+    return { rank: -1, name: 'High Card', tiebreak: ranks };
     }
 
     function compareHands(a, b) {
@@ -122,6 +139,25 @@ Deno.serve(async (req) => {
       { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: 11.95 },
       { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: 7.27 },
       { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: 9.77 },
+    ];
+
+    const DEALER_DECK = [
+      // Spades
+      { rank: 'A', suit: 'spades' }, { rank: '9', suit: 'spades' }, { rank: '8', suit: 'spades' },
+      { rank: '6', suit: 'spades' }, { rank: '5', suit: 'spades' }, { rank: '4', suit: 'spades' },
+      { rank: '3', suit: 'spades' }, { rank: '2', suit: 'spades' },
+      // Hearts
+      { rank: 'K', suit: 'hearts' }, { rank: 'Q', suit: 'hearts' }, { rank: 'J', suit: 'hearts' },
+      { rank: '9', suit: 'hearts' }, { rank: '8', suit: 'hearts' }, { rank: '7', suit: 'hearts' },
+      { rank: '6', suit: 'hearts' }, { rank: '5', suit: 'hearts' },
+      // Diamonds
+      { rank: 'K', suit: 'diamonds' }, { rank: 'Q', suit: 'diamonds' }, { rank: 'J', suit: 'diamonds' },
+      { rank: '10', suit: 'diamonds' }, { rank: '9', suit: 'diamonds' }, { rank: '4', suit: 'diamonds' },
+      { rank: '3', suit: 'diamonds' }, { rank: '2', suit: 'diamonds' },
+      // Clubs
+      { rank: 'A', suit: 'clubs' }, { rank: '10', suit: 'clubs' }, { rank: '8', suit: 'clubs' },
+      { rank: '7', suit: 'clubs' }, { rank: '6', suit: 'clubs' }, { rank: '5', suit: 'clubs' },
+      { rank: '4', suit: 'clubs' }, { rank: '2', suit: 'clubs' },
     ];
 
     const STARTING_BALANCE = 1000;
@@ -544,16 +580,9 @@ Deno.serve(async (req) => {
       balance -= totalBet;
       let gameWin = 0;
 
-      // Deal 5 community cards
-      const suits = ['♠', '♥', '♦', '♣'];
-      const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-      const communityCards = [];
-      for (let i = 0; i < 5; i++) {
-        communityCards.push({
-          rank: ranks[Math.floor(Math.random() * ranks.length)],
-          suit: suits[Math.floor(Math.random() * suits.length)],
-        });
-      }
+      // Deal 5 community cards from shuffled dealer deck
+      const shuffledDeck = shuffleDeck(DEALER_DECK);
+      const communityCards = shuffledDeck.slice(0, 5);
       const flop = communityCards.slice(0, 3);
       const turn = communityCards[3];
       const river = communityCards[4];
