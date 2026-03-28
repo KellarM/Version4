@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const gamesToSimulate = body.gamesToSimulate || 5_000_000;
+    const gamesToSimulate = Math.min(body.gamesToSimulate || 500_000, 500_000); // Cap at 500K for performance
     const TARGET_RTP_MID = 0.965;
     const TARGET_RTP_LOW = 0.95;
     const TARGET_RTP_HIGH = 0.98;
