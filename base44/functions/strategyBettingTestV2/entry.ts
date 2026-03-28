@@ -450,20 +450,8 @@ Deno.serve(async (req) => {
       const winningColors = getWinningColors(redCount);
       const riverIsLow = Math.random() < 0.5;
 
-      // Only roll a rank that the winning hand can actually make
-      // For simplicity: all hands can make One Pair (most common),
-      // but higher ranks are less likely for weaker hands
-      let gameRank = 'One Pair'; // fallback
-      const rand = Math.random();
-      if (rand < 0.02) gameRank = 'Royal Flush';
-      else if (rand < 0.04) gameRank = 'Straight Flush';
-      else if (rand < 0.07) gameRank = 'Four of a Kind';
-      else if (rand < 0.10) gameRank = 'Full House';
-      else if (rand < 0.14) gameRank = 'Flush';
-      else if (rand < 0.18) gameRank = 'Straight';
-      else if (rand < 0.22) gameRank = 'Three of a Kind';
-      else if (rand < 0.28) gameRank = 'Two Pair';
-      // else gameRank = 'One Pair' (42% default)
+      // Roll rank using proper cumulative distribution
+      const gameRank = rollRank();
 
       // Track individual bets for detailed log
       const betsLog = [];
