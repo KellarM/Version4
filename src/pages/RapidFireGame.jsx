@@ -560,14 +560,11 @@ export default function RapidFireGame() {
 
     setGamePhase('winner');
 
-    // Show detailed payout info for all players (only if anyone won)
-    const anyoneWon = playerPayouts.some(p => p.netWin > 0);
-    if (anyoneWon) {
-      setLastWinInfo({
-        playerPayouts,
-        playerCount,
-      });
-    }
+    // Show detailed payout info for all players
+    setLastWinInfo({
+      playerPayouts,
+      playerCount,
+    });
 
     // History — capture ALL winning outcomes regardless of wagers
     const reds = finalComm.filter(c => cardColor(c) === 'red').length;
