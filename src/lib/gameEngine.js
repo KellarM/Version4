@@ -206,15 +206,15 @@ export const RB_TABLE = [
 ];
 
 // Display table for RankBets UI (payout string shown to players)
-// Based on empirical 32-card board frequencies — ranks that are too rare to price are progressive
+// Updated from 10M calibration — March 2026
 export const HAND_RANK_PAYOUTS = [
   { name: 'Royal Flush',     payout: 'Progressive', special: true },
   { name: 'Straight Flush',  payout: 'Progressive', special: true },
-  { name: 'Four of a Kind',  payout: '1.80 to 1'  },  // empirical 34.5% freq
-  { name: 'Full House',      payout: '0.50 to 1'  },  // empirical 64.1% freq
-  { name: 'Flush',           payout: 'Progressive', special: true },  // 0.35% — too rare for fixed payout
-  { name: 'Straight',        payout: 'Progressive', special: true },  // 0.10% — too rare for fixed payout
-  { name: 'Three of a Kind', payout: '30.0 to 1'  }, // rare on 32-card board
-  { name: 'Two Pair',        payout: 'Progressive', special: true },  // 0.62% — too rare for fixed payout
-  { name: 'One Pair',        payout: 'Progressive', special: true },  // near 0% — progressive
+  { name: 'Four of a Kind',  payout: '3.61:1'  },
+  { name: 'Full House',      payout: '0.93:1'  },
+  { name: 'Flush',           payout: '1.24:1'  },
+  { name: 'Straight',        payout: '1.81:1'  },
+  { name: 'Three of a Kind', payout: '0.93:1'  },
+  { name: 'Two Pair',        payout: '4.60:1'  },
+  { name: 'One Pair',        payout: '5.59:1'  },
 ];
