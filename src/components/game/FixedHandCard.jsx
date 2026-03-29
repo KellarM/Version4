@@ -96,10 +96,9 @@ export default function FixedHandCard({
         </div>
       )}
 
-      {/* Hand number + payout */}
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-yellow-400 font-bold text-xs">H{hand.id}</span>
-        <span className="text-yellow-300/80 text-xs font-semibold">{hand.payout}:1</span>
+      {/* Payout — top center */}
+      <div className="flex items-center justify-center mb-1">
+        <span className="text-yellow-300 text-sm font-bold">{hand.payout}:1</span>
       </div>
 
       {/* Cards */}
