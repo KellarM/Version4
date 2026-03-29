@@ -1005,7 +1005,7 @@ export default function RapidFireGame() {
               gamePhase={gamePhase}
               winningRedBlack={winningRedBlack}
               winningLowHigh={winningLowHigh}
-              disabled={balance < selectedChip}
+              disabled={gamePhase !== 'betting' ? true : balance < selectedChip}
               playerCount={playerCount}
             />
           </div>
