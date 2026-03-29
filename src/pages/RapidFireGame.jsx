@@ -87,6 +87,15 @@ export default function RapidFireGame() {
   const [previousBets, setPreviousBets] = useState(null); // { handBets, redBlackBets, rankBets, totalBet }
   const [repeatUsedThisRound, setRepeatUsedThisRound] = useState(false);
 
+  // Insufficient funds alert mouseup handler
+  useEffect(() => {
+    if (!showInsufficientFunds) return;
+    
+    const handleMouseUp = () => setShowInsufficientFunds(false);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => document.removeEventListener('mouseup', handleMouseUp);
+  }, [showInsufficientFunds]);
+
   // Game progress persistence
   useEffect(() => {
     const savedGame = localStorage.getItem('rapidFireGameState');
@@ -747,9 +756,6 @@ export default function RapidFireGame() {
         currentHandBets={handBetCount}
         alertType={rankAlertType}
       />
-      {showInsufficientFunds && (
-        <div onMouseUp={() => setShowInsufficientFunds(false)} className="fixed inset-0 pointer-events-auto z-50" />
-      )}
       <InsufficientFundsAlert 
         isVisible={showInsufficientFunds}
       />
