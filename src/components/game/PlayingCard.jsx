@@ -45,20 +45,20 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
       className={`${sizeClasses[size]} rounded-lg border-2 bg-white flex flex-col shadow-lg select-none overflow-hidden relative ${borderColor} ${glow ? 'ring-2 ring-yellow-400 shadow-yellow-400/80' : ''}`}
     >
       {/* Top-left: rank + suit below it */}
-      <div className={`flex flex-col items-start leading-tight p-1 ${textColor}`} style={{ fontSize: '0.55em', fontWeight: 'bold' }}>
+      <div className={`flex flex-col items-start leading-none p-1 ${textColor}`} style={{ fontSize: '0.55em', fontWeight: 'bold' }}>
         <div>{card.rank}</div>
         <div>{suitSymbol}</div>
       </div>
 
       {/* Center: Large suit symbol (5x) - vertically centered with equal spacing */}
-      <div className="flex-1 flex items-center justify-center px-1">
+      <div className="flex-1 flex items-center justify-center px-1 -my-1">
         <div style={{ fontSize: '2.5em', color: isRed ? '#dc2626' : '#000', opacity: 0.7, lineHeight: 1 }}>
           {suitSymbol}
         </div>
       </div>
 
       {/* Bottom-right: rank + suit below it (right-side up) */}
-      <div className={`flex flex-col items-end leading-tight p-1 pb-0.5 ${textColor}`} style={{ fontSize: '0.55em', fontWeight: 'bold' }}>
+      <div className={`flex flex-col items-end leading-none p-1 pb-0.5 ${textColor}`} style={{ fontSize: '0.55em', fontWeight: 'bold' }}>
         <div>{card.rank}</div>
         <div>{suitSymbol}</div>
       </div>
