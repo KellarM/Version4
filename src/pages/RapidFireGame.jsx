@@ -82,6 +82,7 @@ export default function RapidFireGame() {
   const [showRankLimitAlert, setShowRankLimitAlert] = useState(false);
   const [rankAlertType, setRankAlertType] = useState('limit');
   const [displayWindowVisible, setDisplayWindowVisible] = useState(false);
+  const [previousBets, setPreviousBets] = useState(null); // { handBets, redBlackBets, rankBets, totalBet }
 
   // Game progress persistence
   useEffect(() => {
@@ -533,6 +534,14 @@ export default function RapidFireGame() {
       });
     }
 
+    // Store previous bets for repeat functionality (excluding low/high)
+    setPreviousBets({
+      handBets: snapHandBets,
+      redBlackBets: snapRedBlackBets,
+      rankBets: snapRankBets,
+      totalBet: totalBetsAllPlayers,
+    });
+
     // Increment jackpots for next round
     setRoyalFlushJackpot(p => p + 12.5);
     setStraightFlushJackpot(p => p + 5);
@@ -651,6 +660,35 @@ export default function RapidFireGame() {
     setGamePhase('betting');
     setActivePlayer(0);
   };
+
+  const handleRepeatBets = () => {
+    if (!previousBets) return;
+    setHandBets(previousBets.handBets);
+    setRedBlackBets(previousBets.redBlackBets);
+    setRankBets(previousBets.rankBets);
+    // Deduct from balances
+    setBalances(b => {
+      const n = [...b];
+      for (let i = 0; i < playerCount; i++) {
+        const playerBet = 
+          Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
+          Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+          Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
+        n[i] = Math.max(0, n[i] - playerBet);
+      }
+      return n;
+    });
+  };
+
+  // Check if repeat button should show
+  const canRepeat = previousBets && gamePhase === 'betting' && roundId > 1 && 
+    Array.from({ length: playerCount }, (_, i) => {
+      const playerBet = 
+        Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
+        Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+        Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
+      return (balances[i] || STARTING_BALANCE) >= playerBet;
+    }).every(v => v);
 
   const handleAddPlayer = (playerNum) => {
     if (playerNum > playerCount) {
@@ -901,6 +939,16 @@ export default function RapidFireGame() {
           {/* Bottom controls: chips + action button */}
           <div className="flex items-center justify-between gap-2 border-t border-yellow-700/20 pt-1.5 flex-shrink-0">
             <div className="flex items-center gap-2">
+              {/* Repeat button */}
+              {canRepeat && (
+                <motion.button
+                  onClick={handleRepeatBets}
+                  whileTap={{ scale: 0.97 }}
+                  className="px-4 py-2 rounded-xl border-2 border-green-500 bg-green-600 hover:bg-green-500 text-black font-black text-sm tracking-wider transition-all"
+                >
+                  🔄 Repeat
+                </motion.button>
+              )}
               {/* Bank drop zone — drag chips here to refund */}
               {gamePhase === 'betting' && (
                 <div
