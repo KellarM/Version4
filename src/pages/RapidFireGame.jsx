@@ -465,7 +465,9 @@ export default function RapidFireGame() {
 
       totalBetsAllPlayers += playerTotalBet;
       totalWinningsAllPlayers += w;
-      playerWinnings.push(w);
+      // NET winnings = payouts received minus bets placed
+      const netWinning = w - playerTotalBet;
+      playerWinnings.push(netWinning);
     }
 
     setRoyalFlushJackpot(newRF);
