@@ -81,6 +81,7 @@ export default function RapidFireGame() {
   const [showHandLimitAlert, setShowHandLimitAlert] = useState(false);
   const [showRankLimitAlert, setShowRankLimitAlert] = useState(false);
   const [rankAlertType, setRankAlertType] = useState('limit');
+  const [displayWindowVisible, setDisplayWindowVisible] = useState(false);
 
   // Game progress persistence
   useEffect(() => {
@@ -575,13 +576,14 @@ export default function RapidFireGame() {
 
     setGamePhase('winner');
 
-    // Delay display window by 8 seconds
+    // Delay display window by 4 seconds
     setTimeout(() => {
       setLastWinInfo({
         playerPayouts,
         playerCount,
       });
-    }, 8000);
+      setDisplayWindowVisible(true);
+    }, 4000);
 
     // History — capture ALL winning outcomes regardless of wagers
     const reds = finalComm.filter(c => cardColor(c) === 'red').length;
@@ -641,6 +643,7 @@ export default function RapidFireGame() {
     setWinningRank(null);
     setLeadingRank(null);
     setLastWinInfo(null);
+    setDisplayWindowVisible(false);
     setDeck(shuffleDeck(DEALER_DECK));
     setDeckIndex(0);
     setRoundId(r => r + 1);
@@ -661,7 +664,7 @@ export default function RapidFireGame() {
     if (gamePhase === 'flop') return { label: '🃏 Deal Turn', action: handleDealTurn, disabled: false };
     if (gamePhase === 'lowHighBetting') return { label: '🃏 Deal River', action: handleDealRiver, disabled: false };
     if (gamePhase === 'river' || gamePhase === 'settlement') return { label: '⏳ Settling...', action: null, disabled: true };
-    if (gamePhase === 'winner') return { label: '🔄 New Round', action: handleNewRound, disabled: false };
+    if (gamePhase === 'winner') return { label: '🔄 New Round', action: handleNewRound, disabled: !displayWindowVisible };
     return null;
   };
 
