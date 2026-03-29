@@ -72,7 +72,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
                 }}
               >FIRE</span>
             </div>
-            {/* Bottom line: TEXAS 10 centered under the flame */}
+            {/* Bottom line: T10 centered under the flame */}
             <span className="font-black italic leading-none text-green-400"
               style={{
                 fontFamily: 'Oswald, sans-serif',
@@ -82,7 +82,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
                 letterSpacing: '0.02em',
                 textShadow: '0 0 4px rgba(74,222,128,0.6)',
               }}
-            >TEXAS 10</span>
+            >T10</span>
           </div>
         </div>
 
@@ -153,7 +153,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
               }}
             >FIRE</span>
           </div>
-          {/* TEXAS 10 — centered under the suit symbol */}
+          {/* T10 — centered under the suit symbol */}
           <span className="font-black italic leading-none text-green-400"
             style={{
               fontFamily: 'Oswald, sans-serif',
@@ -163,7 +163,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
               letterSpacing: '0.02em',
               textShadow: '0 0 3px rgba(74,222,128,0.5), 0px 0px 1px rgba(0,0,0,0.9)',
             }}
-          >TEXAS 10</span>
+          >T10</span>
         </div>
       </div>
     </div>
