@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 import { HAND_RANK_PAYOUTS as RANK_PAYOUT_MAP, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 import { cardDisplay, SUITS, FIXED_HANDS } from '@/lib/gameEngine';
 
@@ -11,9 +13,26 @@ const PLAYER_COLORS = [
 ];
 
 export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+
   if (!winInfo || !winInfo.playerPayouts) return null;
 
   const hasAnyWins = winInfo.playerPayouts?.some(p => p.wins.length > 0);
+  
+  // Find the next player with wins starting from currentPlayerIndex
+  const getNextWinningPlayer = (startIdx) => {
+    for (let i = startIdx; i < winInfo.playerPayouts.length; i++) {
+      if (winInfo.playerPayouts[i]?.wins.length > 0) return i;
+    }
+    return -1;
+  };
+
+  const nextWinnerIdx = getNextWinningPlayer(currentPlayerIndex);
+  
+  // Reset to first winner when winInfo changes
+  useEffect(() => {
+    setCurrentPlayerIndex(0);
+  }, [winInfo]);
 
   // Helper to get hand symbol display
   const getHandSymbol = (label) => {
@@ -25,14 +44,23 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
     return `${hand.cards[0].rank}${SUITS[hand.cards[0].suit]} / ${hand.cards[1].rank}${SUITS[hand.cards[1].suit]}`;
   };
 
+  const handleNext = () => {
+    const nextIdx = getNextWinningPlayer(currentPlayerIndex + 1);
+    if (nextIdx !== -1) {
+      setCurrentPlayerIndex(nextIdx);
+    } else {
+      // All winners shown, reset to allow closing
+      setCurrentPlayerIndex(-1);
+    }
+  };
+
   return (
     <AnimatePresence>
-      {winInfo && (
-      <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center gap-4 p-4">
-        {hasAnyWins ? (
-          winInfo.playerPayouts.map((payout, playerId) => {
-            if (!payout || payout.wins.length === 0) return null;
-
+      {winInfo && hasAnyWins && nextWinnerIdx !== -1 && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center p-4">
+          {(() => {
+            const playerId = nextWinnerIdx;
+            const payout = winInfo.playerPayouts[playerId];
             const color = PLAYER_COLORS[playerId % PLAYER_COLORS.length];
 
             return (
@@ -41,9 +69,17 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 initial={{ opacity: 0, scale: 0.8, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ delay: playerId * 0.1 }}
-                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] backdrop-blur-sm pointer-events-auto`}
+                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] backdrop-blur-sm pointer-events-auto relative`}
               >
+                {/* Close Button */}
+                <button
+                  onClick={handleNext}
+                  className="absolute top-4 right-4 p-2 hover:bg-black/20 rounded-lg transition-all"
+                  title="Next winner"
+                >
+                  <X className="w-6 h-6 text-gray-600" />
+                </button>
+
                 {/* Header */}
                 <div className="text-center mb-4">
                   {playerCount > 1 && (
@@ -109,21 +145,8 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 />
               </motion.div>
             );
-          })
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="border-2 border-gray-400 rounded-2xl p-8 shadow-2xl min-w-[600px] backdrop-blur-sm text-center pointer-events-auto"
-          >
-            <div className="text-5xl mb-4">🎰</div>
-            <div className="text-3xl font-black text-gray-400 mb-2" style={{ textShadow: '1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 0 1px 0 white, 1px 0 0 white, 0 -1px 0 white, -1px 0 0 white' }}>No Winners</div>
-            <div className="text-2xl font-black text-gray-500 mb-6" style={{ textShadow: '1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 0 1px 0 white, 1px 0 0 white, 0 -1px 0 white, -1px 0 0 white' }}>Better luck next time!</div>
-            <div className="text-2xl font-black text-gray-500" style={{ textShadow: '1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 0 1px 0 white, 1px 0 0 white, 0 -1px 0 white, -1px 0 0 white' }}>Next Round?</div>
-          </motion.div>
-        )}
-      </div>
+          })()}
+        </div>
       )}
     </AnimatePresence>
   );
