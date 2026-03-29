@@ -1099,7 +1099,7 @@ export default function RapidFireGame() {
               winningRank={winningRank}
               leadingRank={leadingRank}
               disabled={balance < selectedChip}
-              disabledByConstraint={rankBetsLocked}
+              disabledByConstraint={handBetsLockedByRanks}
               handBetCount={handBetCount}
               rankBetCount={rankBetCount}
               onAttemptLockedRank={(type) => {
