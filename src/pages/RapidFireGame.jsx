@@ -83,6 +83,7 @@ export default function RapidFireGame() {
   const [rankAlertType, setRankAlertType] = useState('limit');
   const [displayWindowVisible, setDisplayWindowVisible] = useState(false);
   const [previousBets, setPreviousBets] = useState(null); // { handBets, redBlackBets, rankBets, totalBet }
+  const [repeatUsedThisRound, setRepeatUsedThisRound] = useState(false);
 
   // Game progress persistence
   useEffect(() => {
@@ -653,6 +654,7 @@ export default function RapidFireGame() {
     setLeadingRank(null);
     setLastWinInfo(null);
     setDisplayWindowVisible(false);
+    setRepeatUsedThisRound(false);
     setDeck(shuffleDeck(DEALER_DECK));
     setDeckIndex(0);
     setRoundId(r => r + 1);
@@ -666,6 +668,7 @@ export default function RapidFireGame() {
     setHandBets(previousBets.handBets);
     setRedBlackBets(previousBets.redBlackBets);
     setRankBets(previousBets.rankBets);
+    setRepeatUsedThisRound(true);
     // Deduct from balances
     setBalances(b => {
       const n = [...b];
@@ -681,7 +684,7 @@ export default function RapidFireGame() {
   };
 
   // Check if repeat button should show
-  const canRepeat = previousBets && gamePhase === 'betting' && roundId > 1 && 
+  const canRepeat = previousBets && gamePhase === 'betting' && roundId > 1 && !repeatUsedThisRound &&
     Array.from({ length: playerCount }, (_, i) => {
       const playerBet = 
         Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
