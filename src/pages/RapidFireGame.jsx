@@ -955,7 +955,7 @@ export default function RapidFireGame() {
                   className={`px-5 py-2 rounded-xl font-black text-sm tracking-wider transition-all
                     ${btn.disabled
                       ? 'border border-gray-600 bg-gray-800 text-gray-500 cursor-not-allowed'
-                      : 'border-2 border-yellow-500 bg-yellow-600 hover:bg-yellow-500 text-black shadow-yellow-500/40 shadow-lg'}`}
+                      : 'border-2 border-yellow-500 bg-yellow-600 hover:bg-yellow-500 text-black shadow-yellow-500/40 shadow-lg cursor-pointer'}`}
                 >
                   {btn.label}
                 </motion.button>
