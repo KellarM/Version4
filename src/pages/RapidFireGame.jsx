@@ -123,8 +123,8 @@ export default function RapidFireGame() {
   const rankBetCount = Object.keys(pRankBets).length;
 
   // Betting constraints
-  // Max 2 simultaneous hand bets — prevents multi-hand exploitation
-  const MAX_HAND_BETS = 2;
+  // Max 4 simultaneous hand bets
+  const MAX_HAND_BETS = 4;
   const canBetRank = handBetCount === 0 || handBetCount === 1;
   const canBetHand = rankBetCount === 0 || rankBetCount === 1;
   const canBetMultipleRanks = handBetCount !== 1;
