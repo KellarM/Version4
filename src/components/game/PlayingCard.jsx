@@ -61,6 +61,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
               >RAPID</span>
               <span style={{ fontSize: '0.5em', lineHeight: 1 }}>🔥</span>
               <span className="font-black italic leading-none"
+
                 style={{
                   fontFamily: 'Oswald, sans-serif',
                   fontSize: '0.5em',
@@ -72,7 +73,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
                 }}
               >FIRE</span>
             </div>
-            {/* Bottom line: T10 centered under the flame */}
+            {/* Bottom line: TEXAS 10 centered under the flame */}
             <span className="font-black italic leading-none text-green-400"
               style={{
                 fontFamily: 'Oswald, sans-serif',
@@ -82,7 +83,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
                 letterSpacing: '0.02em',
                 textShadow: '0 0 4px rgba(74,222,128,0.6)',
               }}
-            >T10</span>
+            >TEXAS 10</span>
           </div>
         </div>
 
@@ -123,49 +124,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
         <span>{suitSymbol}</span>
       </div>
 
-      {/* Centered diagonal logo — suit replaces fire */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.75, paddingTop: '30%' }}>
-        <div className="flex flex-col items-center gap-0 leading-none" style={{ transform: 'rotate(-45deg)' }}>
-          {/* RAPID   FIRE — wide gap between, no extra suit symbol */}
-          <div className="flex items-center leading-none" style={{ gap: '20px' }}>
-            <span className="font-black italic leading-none"
-              style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontSize: '0.6rem',
-                transform: 'skewX(-12deg)',
-                background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                letterSpacing: '-0.05em',
-                filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.9)) drop-shadow(0px 0px 2px rgba(0,0,0,0.7))',
-              }}
-            >RAPID</span>
-            <span className="font-black italic leading-none"
-              style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontSize: '0.6rem',
-                transform: 'skewX(-12deg)',
-                background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.9)) drop-shadow(0px 0px 2px rgba(0,0,0,0.7))',
-                letterSpacing: '-0.02em',
-              }}
-            >FIRE</span>
-          </div>
-          {/* T10 — centered under the suit symbol */}
-          <span className="font-black italic leading-none text-green-400"
-            style={{
-              fontFamily: 'Oswald, sans-serif',
-              fontSize: '0.52rem',
-              transform: 'skewX(-12deg)',
-              marginTop: '3px',
-              letterSpacing: '0.02em',
-              textShadow: '0 0 3px rgba(74,222,128,0.5), 0px 0px 1px rgba(0,0,0,0.9)',
-            }}
-          >T10</span>
-        </div>
-      </div>
+
     </div>
   );
 }
