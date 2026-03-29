@@ -36,28 +36,25 @@ export const CARDED_HAND_PAYOUTS = [
 ];
 
 // HAND RANK PAYOUTS — empirical data from actual gameplay (206,846 hands)
-// Calibrated at 96.5% RTP: payout = 0.965/freq - 1
 export const HAND_RANK_PAYOUTS = {
-  'Royal Flush':     7132.63, // 0.0135% freq → 7132.63x
-  'Straight Flush':  277.10,  // 0.347% freq → 277.10x
-  'Four of a Kind':  12.77,   // 7.005% freq → 12.77x
-  'Full House':      2.53,    // 27.35% freq → 2.53x
-  'Flush':           3.21,    // 22.89% freq → 3.21x
-  'Straight':        4.93,    // 16.27% freq → 4.93x
-  'Three of a Kind': 3.81,    // 20.06% freq → 3.81x
-  'Two Pair':        15.98,   // 5.685% freq → 15.98x
-  'One Pair':        162.84,  // 0.589% freq → 162.84x
+  'Royal Flush':     null,    // Progressive jackpot
+  'Straight Flush':  null,    // Progressive jackpot
+  'Four of a Kind':  12.77,
+  'Full House':      2.53,
+  'Flush':           3.21,
+  'Straight':        4.93,
+  'Three of a Kind': 3.81,
+  'Two Pair':        15.98,
+  'One Pair':        null,    // Progressive jackpot
 };
 
-// COLOR BOARD PAYOUTS — empirical 32-card frequencies, calibrated at 96.5% RTP
-// Approximate binomial from actual 32-card deck with suit distribution:
-//   3R/3B: ~50.0%   4R/4B: ~18.75%   5R/5B: ~3.125%
+// COLOR BOARD PAYOUTS — empirical 32-card frequencies
 export const COLOR_BOARD_PAYOUTS = {
-  '3R': 0.81,   // 50.0% freq → fair 0.93x → 0.81x (house edge)
+  '3R': 0.81,
   '3B': 0.81,
-  '4R': 5.25,   // 18.75% freq → fair 4.15x → 5.25x
+  '4R': 5.25,
   '4B': 5.25,
-  '5R': 20.56,  // 3.125% freq → fair 29.88x → 20.56x
+  '5R': 20.56,
   '5B': 20.56,
 };
 

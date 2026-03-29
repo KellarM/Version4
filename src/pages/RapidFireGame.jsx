@@ -68,6 +68,7 @@ export default function RapidFireGame() {
   const [roundId, setRoundId] = useState(1);
   const [royalFlushJackpot, setRoyalFlushJackpot] = useState(10000);
   const [straightFlushJackpot, setStraightFlushJackpot] = useState(2000);
+  const [onePairJackpot, setOnePairJackpot] = useState(1000);
   const [lastWinInfo, setLastWinInfo] = useState(null);
   const [winningRank, setWinningRank] = useState(null);
   const [leadingRank, setLeadingRank] = useState(null);
@@ -87,6 +88,7 @@ export default function RapidFireGame() {
         setRoundsPlayed(state.roundsPlayed);
         setRoyalFlushJackpot(state.royalFlushJackpot);
         setStraightFlushJackpot(state.straightFlushJackpot);
+        setOnePairJackpot(state.onePairJackpot || 1000);
       } catch (e) {
         console.log('Could not restore game state');
       }
@@ -102,6 +104,7 @@ export default function RapidFireGame() {
       roundsPlayed,
       royalFlushJackpot,
       straightFlushJackpot,
+      onePairJackpot,
     };
     localStorage.setItem('rapidFireGameState', JSON.stringify(gameState));
   }, [balances, roundId, casinoProfit, roundsPlayed, royalFlushJackpot, straightFlushJackpot]);
@@ -444,6 +447,13 @@ export default function RapidFireGame() {
           }
           newSF = 2000;
         }
+        if (handResult.name === 'One Pair') {
+          const opBet = prk['One Pair'] || 0;
+          if (opBet >= 10) {
+            w += onePairJackpot + opBet + opBet * 100;
+          }
+          setOnePairJackpot(1000);
+        }
       }
 
       // Total bets for this player
@@ -541,6 +551,7 @@ export default function RapidFireGame() {
     setPlayerStats({});
     setRoyalFlushJackpot(10000);
     setStraightFlushJackpot(2000);
+    setOnePairJackpot(1000);
     setActivePlayer(0);
     setDealerMessage("Texas Hold'em is open for play. Players, please place your bets.");
     setGamePhase('betting');
@@ -567,6 +578,7 @@ export default function RapidFireGame() {
     setActivePlayer(0);
     setRoyalFlushJackpot(p => p + 12.5);
     setStraightFlushJackpot(p => p + 5);
+    setOnePairJackpot(p => p + 0.5);
   };
 
   const handleAddPlayer = (playerNum) => {
@@ -731,6 +743,7 @@ export default function RapidFireGame() {
             history={history}
             royalFlushJackpot={royalFlushJackpot}
             straightFlushJackpot={straightFlushJackpot}
+            onePairJackpot={onePairJackpot}
           />
         </div>
 
