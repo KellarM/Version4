@@ -51,8 +51,8 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const styles = COLOR_STYLES[opt.color];
           const qualifies = !opt.minBet || bet >= opt.minBet;
           
-          // Rule: 1 hand = all allowed, 2 hands = limit to 2 non-progressive, 3+ hands = non-progressive closed
-          const canBetThisRank = isProgressive || (handBetCount <= 1) || (handBetCount === 2 && rankBetCount < 2);
+          // Rule per-player: 0 hands = all allowed, 1-2 hands = limit to 2 non-progressive, 3+ hands = non-progressive closed
+          const canBetThisRank = isProgressive || (handBetCount === 0) || (handBetCount >= 1 && handBetCount <= 2 && rankBetCount < 2);
 
           let cls = styles.inactive;
           if (!canBetThisRank && bet === 0) cls = 'border-red-700/60 bg-red-950/60 text-red-500 opacity-40 cursor-not-allowed';
