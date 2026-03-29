@@ -38,7 +38,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ delay: playerId * 0.1 }}
-              className={`bg-gradient-to-b ${color.bg} border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-80 max-w-md`}
+              className={`bg-gradient-to-b ${color.bg} bg-opacity-75 border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-80 max-w-md backdrop-blur-sm`}
             >
               {/* Header */}
               <div className="text-center mb-4">
@@ -59,7 +59,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.2 + idx * 0.1 }}
-                      className="bg-black/30 rounded-lg p-3 border border-white/20"
+                      className="bg-black/20 rounded-lg p-3 border border-white/10 backdrop-blur-sm"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="font-bold text-sm">{getHandSymbol(win.label)}</div>
