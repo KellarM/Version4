@@ -695,6 +695,19 @@ export default function RapidFireGame() {
 
   const handleRepeatBets = () => {
     if (!previousBets) return;
+    
+    // Check if all players have sufficient funds for previous bets
+    for (let i = 0; i < playerCount; i++) {
+      const playerBet = 
+        Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
+        Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+        Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
+      if ((balances[i] || STARTING_BALANCE) < playerBet) {
+        setShowInsufficientFunds(true);
+        return;
+      }
+    }
+    
     setHandBets(previousBets.handBets);
     setRedBlackBets(previousBets.redBlackBets);
     setRankBets(previousBets.rankBets);
