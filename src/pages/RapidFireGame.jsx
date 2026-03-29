@@ -987,6 +987,7 @@ export default function RapidFireGame() {
               disabled={balance < selectedChip}
               disabledByConstraint={rankBetsLocked}
               handBetCount={handBetCount}
+              rankBetCount={rankBetCount}
               onAttemptLockedRank={(type) => {
                 setRankAlertType(type);
                 setShowRankLimitAlert(true);
