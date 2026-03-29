@@ -18,6 +18,7 @@ import PlayerStatsPanel from '@/components/game/PlayerStatsPanel';
 import ToolsMenu from '@/components/game/ToolsMenu';
 import DetailedPayoutDisplay from '@/components/game/DetailedPayoutDisplay';
 import HandBetLimitAlert from '@/components/game/HandBetLimitAlert';
+import RankBetLimitAlert from '@/components/game/RankBetLimitAlert';
 
 const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -78,6 +79,7 @@ export default function RapidFireGame() {
   const [casinoProfit, setCasinoProfit] = useState(0);
   const [roundsPlayed, setRoundsPlayed] = useState(0);
   const [showHandLimitAlert, setShowHandLimitAlert] = useState(false);
+  const [showRankLimitAlert, setShowRankLimitAlert] = useState(false);
 
   // Game progress persistence
   useEffect(() => {
@@ -125,14 +127,12 @@ export default function RapidFireGame() {
   const rankBetCount = Object.keys(pRankBets).length;
 
   // Betting constraints
-  // Max 4 simultaneous hand bets
+  // Max 2 simultaneous hand bets (for rank betting), max 4 total
   const MAX_HAND_BETS = 4;
-  const canBetRank = handBetCount === 0 || handBetCount === 1;
-  const canBetHand = rankBetCount === 0 || rankBetCount === 1;
-  const canBetMultipleRanks = handBetCount !== 1;
-  const canBetMultipleHands = rankBetCount !== 1;
-  const maxRankBets = handBetCount === 1 ? 1 : Infinity;
-  const maxHandBets = rankBetCount === 1 ? 1 : Infinity;
+  const MAX_HAND_BETS_FOR_RANK = 2;
+  const canBetRank = handBetCount <= MAX_HAND_BETS_FOR_RANK;
+  const canBetHand = rankBetCount === 0;
+  const maxRankBets = 1;  // Only 1 rank bet allowed at a time
 
   const totalBet = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
     Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
@@ -195,13 +195,14 @@ export default function RapidFireGame() {
     const existing = (rankBets[pid] || {})[key] || 0;
     const currentCount = Object.keys(rankBets[pid] || {}).length;
     
-    // Check constraints
-    if (existing === 0 && currentCount > 0 && handBetCount === 1) {
-      // Can only bet 1 rank if 1 hand is already bet
+    // Check constraints: max 2 hand bets allowed for rank betting
+    if (existing === 0 && handBetCount > MAX_HAND_BETS_FOR_RANK) {
+      setShowRankLimitAlert(true);
       return;
     }
-    if (existing === 0 && handBetCount > 1) {
-      // Cannot bet on ranks if multiple hands are bet
+    
+    // Only 1 rank bet allowed
+    if (existing === 0 && currentCount >= maxRankBets) {
       return;
     }
 
@@ -213,7 +214,7 @@ export default function RapidFireGame() {
     if (balance <= 0 || balance < selectedChip) return;
     setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount]);
+  }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount, maxRankBets]);
 
   const handleRemoveRankBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
@@ -657,6 +658,11 @@ export default function RapidFireGame() {
         isOpen={showHandLimitAlert} 
         onClose={() => setShowHandLimitAlert(false)} 
       />
+      <RankBetLimitAlert 
+        isOpen={showRankLimitAlert} 
+        onClose={() => setShowRankLimitAlert(false)} 
+        currentHandBets={handBetCount}
+      />
 
       {/* Player Stats Panel */}
       <PlayerStatsPanel 
@@ -955,7 +961,9 @@ export default function RapidFireGame() {
               winningRank={winningRank}
               leadingRank={leadingRank}
               disabled={balance < selectedChip}
-              disabledByConstraint={handBetCount > 1}
+              disabledByConstraint={handBetCount > MAX_HAND_BETS_FOR_RANK}
+              handBetCount={handBetCount}
+              maxHandBetsForRank={MAX_HAND_BETS_FOR_RANK}
             />
           </div>
           {/* Side Bets panel */}

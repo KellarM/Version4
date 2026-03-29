@@ -14,11 +14,16 @@
  *   H7  7♦7♠    17.91%    H8  4♥2♥    4.52%
  *   H9  3♣3♥    10.53%   H10  A♥5♦    5.37%
  *
+ * BETTING CONSTRAINTS (Updated 2026-03-29):
+ * - Max 4 simultaneous Card Hand bets (no restriction)
+ * - Max 2 Card Hand bets allowed IF betting on Hand Rank board
+ * - Only 1 Hand Rank bet allowed at a time
+ * - Progressive pots (Royal Flush, Straight Flush, One Pair) always available before deal
+ * - All other Hand Rank bets require ≤2 Hand bets to be active
+ *
  * Note: Multi-hand bet exploitation is neutralized by the 2-hand maximum
- * rule enforced in RapidFireGame.jsx (MAX_HAND_BETS = 2).
- * With max 2 hands: best-case (H8+H3) combined freq = 9.6%, win returns
- * $20×21 = $420 on $60 stake → positive but rare enough to be house-favorable
- * overall: EV = 0.096×$420 - 0.904×$60 = $40.32 - $54.24 = -$13.92 per $60 → house edge intact.
+ * rule enforced for rank betting. With max 2 hands + 1 rank: best-case
+ * combined freq ≈ 9.6%, ensuring house edge remains positive overall.
  */
 
 // CARDED HANDS — updated payouts

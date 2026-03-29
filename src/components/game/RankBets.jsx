@@ -33,12 +33,15 @@ const COLOR_STYLES = {
   green:  { active: 'border-green-500 bg-green-900/50 text-green-200',    inactive: 'border-green-800/40 bg-green-950/20 text-green-400/60',    winner: WINNER_STYLE },
 };
 
-export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled, disabledByConstraint }) {
-  const canBet = gamePhase === 'betting' && !disabled && !disabledByConstraint;
+export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled, disabledByConstraint, handBetCount, maxHandBetsForRank = 2 }) {
+  const canBet = gamePhase === 'betting' && !disabled && !disabledByConstraint && handBetCount <= maxHandBetsForRank;
+  const isLocked = handBetCount > maxHandBetsForRank;
 
   return (
     <div>
-      <div className="text-yellow-400 text-xs font-bold tracking-wider uppercase mb-1 text-center">Hand Rank Board</div>
+      <div className={`text-xs font-bold tracking-wider uppercase mb-1 text-center ${isLocked ? 'text-orange-400' : 'text-yellow-400'}`}>
+        Hand Rank Board {isLocked && '🔒'}
+      </div>
       <div className="flex flex-col gap-0.5">
         {RANK_BET_OPTIONS.map(opt => {
           const bet = rankBets[opt.key] || 0;

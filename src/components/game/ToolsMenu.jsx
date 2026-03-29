@@ -12,6 +12,29 @@ const TOOLS = [
   { icon: Activity,  label: 'Frequency Profiler',   href: '/frequency-profiler' },
 ];
 
+// Updated betting rules (as of 2026-03-29)
+const BETTING_RULES = `
+RAPID FIRE - TEXAS 10 BETTING RULES:
+
+CARD HAND BETS:
+• Max 4 simultaneous Card Hand bets allowed
+• Alert triggers when attempting 5th bet (5-sec countdown)
+
+HAND RANK BETS:
+• Unavailable if more than 2 Card Hand bets are active
+• Only 1 Hand Rank bet allowed per round
+• Alert triggers when attempting to bet with >2 active hand bets
+• Progressives (RF, SF, OP) always available before deal
+
+COLOR BOARD (Red/Black):
+• Available during betting phase
+• Can bet multiple color combinations
+
+LOW/HIGH BETS:
+• Available after Turn card is dealt
+• Max bet = total board bets (hand + rank + color bets combined)
+`;
+
 export default function ToolsMenu({ onOpenStats }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
