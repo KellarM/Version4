@@ -17,6 +17,7 @@ import NewPlayerButton from '@/components/game/NewPlayerButton';
 import PlayerStatsPanel from '@/components/game/PlayerStatsPanel';
 import ToolsMenu from '@/components/game/ToolsMenu';
 import DetailedPayoutDisplay from '@/components/game/DetailedPayoutDisplay';
+import HandBetLimitAlert from '@/components/game/HandBetLimitAlert';
 
 const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -76,6 +77,7 @@ export default function RapidFireGame() {
   // Casino profit tracking
   const [casinoProfit, setCasinoProfit] = useState(0);
   const [roundsPlayed, setRoundsPlayed] = useState(0);
+  const [showHandLimitAlert, setShowHandLimitAlert] = useState(false);
 
   // Game progress persistence
   useEffect(() => {
@@ -157,7 +159,7 @@ export default function RapidFireGame() {
     
     // Check constraints
     if (existing === 0 && currentCount >= MAX_HAND_BETS) {
-      // Max 2 simultaneous hand bets — prevents multi-hand exploitation
+      setShowHandLimitAlert(true);
       return;
     }
     if (existing === 0 && currentCount > 0 && rankBetCount === 1) {
@@ -649,6 +651,12 @@ export default function RapidFireGame() {
   return (
     <div className="h-screen w-screen overflow-hidden text-white flex flex-col"
       style={{ background: 'radial-gradient(ellipse at top, #0a1628 0%, #050d1a 100%)' }}>
+
+      {/* Alerts */}
+      <HandBetLimitAlert 
+        isOpen={showHandLimitAlert} 
+        onClose={() => setShowHandLimitAlert(false)} 
+      />
 
       {/* Player Stats Panel */}
       <PlayerStatsPanel 
