@@ -34,8 +34,8 @@ const COLOR_STYLES = {
 };
 
 export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled, disabledByConstraint, handBetCount, maxHandBetsForRank = 2 }) {
-  const canBet = gamePhase === 'betting' && !disabled && !disabledByConstraint && handBetCount <= maxHandBetsForRank;
-  const isLocked = handBetCount > maxHandBetsForRank;
+  const canBet = gamePhase === 'betting' && !disabled;
+  const isLocked = false;
 
   return (
     <div>
@@ -47,11 +47,15 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const bet = rankBets[opt.key] || 0;
           const isWinner = winningRank === opt.key;
           const isLeading = leadingRank === opt.key && !isWinner;
+          const isProgressive = opt.minBet !== undefined; // Royal Flush, Straight Flush, One Pair
           const styles = COLOR_STYLES[opt.color];
           const qualifies = !opt.minBet || bet >= opt.minBet;
+          
+          // Can bet on progressives always, or on non-progressives if ≤2 card hands active
+          const canBetThisRank = isProgressive || handBetCount <= maxHandBetsForRank;
 
           let cls = styles.inactive;
-          if (disabledByConstraint) cls = 'border-red-600/40 bg-red-900/20 text-red-400/50 opacity-60';
+          if (!canBetThisRank && bet === 0) cls = 'border-red-600/40 bg-red-900/20 text-red-400/50 opacity-60';
           else if (isWinner) cls = styles.winner;
           else if (isLeading) cls = styles.active;
           else if (bet > 0) cls = styles.active;
@@ -66,12 +70,12 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           return (
             <motion.button
               key={opt.key}
-              onClick={() => canBet && onRankBet(opt.key)}
+              onClick={() => canBet && canBetThisRank && onRankBet(opt.key)}
               onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveRankBet(opt.key); }}
-              whileTap={canBet ? { scale: 0.97 } : {}}
+              whileTap={canBet && canBetThisRank ? { scale: 0.97 } : {}}
               className={`relative flex items-center justify-between px-2 py-1 rounded-lg border-2 text-xs font-bold transition-all duration-200
                 ${cls}
-                ${canBet ? 'cursor-pointer hover:brightness-125' : 'cursor-default'}
+                ${canBet && canBetThisRank ? 'cursor-pointer hover:brightness-125' : 'cursor-default'}
               `}
             >
               <div className="flex flex-col items-start leading-tight min-w-0">

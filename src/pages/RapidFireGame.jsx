@@ -193,16 +193,11 @@ export default function RapidFireGame() {
   const handleRankBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
     const existing = (rankBets[pid] || {})[key] || 0;
-    const currentCount = Object.keys(rankBets[pid] || {}).length;
+    const isProgressive = key === 'Royal Flush' || key === 'Straight Flush' || key === 'One Pair';
     
-    // Check constraints: max 2 hand bets allowed for rank betting
-    if (existing === 0 && handBetCount > MAX_HAND_BETS_FOR_RANK) {
+    // Non-progressive ranks are locked if >2 card hands active
+    if (!isProgressive && handBetCount > MAX_HAND_BETS_FOR_RANK) {
       setShowRankLimitAlert(true);
-      return;
-    }
-    
-    // Only 1 rank bet allowed
-    if (existing === 0 && currentCount >= maxRankBets) {
       return;
     }
 
@@ -214,7 +209,7 @@ export default function RapidFireGame() {
     if (balance <= 0 || balance < selectedChip) return;
     setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount, maxRankBets]);
+  }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount]);
 
   const handleRemoveRankBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
@@ -262,6 +257,7 @@ export default function RapidFireGame() {
   }, [gamePhase, balance, selectedChip, handBets, redBlackBets, rankBets, pLowHighBet, pid]);
 
   const handleRemoveLowHighBet = useCallback(() => {
+    // Can only remove Low/High bet during lowHighBetting phase (after turn, before river)
     if (gamePhase !== 'lowHighBetting') return;
     if (!pLowHighBet || pLowHighBet.amount <= 0) return;
     setBalances(b => { const n = [...b]; n[pid] += pLowHighBet.amount; return n; });
