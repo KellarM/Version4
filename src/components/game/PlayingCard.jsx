@@ -42,32 +42,37 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
 
         {/* Diagonal logo — centered bottom-left to upper-right */}
         <div className="absolute inset-0 flex items-center justify-center z-20">
-          <div className="flex items-baseline gap-0.5 leading-none"
+          <div className="flex flex-col items-center gap-0 leading-none"
             style={{ transform: 'rotate(-45deg)' }}
           >
-            <span className="font-black italic leading-none"
-              style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontSize: '0.5em',
-                transform: 'skewX(-12deg)',
-                background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 60%, #94a3b8 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                letterSpacing: '-0.05em',
-                filter: 'drop-shadow(1px 0 2px rgba(148,163,184,0.6))',
-              }}
-            >RAPID</span>
-            <span className="font-black italic leading-none"
-              style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontSize: '0.5em',
-                transform: 'skewX(-12deg)',
-                background: 'linear-gradient(180deg, #fef08a 0%, #f97316 60%, #dc2626 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 3px rgba(251,146,60,0.8))',
-              }}
-            >🔥FIRE</span>
+            {/* Top line: RAPID 🔥 FIRE */}
+            <div className="flex items-baseline gap-0.5 leading-none">
+              <span className="font-black italic leading-none"
+                style={{
+                  fontFamily: 'Oswald, sans-serif',
+                  fontSize: '0.5em',
+                  transform: 'skewX(-12deg)',
+                  background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 60%, #94a3b8 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  letterSpacing: '-0.05em',
+                  filter: 'drop-shadow(1px 0 2px rgba(148,163,184,0.6))',
+                }}
+              >RAPID</span>
+              <span style={{ fontSize: '0.5em', lineHeight: 1 }}>🔥</span>
+              <span className="font-black italic leading-none"
+                style={{
+                  fontFamily: 'Oswald, sans-serif',
+                  fontSize: '0.5em',
+                  transform: 'skewX(-12deg)',
+                  background: 'linear-gradient(180deg, #fef08a 0%, #f97316 60%, #dc2626 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: 'drop-shadow(0 0 3px rgba(251,146,60,0.8))',
+                }}
+              >FIRE</span>
+            </div>
+            {/* Bottom line: T10 centered under the flame */}
             <span className="font-black italic leading-none"
               style={{
                 fontFamily: 'Oswald, sans-serif',
@@ -76,8 +81,9 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
                 background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
+                marginTop: '1px',
               }}
-            >T10</span>
+            >TEXAS 10</span>
           </div>
         </div>
 
