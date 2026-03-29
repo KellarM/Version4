@@ -223,14 +223,19 @@ export default function RapidFireGame() {
     const progressiveMinBets = { 'Royal Flush': 25, 'Straight Flush': 15, 'One Pair': 10 };
     const minBet = progressiveMinBets[key];
 
+    // Count only non-progressive rank bets for this player
+    const nonProgRankBetCountForPlayer = Object.keys(pRankBets)
+      .filter(k => !['Royal Flush', 'Straight Flush', 'One Pair'].includes(k))
+      .length;
+
     // Non-progressive ranks: locked if 3+ hand bets, or limited to 2 if 1-2 hand bets
-    // These constraints are calculated per-player based on their own bets
+    // Progressives are always available
     if (!isProgressive && handBetCount >= 3) {
       setRankAlertType('closed');
       setShowRankLimitAlert(true);
       return;
     }
-    if (!isProgressive && handBetCount >= 1 && handBetCount <= 2 && rankBetCount >= 2) {
+    if (!isProgressive && handBetCount >= 1 && handBetCount <= 2 && nonProgRankBetCountForPlayer >= 2) {
       setRankAlertType('limit');
       setShowRankLimitAlert(true);
       return;

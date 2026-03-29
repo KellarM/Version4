@@ -51,8 +51,11 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const styles = COLOR_STYLES[opt.color];
           const qualifies = !opt.minBet || bet >= opt.minBet;
           
-          // Rule per-player: 0 hands = all allowed, 1-2 hands = limit to 2 non-progressive, 3+ hands = non-progressive closed
-          const canBetThisRank = isProgressive || (handBetCount === 0) || (handBetCount >= 1 && handBetCount <= 2 && rankBetCount < 2);
+          // Count only non-progressive bets for this player
+          const nonProgBetCount = Object.keys(rankBets).filter(k => !['Royal Flush', 'Straight Flush', 'One Pair'].includes(k)).length;
+          
+          // Rule per-player: progressives always available; non-progressive: 0 hands = all allowed, 1-2 hands = limit to 2, 3+ hands = closed
+          const canBetThisRank = isProgressive || (handBetCount === 0) || (handBetCount >= 1 && handBetCount <= 2 && nonProgBetCount < 2);
 
           let cls = styles.inactive;
           if (!canBetThisRank && bet === 0) cls = 'border-red-700/60 bg-red-950/60 text-red-500 opacity-40 cursor-not-allowed';
