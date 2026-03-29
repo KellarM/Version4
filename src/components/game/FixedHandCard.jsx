@@ -76,8 +76,9 @@ export default function FixedHandCard({
         if (!isBettingPhase) return;
         const data = e.dataTransfer.getData('text/plain');
         if (!data) return;
-        const { from, pid } = JSON.parse(data);
-        if (from !== hand.id) onDropChip(from, hand.id, pid);
+        const parsed = JSON.parse(data);
+        const { from, pid, type } = parsed;
+        if (type === 'hand' && from !== hand.id) onDropChip(from, hand.id, pid);
       }}
     >
       {(isLeading || isWinner) && !isWinner && (
@@ -119,7 +120,7 @@ export default function FixedHandCard({
               draggable={isBettingPhase && pid === activePlayerId}
               onDragStart={(e) => {
                 e.stopPropagation();
-                e.dataTransfer.setData('text/plain', JSON.stringify({ from: hand.id, pid }));
+                e.dataTransfer.setData('text/plain', JSON.stringify({ from: hand.id, pid, type: 'hand' }));
                 e.dataTransfer.effectAllowed = 'move';
               }}
               style={{ zIndex: 10 + idx, cursor: isBettingPhase && pid === activePlayerId ? 'grab' : 'default' }}
