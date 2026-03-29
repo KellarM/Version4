@@ -25,6 +25,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
 
   return (
     <AnimatePresence>
+      {winInfo && winInfo.playerPayouts?.some(p => p.netWin > 0) && (
       <div className="fixed inset-0 pointer-events-auto z-50 flex items-center justify-center gap-4 p-4">
         {winInfo.playerPayouts.map((payout, playerId) => {
           if (!payout || payout.netWin === 0 && payout.wins.length === 0) return null;
@@ -101,6 +102,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
           );
         })}
       </div>
+      )}
     </AnimatePresence>
   );
 }
