@@ -246,14 +246,13 @@ export default function RapidFireGame() {
     }
     if (balance <= 0 || balance < selectedChip) return;
 
-    // For progressive ranks: cap at minBet, return remainder
+    // For progressive ranks: cap at minBet, don't deduct excess chip
     if (isProgressive && minBet) {
       const amountNeeded = Math.max(0, minBet - existing);
       const amountToAdd = Math.min(selectedChip, amountNeeded);
-      const remainder = selectedChip - amountToAdd;
 
       setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + amountToAdd } }));
-      setBalances(b => { const n = [...b]; n[pid] -= amountToAdd; n[pid] += remainder; return n; });
+      setBalances(b => { const n = [...b]; n[pid] -= amountToAdd; return n; });
     } else {
       setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
       setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
