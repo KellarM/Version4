@@ -61,7 +61,6 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
               >RAPID</span>
               <span style={{ fontSize: '0.5em', lineHeight: 1 }}>🔥</span>
               <span className="font-black italic leading-none"
-
                 style={{
                   fontFamily: 'Oswald, sans-serif',
                   fontSize: '0.5em',
@@ -109,107 +108,164 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
   const isCourtCard = ['J', 'Q', 'K'].includes(card.rank);
 
   return (
-    <div className={`${sizeClasses[size]} rounded-sm border-2 bg-white flex flex-col items-stretch justify-between p-1 shadow-lg select-none overflow-hidden relative
-      ${isRed ? 'text-red-600 border-red-300' : 'text-black border-gray-300'}
+    <div className={`${sizeClasses[size]} rounded-sm border-2 bg-white flex flex-col items-stretch justify-between p-0.5 shadow-lg select-none overflow-hidden relative
+      ${isRed ? 'text-red-600 border-red-400' : 'text-black border-gray-400'}
       ${glow ? 'border-yellow-400 shadow-yellow-400/80 shadow-lg ring-2 ring-yellow-400' : ''}
     `}>
-      {/* Top-left corner: rank + suit */}
-      <div className="flex flex-col leading-none text-center min-w-0">
-        <span className="font-black" style={{ fontSize: '0.65em', lineHeight: '1' }}>{card.rank}</span>
-        <span className="font-bold" style={{ fontSize: '0.5em', lineHeight: '1.1' }}>{suitSymbol}</span>
+      {/* Top-left index */}
+      <div className="flex flex-col leading-none text-left">
+        <span className="font-black" style={{ fontSize: '0.6em', lineHeight: '0.9' }}>{card.rank}</span>
+        <span className="font-bold" style={{ fontSize: '0.45em', lineHeight: '0.8' }}>{suitSymbol}</span>
       </div>
 
-      {/* Center area */}
+      {/* Center content */}
       <div className="flex-1 flex items-center justify-center">
         {isCourtCard ? (
-          // Court cards: show large ornate suit symbol
-          <span className="font-bold opacity-70" style={{ fontSize: '2.5em', lineHeight: '1' }}>{suitSymbol}</span>
-        ) : (
-          // Pip cards: show suit symbols in pattern
-          <div className="flex flex-col items-center justify-center gap-0.5 w-full h-full">
-            {card.rank === 'A' && (
-              <span className="font-black" style={{ fontSize: '1.2em' }}>{suitSymbol}</span>
-            )}
-            {card.rank === '2' && (
-              <>
-                <span className="font-bold" style={{ fontSize: '0.7em' }}>{suitSymbol}</span>
-                <span className="font-bold" style={{ fontSize: '0.7em' }}>{suitSymbol}</span>
-              </>
-            )}
-            {card.rank === '3' && (
-              <>
-                <span className="font-bold" style={{ fontSize: '0.7em' }}>{suitSymbol}</span>
-                <span className="font-bold" style={{ fontSize: '0.7em' }}>{suitSymbol}</span>
-                <span className="font-bold" style={{ fontSize: '0.7em' }}>{suitSymbol}</span>
-              </>
-            )}
-            {card.rank === '4' && (
-              <div className="grid grid-cols-2 gap-1">
-                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
-                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
-                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
-                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
-              </div>
-            )}
-            {card.rank === '5' && (
-              <div className="grid grid-cols-2 gap-1">
-                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
-                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
-                <span className="font-bold text-transparent text-center" style={{ fontSize: '0.6em' }}>.</span>
-                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
-                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
-              </div>
-            )}
-            {['6', '7', '8', '9', '10'].includes(card.rank) && (
-              <div className="grid grid-cols-2 gap-0.5 text-center">
-                {Array(parseInt(card.rank) === 10 ? 10 : parseInt(card.rank)).fill(0).map((_, i) => (
-                  <span key={i} className="font-bold" style={{ fontSize: '0.5em' }}>{suitSymbol}</span>
-                ))}
-              </div>
-            )}
+          // Court cards: show suit symbol in ornate style
+          <div className="text-center">
+            <div className="font-bold opacity-60" style={{ fontSize: '2.2em', lineHeight: '0.8' }}>{suitSymbol}</div>
+            <div className="font-black text-center" style={{ fontSize: '0.55em' }}>
+              {card.rank}
+            </div>
           </div>
+        ) : card.rank === 'A' ? (
+          // Ace: single large pip
+          <span className="font-bold" style={{ fontSize: '2.5em', lineHeight: '0.8' }}>{suitSymbol}</span>
+        ) : (
+          // Number cards: pips arranged in standard pattern
+          <PipPattern rank={card.rank} suit={suitSymbol} />
         )}
       </div>
 
-      {/* Bottom-right corner: rank + suit (upside down) */}
-      <div className="flex flex-col leading-none text-center items-end min-w-0" style={{ transform: 'rotate(180deg)' }}>
-        <span className="font-black" style={{ fontSize: '0.65em', lineHeight: '1' }}>{card.rank}</span>
-        <span className="font-bold" style={{ fontSize: '0.5em', lineHeight: '1.1' }}>{suitSymbol}</span>
+      {/* Bottom-right index (upside down) */}
+      <div className="flex flex-col leading-none text-right items-end" style={{ transform: 'rotate(180deg)' }}>
+        <span className="font-black" style={{ fontSize: '0.6em', lineHeight: '0.9' }}>{card.rank}</span>
+        <span className="font-bold" style={{ fontSize: '0.45em', lineHeight: '0.8' }}>{suitSymbol}</span>
       </div>
 
-      {/* Centered diagonal watermark — only shown when explicitly enabled */}
       {showWatermark && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.75 }}>
-          <div className="flex flex-col items-center gap-0 leading-none" style={{ transform: 'rotate(-45deg)' }}>
-            <div className="flex items-center leading-none" style={{ gap: '20px' }}>
-              <span className="font-black italic leading-none"
-                style={{
-                  fontFamily: 'Oswald, sans-serif',
-                  fontSize: '0.6rem',
-                  transform: 'skewX(-12deg)',
-                  background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  letterSpacing: '-0.05em',
-                  filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.9)) drop-shadow(0px 0px 2px rgba(0,0,0,0.7))',
-                }}
-              >RAPID</span>
-              <span className="font-black italic leading-none"
-                style={{
-                  fontFamily: 'Oswald, sans-serif',
-                  fontSize: '0.6rem',
-                  transform: 'skewX(-12deg)',
-                  background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.9)) drop-shadow(0px 0px 2px rgba(0,0,0,0.7))',
-                  letterSpacing: '-0.02em',
-                }}
-              >FIRE</span>
-            </div>
-          </div>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+          <span className="font-black text-center" style={{ fontSize: '0.8em' }}>RAPID FIRE</span>
         </div>
       )}
     </div>
   );
+}
+
+function PipPattern({ rank, suit }) {
+  const pips = [];
+  const n = parseInt(rank);
+
+  // Standard pip layouts for numbered cards
+  if (n === 2) {
+    return (
+      <div className="flex flex-col items-center justify-between h-full">
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+      </div>
+    );
+  }
+  if (n === 3) {
+    return (
+      <div className="flex flex-col items-center justify-between h-full">
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+      </div>
+    );
+  }
+  if (n === 4) {
+    return (
+      <div className="grid grid-cols-2 gap-1">
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+      </div>
+    );
+  }
+  if (n === 5) {
+    return (
+      <div className="grid grid-cols-2 gap-0.5 w-full h-full items-center justify-center">
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <div className="col-span-2 text-center">
+          <span className="font-bold text-xs">{suit}</span>
+        </div>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+      </div>
+    );
+  }
+  if (n === 6) {
+    return (
+      <div className="grid grid-cols-2 gap-1">
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+      </div>
+    );
+  }
+  if (n === 7) {
+    return (
+      <div className="grid grid-cols-2 gap-0.5 w-full h-full items-center">
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs col-span-2 text-center">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+      </div>
+    );
+  }
+  if (n === 8) {
+    return (
+      <div className="grid grid-cols-2 gap-0.5">
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+      </div>
+    );
+  }
+  if (n === 9) {
+    return (
+      <div className="grid grid-cols-3 gap-0.5">
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+        <span className="font-bold text-xs">{suit}</span>
+      </div>
+    );
+  }
+  if (n === 10) {
+    return (
+      <div className="grid grid-cols-2 gap-0.5 text-xs">
+        <span className="font-bold">{suit}</span>
+        <span className="font-bold">{suit}</span>
+        <span className="font-bold">{suit}</span>
+        <span className="font-bold">{suit}</span>
+        <span className="font-bold">{suit}</span>
+        <span className="font-bold">{suit}</span>
+        <span className="font-bold">{suit}</span>
+        <span className="font-bold">{suit}</span>
+        <span className="font-bold">{suit}</span>
+        <span className="font-bold">{suit}</span>
+      </div>
+    );
+  }
+
+  return null;
 }
