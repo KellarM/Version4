@@ -197,6 +197,10 @@ export default function RapidFireGame() {
     const existing = (rankBets[pid] || {})[key] || 0;
     const isProgressive = key === 'Royal Flush' || key === 'Straight Flush' || key === 'One Pair';
     
+    // Progressive rank min bets
+    const progressiveMinBets = { 'Royal Flush': 25, 'Straight Flush': 15, 'One Pair': 10 };
+    const minBet = progressiveMinBets[key];
+
     // Non-progressive ranks: locked if 3+ hand bets, or limited to 2 if 2 hand bets
     if (!isProgressive && handBetCount >= 3) {
       setRankAlertType('closed');
@@ -215,8 +219,19 @@ export default function RapidFireGame() {
       return;
     }
     if (balance <= 0 || balance < selectedChip) return;
-    setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
-    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+
+    // For progressive ranks: cap at minBet, return remainder
+    if (isProgressive && minBet) {
+      const amountNeeded = Math.max(0, minBet - existing);
+      const amountToAdd = Math.min(selectedChip, amountNeeded);
+      const remainder = selectedChip - amountToAdd;
+
+      setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + amountToAdd } }));
+      setBalances(b => { const n = [...b]; n[pid] -= amountToAdd; n[pid] += remainder; return n; });
+    } else {
+      setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
+      setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+    }
   }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount, rankBetCount]);
 
   const handleRemoveRankBet = useCallback((key) => {
