@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Wrench, BarChart2, Search, Sliders, Target, Scale, Activity } from 'lucide-react';
+import { Wrench, BarChart2, Search, Sliders, Target, Scale, Activity, Play } from 'lucide-react';
 
 const TOOLS = [
   { icon: BarChart2, label: 'Player Stats',        type: 'stats' },
+  { icon: Play,      label: 'Promo Video',          href: '/promo' },
   { icon: Search,    label: 'Hand-by-Hand',         href: '/analysis' },
   { icon: Sliders,   label: 'Payout Calibration',   href: '/calibration' },
   { icon: Target,    label: 'Strategy Test',        href: '/strategy-test' },
