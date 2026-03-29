@@ -75,7 +75,7 @@ export default function SideBets({
     return (
       <motion.button
         key={opt.key}
-        onMouseDown={() => canBetRB && onRedBlackBet(opt.key)}
+        onMouseDown={() => gamePhase === 'betting' && onRedBlackBet(opt.key)}
         onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveRedBlackBet(opt.key); }}
         onDragOver={(e) => { if (gamePhase === 'betting') { e.preventDefault(); e.stopPropagation(); } }}
         onDrop={(e) => {
@@ -179,7 +179,7 @@ export default function SideBets({
             return (
               <motion.button
                 key={type}
-                onMouseDown={() => canBetLH && onLowHighBet(type)}
+                onMouseDown={() => gamePhase === 'lowHighBetting' && onLowHighBet(type)}
                 onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'lowHighBetting' && plh) onRemoveLowHighBet(); }}
                 whileTap={canBetLH ? { scale: 0.95 } : {}}
                 className={`relative rounded-lg px-1 py-0.5 text-xs font-bold border-2 transition-all duration-200 ${cls} ${canBetLH ? 'cursor-pointer' : 'cursor-default'}`}

@@ -71,10 +71,12 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
             <motion.button
               key={opt.key}
               onMouseDown={() => {
-                if (canBet && canBetThisRank) {
-                  onRankBet(opt.key);
-                } else if (!canBetThisRank && gamePhase === 'betting') {
-                  onAttemptLockedRank?.('limit');
+                if (gamePhase === 'betting') {
+                  if (!canBetThisRank) {
+                    onAttemptLockedRank?.('limit');
+                  } else {
+                    onRankBet(opt.key);
+                  }
                 }
               }}
               onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveRankBet(opt.key); }}

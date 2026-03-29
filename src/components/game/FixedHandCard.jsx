@@ -61,8 +61,13 @@ export default function FixedHandCard({
       animate={isLeading && !isWinner ? { scale: [1, 1.02, 1] } : { scale: 1 }}
       transition={{ duration: 0.5, repeat: isLeading && !isWinner ? Infinity : 0, repeatDelay: 1.5 }}
       onMouseDown={() => {
-        if (canBet) onBet(hand.id);
-        else if (disabledByConstraint && isBettingPhase) onAttemptLockedBet?.();
+        if (isBettingPhase) {
+          if (disabledByConstraint) {
+            onAttemptLockedBet?.();
+          } else {
+            onBet(hand.id);
+          }
+        }
       }}
       onContextMenu={(e) => { e.preventDefault(); if (isBettingPhase) onRemoveBet(hand.id); }}
       onMouseEnter={() => setHovered(true)}
