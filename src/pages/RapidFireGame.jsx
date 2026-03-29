@@ -175,7 +175,7 @@ export default function RapidFireGame() {
       setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
       return;
     }
-    if (balance < selectedChip) return;
+    if (balance <= 0 || balance < selectedChip) return;
     setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
   }, [gamePhase, balance, selectedChip, pid, handBets, rankBetCount]);
@@ -208,7 +208,7 @@ export default function RapidFireGame() {
       setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
       return;
     }
-    if (balance < selectedChip) return;
+    if (balance <= 0 || balance < selectedChip) return;
     setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
   }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount]);
@@ -229,7 +229,7 @@ export default function RapidFireGame() {
       setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
       return;
     }
-    if (balance < selectedChip) return;
+    if (balance <= 0 || balance < selectedChip) return;
     setRedBlackBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
   }, [gamePhase, balance, selectedChip, pid, redBlackBets]);
@@ -253,7 +253,7 @@ export default function RapidFireGame() {
     if (remaining <= 0) return;
     // Substitute: use min of chip and remaining (don't exceed table total)
     const addAmount = Math.min(selectedChip, remaining);
-    if (balance < addAmount) return;
+    if (balance <= 0 || balance < addAmount) return;
     setLowHighBets(prev => ({ ...prev, [pid]: { type, amount: (prev[pid]?.type === type ? prev[pid].amount : 0) + addAmount } }));
     setBalances(b => { const n = [...b]; n[pid] -= addAmount; return n; });
   }, [gamePhase, balance, selectedChip, handBets, redBlackBets, rankBets, pLowHighBet, pid]);
@@ -510,13 +510,15 @@ export default function RapidFireGame() {
       });
     }
 
-    setRoyalFlushJackpot(newRF);
-    setStraightFlushJackpot(newSF);
+    // Increment jackpots for next round
+    setRoyalFlushJackpot(p => p + 12.5);
+    setStraightFlushJackpot(p => p + 5);
+    setOnePairJackpot(p => p + 0.5);
 
     // Update all player balances
     setBalances(prev => {
       const n = [...prev];
-      for (let i = 0; i < playerCount; i++) n[i] = (n[i] || STARTING_BALANCE) + playerWinnings[i];
+      for (let i = 0; i < playerCount; i++) n[i] = Math.max(0, (n[i] || STARTING_BALANCE) + playerWinnings[i]);
       return n;
     });
 
@@ -549,12 +551,16 @@ export default function RapidFireGame() {
     setCasinoProfit(p => p + roundProfit);
     setRoundsPlayed(r => r + 1);
 
-    // Show detailed payout info for all players
-    setLastWinInfo({
-      playerPayouts,
-      playerCount,
-    });
     setGamePhase('winner');
+
+    // Show detailed payout info for all players (only if anyone won)
+    const anyoneWon = playerPayouts.some(p => p.netWin > 0);
+    if (anyoneWon) {
+      setLastWinInfo({
+        playerPayouts,
+        playerCount,
+      });
+    }
 
     // History — capture ALL winning outcomes regardless of wagers
     const reds = finalComm.filter(c => cardColor(c) === 'red').length;
@@ -620,9 +626,6 @@ export default function RapidFireGame() {
     setDealerMessage("Texas Hold'em is open for play. Players, please place your bets.");
     setGamePhase('betting');
     setActivePlayer(0);
-    setRoyalFlushJackpot(p => p + 12.5);
-    setStraightFlushJackpot(p => p + 5);
-    setOnePairJackpot(p => p + 0.5);
   };
 
   const handleAddPlayer = (playerNum) => {
