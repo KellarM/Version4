@@ -115,12 +115,12 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="border-2 border-gray-600 rounded-2xl p-8 shadow-2xl min-w-[600px] backdrop-blur-sm text-center pointer-events-auto"
+            className="border-2 border-gray-400 rounded-2xl p-8 shadow-2xl min-w-[600px] backdrop-blur-sm text-center pointer-events-auto"
           >
             <div className="text-5xl mb-4">🎰</div>
-            <div className="text-2xl font-black text-gray-500 mb-6">No Winners This Round</div>
-            <div className="text-2xl font-black text-gray-600 mb-6">Better luck next time!</div>
-            <div className="text-2xl font-black text-gray-500">Next Round?</div>
+            <div className="text-3xl font-black text-gray-400 mb-2" style={{ textShadow: '1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 0 1px 0 white, 1px 0 0 white, 0 -1px 0 white, -1px 0 0 white' }}>No Winners</div>
+            <div className="text-2xl font-black text-gray-500 mb-6" style={{ textShadow: '1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 0 1px 0 white, 1px 0 0 white, 0 -1px 0 white, -1px 0 0 white' }}>Better luck next time!</div>
+            <div className="text-2xl font-black text-gray-500" style={{ textShadow: '1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 0 1px 0 white, 1px 0 0 white, 0 -1px 0 white, -1px 0 0 white' }}>Next Round?</div>
           </motion.div>
         )}
       </div>
