@@ -55,7 +55,7 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const canBetThisRank = isProgressive || (handBetCount <= 1) || (handBetCount === 2 && rankBetCount < 2);
 
           let cls = styles.inactive;
-          if (!canBetThisRank && bet === 0) cls = 'border-red-600/40 bg-red-900/20 text-red-400/50 opacity-60';
+          if (!canBetThisRank && bet === 0) cls = 'border-red-700/60 bg-red-950/60 text-red-500 opacity-40 cursor-not-allowed';
           else if (isWinner) cls = styles.winner;
           else if (isLeading) cls = styles.active;
           else if (bet > 0) cls = styles.active;
@@ -103,7 +103,7 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
                 ${canBet && canBetThisRank ? 'cursor-pointer hover:brightness-125' : 'cursor-default'}
               `}
             >
-              <div className="flex flex-col items-start leading-tight min-w-0">
+              <div className="flex flex-col items-start leading-tight min-w-0 flex-1">
                 <span className="truncate">{opt.label}</span>
                 {opt.minBet && (
                   <span className={`text-xs font-normal leading-none mt-0.5 ${bet > 0 && !qualifies ? 'text-red-400' : bet >= opt.minBet ? 'text-green-400' : 'text-yellow-400/50'}`}>
@@ -111,6 +111,9 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
                   </span>
                 )}
               </div>
+              {!canBetThisRank && bet === 0 && (
+                <span className="text-red-400 font-black text-lg ml-1 flex-shrink-0">🔒</span>
+              )}
               <span className="text-yellow-400/80 ml-1 flex-shrink-0">{opt.payout}</span>
 
               {chipsHere.length > 0 && (
