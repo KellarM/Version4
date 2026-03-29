@@ -87,8 +87,8 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
                 if (!data) return;
                 try {
                   const { from, type, pid } = JSON.parse(data);
+                  // Accept drags from hand, rank, or rb betting positions
                   if (type === 'rank' && from !== opt.key) {
-                    // Move rank bet from one rank to another
                     const amt = (rankBets[from] || 0);
                     if (amt > 0) {
                       onRemoveRankBet(from);

@@ -90,9 +90,7 @@ export default function SideBets({
               const amt = (redBlackBets[from] || 0);
               if (amt > 0) {
                 onRemoveRedBlackBet(from);
-                for (let i = 0; i < amt; i += selectedChip) {
-                  onRedBlackBet(opt.key);
-                }
+                onRedBlackBet(opt.key);
               }
             }
           } catch (e) {}
@@ -182,7 +180,7 @@ export default function SideBets({
               <motion.button
                 key={type}
                 onClick={() => canBetLH && onLowHighBet(type)}
-                onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'lowHighBetting') onRemoveLowHighBet(); }}
+                onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'lowHighBetting' && plh) onRemoveLowHighBet(); }}
                 whileTap={canBetLH ? { scale: 0.95 } : {}}
                 className={`relative rounded-lg px-1 py-0.5 text-xs font-bold border-2 transition-all duration-200 ${cls} ${canBetLH ? 'cursor-pointer' : 'cursor-default'}`}
               >

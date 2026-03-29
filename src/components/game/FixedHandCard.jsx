@@ -71,15 +71,19 @@ export default function FixedHandCard({
       onDragOver={(e) => { if (isBettingPhase) { e.preventDefault(); setDragOver(true); } }}
       onDragLeave={() => setDragOver(false)}
       onDrop={(e) => {
-        e.preventDefault();
-        setDragOver(false);
-        if (!isBettingPhase) return;
-        const data = e.dataTransfer.getData('text/plain');
-        if (!data) return;
-        const parsed = JSON.parse(data);
-        const { from, pid, type } = parsed;
-        if (type === 'hand' && from !== hand.id) onDropChip(from, hand.id, pid);
-      }}
+         e.preventDefault();
+         setDragOver(false);
+         if (!isBettingPhase) return;
+         const data = e.dataTransfer.getData('text/plain');
+         if (!data) return;
+         try {
+           const parsed = JSON.parse(data);
+           const { from, pid, type, amount } = parsed;
+           if (type === 'hand' && from !== hand.id) {
+             onDropChip(from, hand.id, pid);
+           }
+         } catch (e) {}
+       }}
     >
       {(isLeading || isWinner) && !isWinner && (
         <div className="absolute inset-0 rounded-xl pointer-events-none">
