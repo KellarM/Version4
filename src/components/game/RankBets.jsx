@@ -112,7 +112,7 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
                 )}
               </div>
               {!canBetThisRank && bet === 0 && (
-                <span className="text-red-400 font-black text-lg ml-1 flex-shrink-0">🔒</span>
+                <span className="text-red-400 font-black text-sm ml-1 flex-shrink-0">🔒</span>
               )}
               <span className="text-yellow-400/80 ml-1 flex-shrink-0">{opt.payout}</span>
 
