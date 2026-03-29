@@ -127,7 +127,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.75, paddingTop: '30%' }}>
         <div className="flex flex-col items-center gap-0 leading-none" style={{ transform: 'rotate(-45deg)' }}>
           {/* RAPID   FIRE — wide gap between, no extra suit symbol */}
-          <div className="flex items-center leading-none" style={{ gap: '8px' }}>
+          <div className="flex items-center leading-none" style={{ gap: '14px' }}>
             <span className="font-black italic leading-none"
               style={{
                 fontFamily: 'Oswald, sans-serif',
