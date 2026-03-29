@@ -5,9 +5,9 @@ import { Link } from 'react-router-dom';
 import { Play, CheckCircle2, AlertCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 const GAME_SIZES = [
-  { label: '100K / strategy (fast preview)', value: 100_000 },
-  { label: '1M / strategy (~20s)', value: 1_000_000 },
-  { label: '10M / strategy (full audit)', value: 10_000_000 },
+  { label: '100K / strategy (preview)', value: 100_000 },
+  { label: '1M / strategy (~10s)', value: 1_000_000 },
+  { label: '2M / strategy (full audit)', value: 2_000_000 },
 ];
 
 function RtpBadge({ rtp }) {
