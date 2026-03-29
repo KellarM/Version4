@@ -5,10 +5,9 @@ import { Link } from 'react-router-dom';
 import { Play } from 'lucide-react';
 
 const TRIAL_SIZES = [
-  { label: '1M games',   value: 1_000_000 },
-  { label: '5M games',   value: 5_000_000 },
-  { label: '10M games',  value: 10_000_000 },
-  { label: '100M games', value: 100_000_000 },
+  { label: '100K (fast)',    value: 100_000 },
+  { label: '200K (default)', value: 200_000 },
+  { label: '500K (max)',     value: 500_000 },
 ];
 
 function RTPBadge({ rtp }) {
@@ -29,7 +28,7 @@ export default function FrequencyProfiler() {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedSize, setSelectedSize] = useState(1_000_000);
+  const [selectedSize, setSelectedSize] = useState(200_000);
 
   const runProfiler = async () => {
     setLoading(true);
@@ -76,7 +75,7 @@ export default function FrequencyProfiler() {
                   </button>
                 ))}
               </div>
-              <p className="text-yellow-400/60 text-xs mt-2">⚠ Large simulations (10M+) may take 60–120s. Server CPU limits apply.</p>
+              <p className="text-yellow-400/60 text-xs mt-2">⚠ Hard cap: 500K games. Results are statistically stable at 200K+. Larger runs hit Deno's CPU timeout (502).</p>
             </div>
             <button
               onClick={runProfiler}
