@@ -35,22 +35,18 @@ export const CARDED_HAND_PAYOUTS = [
   17.0,  // Hand 10: A♥5♦    (5.37%  → fair 17.97x)
 ];
 
-// HAND RANK PAYOUTS — empirical 32-card frequencies (very different from 52-card)
+// HAND RANK PAYOUTS — empirical data from actual gameplay (206,846 hands)
 // Calibrated at 96.5% RTP: payout = 0.965/freq - 1
-//   One Pair:        42.26% → 1.28x    Two Pair:  4.75% → 19.32x
-//   Three of a Kind:  2.11% → 44.74x   Straight:  4.62% → 19.90x
-//   Full House:       2.60% → 36.12x
-//   Flush/Four of Kind: too rare or too volatile → Progressive jackpot
 export const HAND_RANK_PAYOUTS = {
-  'Royal Flush':     null,   // Progressive jackpot
-  'Straight Flush':  null,   // Progressive jackpot
-  'Four of a Kind':  null,   // Progressive (0.17% freq → ~567x — jackpot territory)
-  'Full House':      35.0,   // 2.60% freq → fair 36.12x → 35.0x (house edge)
-  'Flush':           null,   // Progressive (0.33% freq → ~291x — jackpot territory)
-  'Straight':        19.5,   // 4.62% freq → fair 19.90x → 19.5x (house edge)
-  'Three of a Kind': 44.0,   // 2.11% freq → fair 44.74x → 44.0x (house edge)
-  'Two Pair':        19.0,   // 4.75% freq → fair 19.32x → 19.0x (house edge)
-  'One Pair':        1.28,   // 42.26% freq → fair 1.28x
+  'Royal Flush':     7132.63, // 0.0135% freq → 7132.63x
+  'Straight Flush':  277.10,  // 0.347% freq → 277.10x
+  'Four of a Kind':  12.77,   // 7.005% freq → 12.77x
+  'Full House':      2.53,    // 27.35% freq → 2.53x
+  'Flush':           3.21,    // 22.89% freq → 3.21x
+  'Straight':        4.93,    // 16.27% freq → 4.93x
+  'Three of a Kind': 3.81,    // 20.06% freq → 3.81x
+  'Two Pair':        15.98,   // 5.685% freq → 15.98x
+  'One Pair':        162.84,  // 0.589% freq → 162.84x
 };
 
 // COLOR BOARD PAYOUTS — empirical 32-card frequencies, calibrated at 96.5% RTP
