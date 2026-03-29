@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function RankBetLimitAlert({ isOpen, onClose, currentHandBets }) {
+export default function RankBetLimitAlert({ isOpen, onClose, currentHandBets, alertType = 'limit' }) {
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -23,40 +23,57 @@ export default function RankBetLimitAlert({ isOpen, onClose, currentHandBets }) 
     return () => clearInterval(timer);
   }, [isOpen, onClose]);
 
+  const isClosed = alertType === 'closed';
+  const bgGradient = isClosed ? 'from-red-600 to-red-700' : 'from-orange-600 to-orange-700';
+  const borderColor = isClosed ? 'border-red-400' : 'border-orange-400';
+  const textColor = isClosed ? 'text-red-100' : 'text-orange-100';
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop — clickable to dismiss */}
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/5"
+            className="fixed inset-0 z-30 bg-black/60"
           />
 
           {/* Alert Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: -20 }}
+            initial={{ opacity: 0, scale: 0.8, y: -50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            onClick={onClose}
-            className="fixed inset-0 flex items-center justify-center z-50 pointer-events-auto"
+            exit={{ opacity: 0, scale: 0.8, y: -50 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 flex items-center justify-center z-50"
           >
-            <div className="bg-gradient-to-b from-orange-600 to-orange-700 border-2 border-orange-400 rounded-2xl px-8 py-6 shadow-2xl max-w-sm">
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              className={`bg-gradient-to-b ${bgGradient} border-2 ${borderColor} rounded-2xl px-8 py-6 shadow-2xl max-w-sm`}>
               <div className="text-center">
                 <div className="text-white font-black text-2xl mb-2">⚠️</div>
-                <h2 className="text-white font-bold text-xl mb-4">Hand Rank Bets Unavailable</h2>
-                <p className="text-orange-100 text-lg font-semibold mb-6">
-                  Hand Rank Bets Are Unavailable If More than 2 Bets Are Made On Card Hands
-                </p>
-                {currentHandBets > 0 && (
-                  <p className="text-orange-50 text-sm mb-4 bg-black/20 rounded-lg p-3">
-                    Currently have <span className="font-bold">{currentHandBets}</span> Card Hand bet(s). Remove bets to unlock Hand Rank board.
-                  </p>
+                <h2 className="text-white font-bold text-xl mb-4">Rank Betting Limit</h2>
+                {isClosed ? (
+                  <>
+                    <p className={`${textColor} text-lg font-semibold mb-6`}>
+                      Rank Betting Is Closed
+                    </p>
+                    <p className={`${textColor} text-sm font-semibold mb-4`}>
+                      Due To Exceeding More Than 2 Card Hand Bets
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className={`${textColor} text-lg font-semibold mb-6`}>
+                      Rank Betting Is Limited To 2 Bets
+                    </p>
+                    <p className={`${textColor} text-sm font-semibold mb-4`}>
+                      When Wagering On More Than 1 Or Less Than 3 Carded Hands
+                    </p>
+                  </>
                 )}
-                <div className="text-orange-100 text-sm">
+                <div className={textColor + ' text-sm'}>
                   Closing in <span className="font-black text-white text-lg">{countdown}</span> seconds
                 </div>
               </div>

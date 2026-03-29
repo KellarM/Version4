@@ -80,6 +80,7 @@ export default function RapidFireGame() {
   const [roundsPlayed, setRoundsPlayed] = useState(0);
   const [showHandLimitAlert, setShowHandLimitAlert] = useState(false);
   const [showRankLimitAlert, setShowRankLimitAlert] = useState(false);
+  const [rankAlertType, setRankAlertType] = useState('limit');
 
   // Game progress persistence
   useEffect(() => {
@@ -127,12 +128,13 @@ export default function RapidFireGame() {
   const rankBetCount = Object.keys(pRankBets).length;
 
   // Betting constraints
-  // Max 2 simultaneous hand bets (for rank betting), max 4 total
+  // 1 hand: all rank bets allowed
+  // 2 hands: max 2 non-progressive rank bets (progressives always open)
+  // 3-4 hands: all non-progressive rank bets closed (progressives stay open)
   const MAX_HAND_BETS = 4;
-  const MAX_HAND_BETS_FOR_RANK = 2;
-  const canBetRank = handBetCount <= MAX_HAND_BETS_FOR_RANK;
+  const canBetRank = handBetCount <= 2;
   const canBetHand = rankBetCount === 0;
-  const maxRankBets = 1;  // Only 1 rank bet allowed at a time
+  const rankBetsLocked = handBetCount >= 3;
 
   const totalBet = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
     Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
@@ -195,8 +197,14 @@ export default function RapidFireGame() {
     const existing = (rankBets[pid] || {})[key] || 0;
     const isProgressive = key === 'Royal Flush' || key === 'Straight Flush' || key === 'One Pair';
     
-    // Non-progressive ranks are locked if >2 card hands active
-    if (!isProgressive && handBetCount > MAX_HAND_BETS_FOR_RANK) {
+    // Non-progressive ranks: locked if 3+ hand bets, or limited to 2 if 2 hand bets
+    if (!isProgressive && handBetCount >= 3) {
+      setRankAlertType('closed');
+      setShowRankLimitAlert(true);
+      return;
+    }
+    if (!isProgressive && handBetCount === 2 && rankBetCount >= 2) {
+      setRankAlertType('limit');
       setShowRankLimitAlert(true);
       return;
     }
@@ -209,7 +217,7 @@ export default function RapidFireGame() {
     if (balance <= 0 || balance < selectedChip) return;
     setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount]);
+  }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount, rankBetCount]);
 
   const handleRemoveRankBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
@@ -658,6 +666,7 @@ export default function RapidFireGame() {
         isOpen={showRankLimitAlert} 
         onClose={() => setShowRankLimitAlert(false)} 
         currentHandBets={handBetCount}
+        alertType={rankAlertType}
       />
 
       {/* Player Stats Panel */}
@@ -976,9 +985,12 @@ export default function RapidFireGame() {
               winningRank={winningRank}
               leadingRank={leadingRank}
               disabled={balance < selectedChip}
-              disabledByConstraint={handBetCount > MAX_HAND_BETS_FOR_RANK}
+              disabledByConstraint={rankBetsLocked}
               handBetCount={handBetCount}
-              maxHandBetsForRank={MAX_HAND_BETS_FOR_RANK}
+              onAttemptLockedRank={(type) => {
+                setRankAlertType(type);
+                setShowRankLimitAlert(true);
+              }}
             />
           </div>
           {/* Side Bets panel */}

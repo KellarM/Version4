@@ -33,7 +33,7 @@ const COLOR_STYLES = {
   green:  { active: 'border-green-500 bg-green-900/50 text-green-200',    inactive: 'border-green-800/40 bg-green-950/20 text-green-400/60',    winner: WINNER_STYLE },
 };
 
-export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled, disabledByConstraint, handBetCount, maxHandBetsForRank = 2 }) {
+export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled, disabledByConstraint, handBetCount, maxHandBetsForRank = 2, onAttemptLockedRank }) {
   const canBet = gamePhase === 'betting' && !disabled;
   const isLocked = false;
 
@@ -51,8 +51,8 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const styles = COLOR_STYLES[opt.color];
           const qualifies = !opt.minBet || bet >= opt.minBet;
           
-          // Can bet on progressives always, or on non-progressives if ≤2 card hands active
-          const canBetThisRank = isProgressive || handBetCount <= maxHandBetsForRank;
+          // Rule: 1 hand = all allowed, 2 hands = limit to 2 non-progressive, 3+ hands = non-progressive closed
+          const canBetThisRank = isProgressive || (handBetCount <= 1) || (handBetCount === 2 && rankBetCount < 2);
 
           let cls = styles.inactive;
           if (!canBetThisRank && bet === 0) cls = 'border-red-600/40 bg-red-900/20 text-red-400/50 opacity-60';
@@ -70,7 +70,13 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           return (
             <motion.button
               key={opt.key}
-              onClick={() => canBet && canBetThisRank && onRankBet(opt.key)}
+              onClick={() => {
+                if (canBet && canBetThisRank) {
+                  onRankBet(opt.key);
+                } else if (!canBetThisRank && gamePhase === 'betting') {
+                  onAttemptLockedRank?.('limit');
+                }
+              }}
               onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveRankBet(opt.key); }}
               onDragOver={(e) => { if (gamePhase === 'betting') { e.preventDefault(); e.stopPropagation(); } }}
               onDrop={(e) => {
