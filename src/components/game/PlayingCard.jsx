@@ -42,204 +42,26 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
 
   return (
     <div
-      className={`${sizeClasses[size]} rounded-lg border-2 bg-white flex flex-col justify-between p-1.5 shadow-lg select-none overflow-hidden relative ${borderColor} ${glow ? 'ring-2 ring-yellow-400 shadow-yellow-400/80' : ''}`}
+      className={`${sizeClasses[size]} rounded-lg border-2 bg-white flex flex-col p-1 shadow-lg select-none overflow-hidden relative ${borderColor} ${glow ? 'ring-2 ring-yellow-400 shadow-yellow-400/80' : ''}`}
     >
-      {/* Top-left corner: rank & suit */}
-      <div className={`flex flex-col items-start leading-none font-black ${textColor}`} style={{ fontSize: '0.65em' }}>
+      {/* Top-left: rank + suit below it */}
+      <div className={`flex flex-col items-start leading-tight ${textColor}`} style={{ fontSize: '0.55em', fontWeight: 'bold' }}>
         <div>{card.rank}</div>
-        <div style={{ fontSize: '0.7em', marginTop: '0.1em' }}>{suitSymbol}</div>
+        <div>{suitSymbol}</div>
       </div>
 
-      {/* Center: main pip display */}
+      {/* Center: Large suit symbol (5x) */}
       <div className="flex-1 flex items-center justify-center">
-        {card.rank === 'A' ? (
-          <Ace suit={card.suit} isRed={isRed} />
-        ) : ['J', 'Q', 'K'].includes(card.rank) ? (
-          <CourtCard rank={card.rank} isRed={isRed} />
-        ) : (
-          <NumberCard rank={parseInt(card.rank)} suit={suitSymbol} isRed={isRed} />
-        )}
+        <div style={{ fontSize: '2.5em', color: isRed ? '#dc2626' : '#000', opacity: 0.7, lineHeight: 1 }}>
+          {suitSymbol}
+        </div>
       </div>
 
-      {/* Bottom-right corner: rank & suit (upside down) */}
-      <div className={`flex flex-col items-end leading-none font-black ${textColor}`} style={{ fontSize: '0.65em', transform: 'rotate(180deg)' }}>
+      {/* Bottom-right: rank + suit below it (upside down) */}
+      <div className={`flex flex-col items-end leading-tight ${textColor}`} style={{ fontSize: '0.55em', fontWeight: 'bold', transform: 'rotate(180deg)' }}>
         <div>{card.rank}</div>
-        <div style={{ fontSize: '0.7em', marginTop: '0.1em' }}>{suitSymbol}</div>
+        <div>{suitSymbol}</div>
       </div>
     </div>
   );
-}
-
-// Ace: Large ornate pip centered
-function Ace({ suit, isRed }) {
-  const color = isRed ? '#dc2626' : '#000';
-  return (
-    <div style={{ fontSize: '2.8em', color, opacity: 0.8, lineHeight: 1 }}>
-      {suit === 0 ? '♠' : suit === 1 ? '♥' : suit === 2 ? '♦' : '♣'}
-    </div>
-  );
-}
-
-// Court: Large suit symbol with rank label
-function CourtCard({ rank, isRed }) {
-  const color = isRed ? '#dc2626' : '#000';
-  return (
-    <div className="flex flex-col items-center gap-0.5">
-      <div style={{ fontSize: '1.8em', color, opacity: 0.6, fontWeight: 'bold', lineHeight: 1 }}>
-        {rank === 'J' ? '♠' : rank === 'Q' ? '♥' : '♦'}
-      </div>
-      <div style={{ fontSize: '0.7em', color, fontWeight: 'black', opacity: 0.7 }}>{rank}</div>
-    </div>
-  );
-}
-
-// Number cards: pips in standard layout per rank
-function NumberCard({ rank, suit, isRed }) {
-  const color = isRed ? '#dc2626' : '#000';
-  const pipSize = { 2: '1.1em', 3: '1em', 4: '0.9em', 5: '0.8em', 6: '0.75em', 7: '0.7em', 8: '0.65em', 9: '0.55em', 10: '0.48em' }[rank];
-
-  const renderPips = () => {
-    const Pip = () => <div style={{ fontSize: pipSize, color, opacity: 0.8, fontWeight: 'bold', lineHeight: 1 }}>{suit}</div>;
-
-    switch (rank) {
-      case 2:
-        return (
-          <div className="flex flex-col items-center justify-between h-full">
-            <Pip />
-            <Pip />
-          </div>
-        );
-      case 3:
-        return (
-          <div className="flex flex-col items-center justify-between h-full">
-            <Pip />
-            <Pip />
-            <Pip />
-          </div>
-        );
-      case 4:
-        return (
-          <div className="grid grid-cols-2 gap-1">
-            <Pip />
-            <Pip />
-            <Pip />
-            <Pip />
-          </div>
-        );
-      case 5:
-        return (
-          <div className="flex flex-col items-center gap-0.5">
-            <div className="flex gap-1.5">
-              <Pip />
-              <Pip />
-            </div>
-            <Pip />
-            <div className="flex gap-1.5">
-              <Pip />
-              <Pip />
-            </div>
-          </div>
-        );
-      case 6:
-        return (
-          <div className="flex flex-col gap-0.5">
-            <div className="flex gap-1.5 justify-center">
-              <Pip />
-              <Pip />
-            </div>
-            <div className="flex gap-1.5 justify-center">
-              <Pip />
-              <Pip />
-            </div>
-            <div className="flex gap-1.5 justify-center">
-              <Pip />
-              <Pip />
-            </div>
-          </div>
-        );
-      case 7:
-        return (
-          <div className="flex flex-col items-center gap-0.5">
-            <div className="flex gap-1.5">
-              <Pip />
-              <Pip />
-            </div>
-            <Pip />
-            <div className="flex gap-1.5">
-              <Pip />
-              <Pip />
-            </div>
-            <div className="flex gap-1.5">
-              <Pip />
-              <Pip />
-            </div>
-          </div>
-        );
-      case 8:
-        return (
-          <div className="flex flex-col items-center gap-0.5">
-            <div className="flex gap-1.5">
-              <Pip />
-              <Pip />
-            </div>
-            <div className="flex gap-1.5">
-              <Pip />
-              <Pip />
-            </div>
-            <Pip />
-            <div className="flex gap-1.5">
-              <Pip />
-              <Pip />
-            </div>
-            <div className="flex gap-1.5">
-              <Pip />
-              <Pip />
-            </div>
-          </div>
-        );
-      case 9:
-        return (
-          <div className="grid grid-cols-3 gap-0.5 w-full place-items-center">
-            <Pip />
-            <Pip />
-            <Pip />
-            <Pip />
-            <Pip />
-            <Pip />
-            <Pip />
-            <Pip />
-            <Pip />
-          </div>
-        );
-      case 10:
-        return (
-          <div className="flex flex-col items-center gap-0.5 text-center">
-            <div className="flex gap-1">
-              <Pip />
-              <Pip />
-            </div>
-            <div className="flex gap-1">
-              <Pip />
-              <Pip />
-            </div>
-            <div className="flex gap-1">
-              <Pip />
-              <Pip />
-            </div>
-            <div className="flex gap-1">
-              <Pip />
-              <Pip />
-            </div>
-            <div className="flex gap-1">
-              <Pip />
-              <Pip />
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  return <div>{renderPips()}</div>;
 }
