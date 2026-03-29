@@ -122,9 +122,45 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
         <span className="font-bold">{card.rank}</span>
         <span>{suitSymbol}</span>
       </div>
-      {/* Logo decals in corners */}
-      <div className="absolute top-0.5 right-0.5 font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.55rem', transform: 'skewX(-8deg)', background: 'linear-gradient(90deg, #cbd5e1 0%, #f97316 50%, #dc2626 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', opacity: 0.85, filter: 'drop-shadow(0 0 1px rgba(249, 115, 22, 0.4))' }}>RF</div>
-      <div className="absolute bottom-0.5 left-0.5 font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.55rem', transform: 'skewX(-8deg)', background: 'linear-gradient(90deg, #cbd5e1 0%, #f97316 50%, #dc2626 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', opacity: 0.85, filter: 'drop-shadow(0 0 1px rgba(249, 115, 22, 0.4))' }}>RF</div>
+
+      {/* Centered diagonal logo — suit replaces fire */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.18 }}>
+        <div className="flex flex-col items-center gap-0 leading-none" style={{ transform: 'rotate(-45deg)' }}>
+          {/* RAPID {suit} FIRE */}
+          <div className="flex items-baseline gap-0.5 leading-none">
+            <span className="font-black italic leading-none"
+              style={{
+                fontFamily: 'Oswald, sans-serif',
+                fontSize: '0.55rem',
+                transform: 'skewX(-12deg)',
+                color: isRed ? '#dc2626' : '#111827',
+                letterSpacing: '-0.04em',
+              }}
+            >RAPID</span>
+            <span style={{ fontSize: '0.55rem', lineHeight: 1, color: isRed ? '#dc2626' : '#111827' }}>{suitSymbol}</span>
+            <span className="font-black italic leading-none"
+              style={{
+                fontFamily: 'Oswald, sans-serif',
+                fontSize: '0.55rem',
+                transform: 'skewX(-12deg)',
+                color: isRed ? '#dc2626' : '#111827',
+                letterSpacing: '-0.02em',
+              }}
+            >FIRE</span>
+          </div>
+          {/* TEXAS 10 */}
+          <span className="font-black italic leading-none"
+            style={{
+              fontFamily: 'Oswald, sans-serif',
+              fontSize: '0.5rem',
+              transform: 'skewX(-12deg)',
+              color: '#16a34a',
+              marginTop: '1px',
+              letterSpacing: '0.02em',
+            }}
+          >TEXAS 10</span>
+        </div>
+      </div>
     </div>
   );
 }
