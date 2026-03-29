@@ -42,15 +42,15 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ delay: playerId * 0.1 }}
-                className={`bg-gradient-to-b ${color.bg} bg-opacity-50 border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-80 max-w-md backdrop-blur-sm`}
+                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-80 max-w-md backdrop-blur-sm`}
               >
                 {/* Header */}
                 <div className="text-center mb-4">
                   {playerCount > 1 && (
-                    <div className="text-sm font-bold opacity-80 mb-1">PLAYER {playerId + 1}</div>
+                    <div className="text-sm font-bold text-gray-600 mb-1">PLAYER {playerId + 1}</div>
                   )}
-                  <div className="text-3xl font-black text-yellow-300">YOU WIN!</div>
-                  <div className="text-2xl font-black text-yellow-200 mt-1">WINNER</div>
+                  <div className="text-3xl font-black text-gray-400">YOU WIN!</div>
+                  <div className="text-2xl font-black text-gray-500 mt-1">WINNER</div>
                 </div>
 
                 {/* Winning bets breakdown */}
@@ -63,18 +63,18 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 + idx * 0.1 }}
-                        className="bg-black/20 rounded-lg p-3 border border-white/10 backdrop-blur-sm"
+                        className="rounded-lg p-3 border border-gray-600/40 backdrop-blur-sm"
                       >
                         <div className="flex justify-between items-start mb-2">
-                          <div className="font-bold text-sm">{getHandSymbol(win.label)}</div>
+                          <div className="font-bold text-sm text-gray-500">{getHandSymbol(win.label)}</div>
                           <div className="text-right">
-                            <div className="text-xs opacity-80">Bet: ${win.bet.toFixed(2)}</div>
-                            <div className="text-xs opacity-80">Odds: {win.odds}</div>
+                            <div className="text-xs text-gray-600">Bet: ${win.bet.toFixed(2)}</div>
+                            <div className="text-xs text-gray-600">Odds: {win.odds}</div>
                           </div>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="opacity-70">${profit.toFixed(2)} + BET OF ${win.bet.toFixed(2)}</span>
-                          <span className="font-bold text-yellow-200">= ${win.payout.toFixed(2)}</span>
+                          <span className="text-gray-600">${profit.toFixed(2)} + BET OF ${win.bet.toFixed(2)}</span>
+                          <span className="font-bold text-gray-500">= ${win.payout.toFixed(2)}</span>
                         </div>
                       </motion.div>
                     );
@@ -82,14 +82,14 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 </div>
 
                 {/* Totals */}
-                <div className="border-t border-white/30 pt-3 space-y-2">
+                <div className="border-t border-gray-600/40 pt-3 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="opacity-80">Total Wagered</span>
-                    <span className="font-bold">${payout.totalBet.toFixed(2)}</span>
+                    <span className="text-gray-600">Total Wagered</span>
+                    <span className="font-bold text-gray-500">${payout.totalBet.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-black">
-                    <span>Net Win</span>
-                    <span className="text-green-200">
+                    <span className="text-gray-600">Net Win</span>
+                    <span className={payout.netWin >= 0 ? "text-yellow-500" : "text-red-600"}>
                       ${payout.netWin.toFixed(2)}
                     </span>
                   </div>
@@ -99,7 +99,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 <motion.div
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 0.6, repeat: Infinity }}
-                  className="absolute top-0 left-0 right-0 h-1 bg-yellow-300 rounded-t-2xl"
+                  className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl ${payout.netWin >= 0 ? 'bg-yellow-500' : 'bg-red-600'}`}
                 />
               </motion.div>
             );
@@ -109,12 +109,12 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="bg-gradient-to-b from-gray-700 to-gray-800 border-2 border-gray-400 rounded-2xl p-8 shadow-2xl min-w-80 backdrop-blur-sm text-center"
+            className="border-2 border-gray-600 rounded-2xl p-8 shadow-2xl min-w-80 backdrop-blur-sm text-center"
           >
             <div className="text-5xl mb-4">🎰</div>
-            <div className="text-2xl font-black text-gray-200 mb-6">No Winners This Round</div>
-            <div className="text-gray-300 text-sm mb-6">Better luck next time!</div>
-            <div className="text-4xl font-black text-yellow-400">Next Round?</div>
+            <div className="text-2xl font-black text-gray-500 mb-6">No Winners This Round</div>
+            <div className="text-gray-600 text-sm mb-6">Better luck next time!</div>
+            <div className="text-4xl font-black text-gray-500">Next Round?</div>
           </motion.div>
         )}
       </div>
