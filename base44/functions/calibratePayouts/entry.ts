@@ -13,10 +13,10 @@ Deno.serve(async (req) => {
     const TARGET_RTP_HIGH = 0.98;
 
     // ── Precomputed constants ─────────────────────────────────────────────
-    // Using centralized payouts from lib/payoutConstants.js
-    const HAND_PAYOUTS = [8.10, 6.75, 8.52, 7.90, 8.31, 10.18, 7.48, 11.95, 7.27, 9.77]; // Must match exactly
+    // Using ACTUAL current payouts from payoutConstants.js
+    const HAND_PAYOUTS = [18, 4, 15, 8, 6, 5, 6, 7, 8, 15]; // Current payouts
     const RANKS = ['Royal Flush','Straight Flush','Four of a Kind','Full House','Flush','Straight','Three of a Kind','Two Pair','One Pair'];
-    const RANK_PAYOUTS = [null, null, 3.79, 0.98, 1.30, 1.90, 0.98, 4.83, 5.87];
+    const RANK_PAYOUTS = [null, null, 12.77, 2.53, 3.21, 4.93, 3.81, 15.98, null]; // null for progressives and One Pair
     const RANK_FREQ    = [0.000154, 0.00139, 0.00168, 0.02596, 0.00327, 0.04619, 0.02113, 0.04754, 0.42257];
     const RANK_CUM = [];
     let cum = 0;
@@ -28,10 +28,10 @@ Deno.serve(async (req) => {
     let rcCum = 0;
     for (const p of RED_COUNT_PROBS) { rcCum += p; RED_COUNT_CUM.push(rcCum); }
 
-    // Centralized payouts — must match settle() in RapidFireGame
+    // Current payouts from payoutConstants.js
     const COLOR_KEYS    = ['3R','3B','4R','4B','5R','5B'];
-    const COLOR_PAYOUTS = { '3R': 0.78, '3B': 0.78, '4R': 5.04, '4B': 5.04, '5R': 19.74, '5B': 19.74 };
-    const LH_PAYOUT     = 0.88;
+    const COLOR_PAYOUTS = { '3R': 0.81, '3B': 0.81, '4R': 5.25, '4B': 5.25, '5R': 20.56, '5B': 20.56 };
+    const LH_PAYOUT     = 0.95;
 
     function rollRedCount() {
       const r = Math.random();
