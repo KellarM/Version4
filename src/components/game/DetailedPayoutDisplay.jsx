@@ -42,7 +42,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ delay: playerId * 0.1 }}
-                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-80 max-w-md backdrop-blur-sm`}
+                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] backdrop-blur-sm`}
               >
                 {/* Header */}
                 <div className="text-center mb-4">
@@ -109,7 +109,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="border-2 border-gray-600 rounded-2xl p-8 shadow-2xl min-w-80 backdrop-blur-sm text-center"
+            className="border-2 border-gray-600 rounded-2xl p-8 shadow-2xl min-w-[600px] backdrop-blur-sm text-center"
           >
             <div className="text-5xl mb-4">🎰</div>
             <div className="text-2xl font-black text-gray-500 mb-6">No Winners This Round</div>
