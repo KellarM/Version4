@@ -40,34 +40,15 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
           }}
         />
 
-        {/* Center emblem */}
+        {/* Diagonal logo — centered bottom-left to upper-right */}
         <div className="absolute inset-0 flex items-center justify-center z-20">
-          <div className="flex flex-col items-center gap-0" style={{ transform: 'rotate(-5deg)' }}>
-            <span style={{ fontSize: '1.1em', filter: 'drop-shadow(0 0 4px rgba(251,146,60,0.8))' }}>🔥</span>
-            <div className="font-black italic leading-none"
-              style={{
-                fontFamily: 'Oswald, sans-serif',
-                fontSize: '0.55em',
-                transform: 'skewX(-12deg)',
-                background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                letterSpacing: '-0.02em',
-                filter: 'drop-shadow(0 0 3px rgba(255,255,255,0.4))',
-              }}
-            >RF</div>
-          </div>
-        </div>
-
-        {/* Diagonal logo — bottom-left to upper-right */}
-        <div className="absolute bottom-1 left-1 z-20"
-          style={{ transform: 'rotate(-45deg)', transformOrigin: 'bottom left' }}
-        >
-          <div className="flex items-baseline gap-0.5 leading-none">
+          <div className="flex items-baseline gap-0.5 leading-none"
+            style={{ transform: 'rotate(-45deg)' }}
+          >
             <span className="font-black italic leading-none"
               style={{
                 fontFamily: 'Oswald, sans-serif',
-                fontSize: '0.45em',
+                fontSize: '0.5em',
                 transform: 'skewX(-12deg)',
                 background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 60%, #94a3b8 100%)',
                 WebkitBackgroundClip: 'text',
@@ -79,7 +60,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
             <span className="font-black italic leading-none"
               style={{
                 fontFamily: 'Oswald, sans-serif',
-                fontSize: '0.45em',
+                fontSize: '0.5em',
                 transform: 'skewX(-12deg)',
                 background: 'linear-gradient(180deg, #fef08a 0%, #f97316 60%, #dc2626 100%)',
                 WebkitBackgroundClip: 'text',
@@ -90,7 +71,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
             <span className="font-black italic leading-none"
               style={{
                 fontFamily: 'Oswald, sans-serif',
-                fontSize: '0.35em',
+                fontSize: '0.38em',
                 transform: 'skewX(-12deg)',
                 background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
                 WebkitBackgroundClip: 'text',
@@ -100,14 +81,15 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
           </div>
         </div>
 
-        {/* Top-right corner glow accent */}
-        <div className="absolute top-0 right-0 w-6 h-6 rounded-bl-full opacity-30 pointer-events-none"
-          style={{ background: 'radial-gradient(circle at top right, rgba(251,146,60,0.8), transparent 70%)' }}
-        />
-        {/* Bottom-left corner glow accent */}
-        <div className="absolute bottom-0 left-0 w-6 h-6 rounded-tr-full opacity-30 pointer-events-none"
-          style={{ background: 'radial-gradient(circle at bottom left, rgba(74,222,128,0.6), transparent 70%)' }}
-        />
+        {/* Flame — top-left corner */}
+        <div className="absolute top-1 left-1 z-20 leading-none"
+          style={{ fontSize: '0.9em', filter: 'drop-shadow(0 0 3px rgba(251,146,60,0.8))' }}
+        >🔥</div>
+
+        {/* Flame — bottom-right corner */}
+        <div className="absolute bottom-1 right-1 z-20 leading-none"
+          style={{ fontSize: '0.9em', filter: 'drop-shadow(0 0 3px rgba(251,146,60,0.8))', transform: 'rotate(180deg)' }}
+        >🔥</div>
       </div>
     );
   }
