@@ -93,6 +93,12 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                       ${payout.netWin.toFixed(2)}
                     </span>
                   </div>
+                  <div className="flex justify-between text-2xl font-black gap-2">
+                    <span className="text-gray-600" style={{ textShadow: '1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 0 1px 0 white, 1px 0 0 white, 0 -1px 0 white, -1px 0 0 white' }}>Total Win</span>
+                    <span className="text-yellow-500" style={{ textShadow: '1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 0 1px 0 white, 1px 0 0 white, 0 -1px 0 white, -1px 0 0 white' }}>
+                      ${(payout.totalBet + payout.netWin).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Visual indicator */}
