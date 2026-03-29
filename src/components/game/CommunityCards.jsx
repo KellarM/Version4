@@ -26,8 +26,8 @@ export default function CommunityCards({ cards, phase }) {
                     <PlayingCard card={card} size="md" glow={isActive} />
                   </motion.div>
                 ) : (
-                  <motion.div key={`empty-${i}`}>
-                    <PlayingCard card={null} size="md" />
+                  <motion.div key={`empty-${i}`} initial={{ opacity: 0.6 }} animate={{ opacity: 0.6 }}>
+                    <PlayingCard faceDown size="md" />
                   </motion.div>
                 )}
               </AnimatePresence>
