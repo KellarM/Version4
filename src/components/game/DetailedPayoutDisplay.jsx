@@ -42,7 +42,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ delay: playerId * 0.1 }}
-                className={`bg-gradient-to-b ${color.bg} bg-opacity-40 border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-80 max-w-md backdrop-blur-sm`}
+                className={`bg-gradient-to-b ${color.bg} bg-opacity-50 border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-80 max-w-md backdrop-blur-sm`}
               >
                 {/* Header */}
                 <div className="text-center mb-4">
