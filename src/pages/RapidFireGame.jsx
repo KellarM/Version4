@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import {
   FIXED_HANDS, shuffleDeck, DEALER_DECK, findLeadingHand,
   resolveRedBlack, resolveLowHigh, cardColor, isLowCard,
@@ -16,6 +15,7 @@ import RankBets from '@/components/game/RankBets';
 import PayoutTable from '@/components/game/PayoutTable';
 import NewPlayerButton from '@/components/game/NewPlayerButton';
 import PlayerStatsPanel from '@/components/game/PlayerStatsPanel';
+import ToolsMenu from '@/components/game/ToolsMenu';
 
 const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -694,41 +694,7 @@ export default function RapidFireGame() {
               <div className="text-yellow-400/40 text-xs">{roundsPlayed} rounds</div>
             </div>
           )}
-          <button
-            onClick={() => setShowStatsPanel(!showStatsPanel)}
-            className="ml-2 px-2 py-1 rounded-lg border border-purple-700/60 bg-purple-900/30 text-purple-300 text-xs font-bold hover:bg-purple-800/50 transition-all"
-            title="View player statistics"
-          >
-            📊 Stats
-          </button>
-          <Link
-            to="/analysis"
-            className="ml-1 px-2 py-1 rounded-lg border border-green-700/60 bg-green-900/30 text-green-300 text-xs font-bold hover:bg-green-800/50 transition-all"
-            title="Hand-by-hand breakdown"
-          >
-            🔍 H-by-H
-          </Link>
-          <Link
-            to="/calibration"
-            className="ml-1 px-2 py-1 rounded-lg border border-yellow-700/60 bg-yellow-900/30 text-yellow-300 text-xs font-bold hover:bg-yellow-800/50 transition-all"
-            title="Payout calibration engine"
-          >
-            ⚖️ Calibrate
-          </Link>
-          <Link
-            to="/strategy-test"
-            className="ml-1 px-2 py-1 rounded-lg border border-cyan-700/60 bg-cyan-900/30 text-cyan-300 text-xs font-bold hover:bg-cyan-800/50 transition-all"
-            title="Strategy betting simulator"
-          >
-            🎯 Strategy Test
-          </Link>
-          <Link
-            to="/regulatory"
-            className="ml-1 px-2 py-1 rounded-lg border border-purple-700/60 bg-purple-900/30 text-purple-300 text-xs font-bold hover:bg-purple-800/50 transition-all"
-            title="Regulatory compliance audit & payout calibration"
-          >
-            ⚖️ Regulatory
-          </Link>
+          <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} />
           <button
             onClick={handleResetGame}
             className="ml-2 px-2 py-1 rounded-lg border border-red-700/60 bg-red-900/30 text-red-300 text-xs font-bold hover:bg-red-800/50 transition-all"

@@ -13,6 +13,7 @@ import HandByHandAnalysis from './pages/HandByHandAnalysis';
 import PayoutCalibration from './pages/PayoutCalibration';
 import StrategyTest from './pages/StrategyTest';
 import RegulatoryCompliance from './pages/RegulatoryCompliance';
+import FrequencyProfiler from './pages/FrequencyProfiler';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -47,6 +48,7 @@ const AuthenticatedApp = () => {
       <Route path="/calibration" element={<PayoutCalibration />} />
       <Route path="/strategy-test" element={<StrategyTest />} />
       <Route path="/regulatory" element={<RegulatoryCompliance />} />
+      <Route path="/frequency-profiler" element={<FrequencyProfiler />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
