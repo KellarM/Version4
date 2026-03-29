@@ -33,7 +33,7 @@ const COLOR_STYLES = {
   green:  { active: 'border-green-500 bg-green-900/50 text-green-200',    inactive: 'border-green-800/40 bg-green-950/20 text-green-400/60',    winner: WINNER_STYLE },
 };
 
-export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled, disabledByConstraint, handBetCount, maxHandBetsForRank = 2, onAttemptLockedRank }) {
+export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled, disabledByConstraint, handBetCount, rankBetCount, onAttemptLockedRank }) {
   const canBet = gamePhase === 'betting' && !disabled;
   const isLocked = false;
 
@@ -92,10 +92,7 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
                     const amt = (rankBets[from] || 0);
                     if (amt > 0) {
                       onRemoveRankBet(from);
-                      // Trigger multiple bets if needed
-                      for (let i = 0; i < amt; i += selectedChip) {
-                        onRankBet(opt.key);
-                      }
+                      onRankBet(opt.key);
                     }
                   }
                 } catch (e) {}
