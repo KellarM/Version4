@@ -866,6 +866,7 @@ export default function RapidFireGame() {
                   gamePhase={gamePhase}
                   disabled={balance < selectedChip && !pHandBets[hand.id]}
                   disabledByConstraint={rankBetCount > 1 || (handBetCount >= MAX_HAND_BETS && !pHandBets[hand.id])}
+                  onAttemptLockedBet={() => setShowHandLimitAlert(true)}
                 />
               ))}
             </div>
