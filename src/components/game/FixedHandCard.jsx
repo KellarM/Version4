@@ -143,6 +143,13 @@ export default function FixedHandCard({
         </motion.div>
       )}
 
+      {/* Lock icon when disabled by constraint */}
+      {disabledByConstraint && betAmount === 0 && (
+        <div className="absolute inset-0 rounded-xl flex items-center justify-center pointer-events-none">
+          <span className="text-red-400 font-black text-xs">🔒</span>
+        </div>
+      )}
+
       {/* Bet prompt */}
       {canBet && hovered && betAmount === 0 && (
         <div className="absolute inset-0 rounded-xl bg-yellow-400/10 flex items-center justify-center pointer-events-none">
