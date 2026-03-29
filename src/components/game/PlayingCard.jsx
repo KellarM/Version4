@@ -106,22 +106,75 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
 
   const isRed = SUIT_COLORS[card.suit] === 'red';
   const suitSymbol = SUITS[card.suit];
+  const isCourtCard = ['J', 'Q', 'K'].includes(card.rank);
 
   return (
-    <div className={`${sizeClasses[size]} rounded-md border bg-white flex flex-col items-stretch justify-between p-0.5 shadow-lg select-none overflow-hidden relative
-      ${isRed ? 'text-red-600' : 'text-gray-900'}
-      ${glow ? 'border-yellow-400 shadow-yellow-400/80 shadow-lg ring-2 ring-yellow-400' : 'border-gray-200'}
+    <div className={`${sizeClasses[size]} rounded-sm border-2 bg-white flex flex-col items-stretch justify-between p-1 shadow-lg select-none overflow-hidden relative
+      ${isRed ? 'text-red-600 border-red-300' : 'text-black border-gray-300'}
+      ${glow ? 'border-yellow-400 shadow-yellow-400/80 shadow-lg ring-2 ring-yellow-400' : ''}
     `}>
-      <div className="flex flex-col leading-none text-xs">
-        <span className="font-bold">{card.rank}</span>
-        <span>{suitSymbol}</span>
+      {/* Top-left corner: rank + suit */}
+      <div className="flex flex-col leading-none text-center min-w-0">
+        <span className="font-black" style={{ fontSize: '0.65em', lineHeight: '1' }}>{card.rank}</span>
+        <span className="font-bold" style={{ fontSize: '0.5em', lineHeight: '1.1' }}>{suitSymbol}</span>
       </div>
+
+      {/* Center area */}
       <div className="flex-1 flex items-center justify-center">
-        <span className="text-base font-bold">{suitSymbol}</span>
+        {isCourtCard ? (
+          // Court cards: show large ornate suit symbol
+          <span className="font-bold opacity-70" style={{ fontSize: '2.5em', lineHeight: '1' }}>{suitSymbol}</span>
+        ) : (
+          // Pip cards: show suit symbols in pattern
+          <div className="flex flex-col items-center justify-center gap-0.5 w-full h-full">
+            {card.rank === 'A' && (
+              <span className="font-black" style={{ fontSize: '1.2em' }}>{suitSymbol}</span>
+            )}
+            {card.rank === '2' && (
+              <>
+                <span className="font-bold" style={{ fontSize: '0.7em' }}>{suitSymbol}</span>
+                <span className="font-bold" style={{ fontSize: '0.7em' }}>{suitSymbol}</span>
+              </>
+            )}
+            {card.rank === '3' && (
+              <>
+                <span className="font-bold" style={{ fontSize: '0.7em' }}>{suitSymbol}</span>
+                <span className="font-bold" style={{ fontSize: '0.7em' }}>{suitSymbol}</span>
+                <span className="font-bold" style={{ fontSize: '0.7em' }}>{suitSymbol}</span>
+              </>
+            )}
+            {card.rank === '4' && (
+              <div className="grid grid-cols-2 gap-1">
+                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
+                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
+                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
+                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
+              </div>
+            )}
+            {card.rank === '5' && (
+              <div className="grid grid-cols-2 gap-1">
+                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
+                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
+                <span className="font-bold text-transparent text-center" style={{ fontSize: '0.6em' }}>.</span>
+                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
+                <span className="font-bold" style={{ fontSize: '0.6em' }}>{suitSymbol}</span>
+              </div>
+            )}
+            {['6', '7', '8', '9', '10'].includes(card.rank) && (
+              <div className="grid grid-cols-2 gap-0.5 text-center">
+                {Array(parseInt(card.rank) === 10 ? 10 : parseInt(card.rank)).fill(0).map((_, i) => (
+                  <span key={i} className="font-bold" style={{ fontSize: '0.5em' }}>{suitSymbol}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-      <div className="flex flex-col leading-none text-xs items-end self-end">
-        <span className="font-bold">{card.rank}</span>
-        <span>{suitSymbol}</span>
+
+      {/* Bottom-right corner: rank + suit (upside down) */}
+      <div className="flex flex-col leading-none text-center items-end min-w-0" style={{ transform: 'rotate(180deg)' }}>
+        <span className="font-black" style={{ fontSize: '0.65em', lineHeight: '1' }}>{card.rank}</span>
+        <span className="font-bold" style={{ fontSize: '0.5em', lineHeight: '1.1' }}>{suitSymbol}</span>
       </div>
 
       {/* Centered diagonal watermark — only shown when explicitly enabled */}
