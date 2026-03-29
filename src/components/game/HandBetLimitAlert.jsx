@@ -27,13 +27,12 @@ export default function HandBetLimitAlert({ isOpen, onClose }) {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop — clickable to dismiss */}
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 bg-black/50"
           />
 
           {/* Alert Modal */}
