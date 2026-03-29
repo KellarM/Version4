@@ -32,15 +32,16 @@ export default function HandBetLimitAlert({ isOpen, onClose }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/50"
+            className="fixed inset-0 z-30 bg-black/60"
           />
 
           {/* Alert Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: -20 }}
+            initial={{ opacity: 0, scale: 0.8, y: -50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 flex items-center justify-center z-50 pointer-events-auto"
+            exit={{ opacity: 0, scale: 0.8, y: -50 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 flex items-center justify-center z-50"
           >
             <div 
               onClick={(e) => e.stopPropagation()}
