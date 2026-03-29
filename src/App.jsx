@@ -6,6 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
+import PromoSequence from './pages/PromoSequence';
 import RapidFireGame from './pages/RapidFireGame';
 import SimulationMode from './pages/SimulationMode';
 import DetailedSimulation from './pages/DetailedSimulation';
@@ -49,6 +50,7 @@ const AuthenticatedApp = () => {
       <Route path="/strategy-test" element={<StrategyTest />} />
       <Route path="/regulatory" element={<RegulatoryCompliance />} />
       <Route path="/frequency-profiler" element={<FrequencyProfiler />} />
+      <Route path="/promo" element={<PromoSequence />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
