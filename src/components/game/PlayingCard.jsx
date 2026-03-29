@@ -124,7 +124,37 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
         <span>{suitSymbol}</span>
       </div>
 
-
+      {/* Centered diagonal watermark */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.75, paddingTop: '30%' }}>
+        <div className="flex flex-col items-center gap-0 leading-none" style={{ transform: 'rotate(-45deg)' }}>
+          <div className="flex items-center leading-none" style={{ gap: '20px' }}>
+            <span className="font-black italic leading-none"
+              style={{
+                fontFamily: 'Oswald, sans-serif',
+                fontSize: '0.6rem',
+                transform: 'skewX(-12deg)',
+                background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                letterSpacing: '-0.05em',
+                filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.9)) drop-shadow(0px 0px 2px rgba(0,0,0,0.7))',
+              }}
+            >RAPID</span>
+            <span className="font-black italic leading-none"
+              style={{
+                fontFamily: 'Oswald, sans-serif',
+                fontSize: '0.6rem',
+                transform: 'skewX(-12deg)',
+                background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.9)) drop-shadow(0px 0px 2px rgba(0,0,0,0.7))',
+                letterSpacing: '-0.02em',
+              }}
+            >FIRE</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
