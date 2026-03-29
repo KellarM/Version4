@@ -28,7 +28,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
   return (
     <AnimatePresence>
       {winInfo && (
-      <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center gap-4 p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center gap-4 p-4">
         {hasAnyWins ? (
           winInfo.playerPayouts.map((payout, playerId) => {
             if (!payout || payout.wins.length === 0) return null;
@@ -42,7 +42,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ delay: playerId * 0.1 }}
-                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] backdrop-blur-sm`}
+                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] backdrop-blur-sm pointer-events-auto`}
               >
                 {/* Header */}
                 <div className="text-center mb-4">
@@ -54,7 +54,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 </div>
 
                 {/* Winning bets breakdown */}
-                <div className="space-y-2 mb-4 max-h-96 overflow-auto pr-2">
+                <div className="space-y-2 mb-4 max-h-96 overflow-y-auto pr-2 pointer-events-auto">
                   {payout.wins.map((win, idx) => {
                     const profit = win.payout - win.bet;
                     return (
@@ -109,7 +109,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="border-2 border-gray-600 rounded-2xl p-8 shadow-2xl min-w-[600px] backdrop-blur-sm text-center"
+            className="border-2 border-gray-600 rounded-2xl p-8 shadow-2xl min-w-[600px] backdrop-blur-sm text-center pointer-events-auto"
           >
             <div className="text-5xl mb-4">🎰</div>
             <div className="text-2xl font-black text-gray-500 mb-6">No Winners This Round</div>

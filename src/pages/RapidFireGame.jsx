@@ -575,11 +575,13 @@ export default function RapidFireGame() {
 
     setGamePhase('winner');
 
-    // Show detailed payout info for all players
-    setLastWinInfo({
-      playerPayouts,
-      playerCount,
-    });
+    // Delay display window by 8 seconds
+    setTimeout(() => {
+      setLastWinInfo({
+        playerPayouts,
+        playerCount,
+      });
+    }, 8000);
 
     // History — capture ALL winning outcomes regardless of wagers
     const reds = finalComm.filter(c => cardColor(c) === 'red').length;
