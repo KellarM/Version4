@@ -12,13 +12,13 @@ const PLAYER_CHIP_COLORS = [
 export const RANK_BET_OPTIONS = [
   { key: 'Royal Flush',     label: 'Royal Flush',     payout: 'Progressive', color: 'purple', minBet: 25 },
   { key: 'Straight Flush',  label: 'Straight Flush',  payout: 'Progressive', color: 'orange', minBet: 15 },
-  { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: '3.78:1', color: 'yellow' },
-  { key: 'Full House',      label: 'Full House',       payout: '0.98:1', color: 'green'  },
-  { key: 'Flush',           label: 'Flush',            payout: '1.30:1', color: 'blue'   },
-  { key: 'Straight',        label: 'Straight',         payout: '1.89:1', color: 'teal'   },
-  { key: 'Three of a Kind', label: 'Three of a Kind', payout: '0.98:1', color: 'green'  },
-  { key: 'Two Pair',        label: 'Two Pair',         payout: '4.82:1', color: 'green'  },
-  { key: 'One Pair',        label: 'One Pair',         payout: '5.86:1', color: 'green'  },
+  { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: '1.80:1',      color: 'yellow' },
+  { key: 'Full House',      label: 'Full House',       payout: '0.50:1',      color: 'green'  },
+  { key: 'Flush',           label: 'Flush',            payout: 'Progressive', color: 'blue'   },
+  { key: 'Straight',        label: 'Straight',         payout: 'Progressive', color: 'teal'   },
+  { key: 'Three of a Kind', label: 'Three of a Kind', payout: '30.0:1',      color: 'green'  },
+  { key: 'Two Pair',        label: 'Two Pair',         payout: 'Progressive', color: 'green'  },
+  { key: 'One Pair',        label: 'One Pair',         payout: 'Progressive', color: 'green'  },
 ];
 
 // Winner always highlights in gold/yellow with flash animation
