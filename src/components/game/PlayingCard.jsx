@@ -124,39 +124,55 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
       </div>
 
       {/* Centered diagonal logo — suit replaces fire */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.18 }}>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="flex flex-col items-center gap-0 leading-none" style={{ transform: 'rotate(-45deg)' }}>
-          {/* RAPID {suit} FIRE */}
-          <div className="flex items-baseline gap-0.5 leading-none">
+          {/* RAPID {suit} FIRE — all baseline-aligned, suit NOT skewed */}
+          <div className="flex items-center gap-0.5 leading-none">
             <span className="font-black italic leading-none"
               style={{
                 fontFamily: 'Oswald, sans-serif',
-                fontSize: '0.55rem',
+                fontSize: '0.6rem',
                 transform: 'skewX(-12deg)',
-                color: isRed ? '#dc2626' : '#111827',
-                letterSpacing: '-0.04em',
+                background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                letterSpacing: '-0.05em',
+                filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.9)) drop-shadow(0px 0px 2px rgba(0,0,0,0.7))',
               }}
             >RAPID</span>
-            <span style={{ fontSize: '0.55rem', lineHeight: 1, color: isRed ? '#dc2626' : '#111827' }}>{suitSymbol}</span>
+            {/* Suit symbol — upright, NOT skewed */}
+            <span
+              style={{
+                fontSize: '0.65rem',
+                lineHeight: 1,
+                color: isRed ? '#dc2626' : '#1e293b',
+                display: 'inline-block',
+                transform: 'skewX(12deg)', /* counter-skew to keep upright inside the slanted container */
+                filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.8))',
+              }}
+            >{suitSymbol}</span>
             <span className="font-black italic leading-none"
               style={{
                 fontFamily: 'Oswald, sans-serif',
-                fontSize: '0.55rem',
+                fontSize: '0.6rem',
                 transform: 'skewX(-12deg)',
-                color: isRed ? '#dc2626' : '#111827',
+                background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.9)) drop-shadow(0px 0px 2px rgba(0,0,0,0.7))',
                 letterSpacing: '-0.02em',
               }}
             >FIRE</span>
           </div>
-          {/* TEXAS 10 */}
-          <span className="font-black italic leading-none"
+          {/* TEXAS 10 — centered under the suit symbol */}
+          <span className="font-black italic leading-none text-green-400"
             style={{
               fontFamily: 'Oswald, sans-serif',
-              fontSize: '0.5rem',
+              fontSize: '0.52rem',
               transform: 'skewX(-12deg)',
-              color: '#16a34a',
-              marginTop: '1px',
+              marginTop: '2px',
               letterSpacing: '0.02em',
+              textShadow: '0 0 3px rgba(74,222,128,0.5), 0px 0px 1px rgba(0,0,0,0.9)',
             }}
           >TEXAS 10</span>
         </div>
