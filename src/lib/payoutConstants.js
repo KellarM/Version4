@@ -21,18 +21,18 @@
  * overall: EV = 0.096×$420 - 0.904×$60 = $40.32 - $54.24 = -$13.92 per $60 → house edge intact.
  */
 
-// CARDED HANDS — single-hand calibrated at 96.5% RTP
+// CARDED HANDS — updated payouts
 export const CARDED_HAND_PAYOUTS = [
-  16.5,  // Hand 1:  A♦10♥   (5.52%  → fair 16.49x)
-  2.25,  // Hand 2:  K♣K♠    (29.84% → fair 2.23x)
-  18.0,  // Hand 3:  Q♣J♠    (5.08%  → fair 17.99x)
-  18.0,  // Hand 4:  Q♠10♠   (5.04%  → fair 18.15x)
-  11.25, // Hand 5:  J♣9♣    (7.89%  → fair 11.23x)
-  10.5,  // Hand 6:  8♦6♦    (8.30%  → fair 10.63x)
-  4.4,   // Hand 7:  7♦7♠    (17.91% → fair 4.39x)
-  20.0,  // Hand 8:  4♥2♥    (4.52%  → fair 20.35x)
-  8.2,   // Hand 9:  3♣3♥    (10.53% → fair 8.16x)
-  17.0,  // Hand 10: A♥5♦    (5.37%  → fair 17.97x)
+  18,    // Hand 1:  A♦10♥
+  4,     // Hand 2:  K♣K♠
+  15,    // Hand 3:  Q♣J♠
+  8,     // Hand 4:  Q♠10♠
+  6,     // Hand 5:  J♣9♣
+  5,     // Hand 6:  8♦6♦
+  6,     // Hand 7:  7♦7♠
+  7,     // Hand 8:  4♥2♥
+  8,     // Hand 9:  3♣3♥
+  15,    // Hand 10: A♥5♦
 ];
 
 // HAND RANK PAYOUTS — empirical data from actual gameplay (206,846 hands)
