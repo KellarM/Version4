@@ -597,41 +597,53 @@ export default function RapidFireGame() {
       {/* Header */}
       <div className="w-full bg-black/60 border-b border-yellow-700/30 px-3 py-1.5 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex flex-col leading-none select-none">
-            <div className="flex items-baseline gap-0.5">
-              {/* RAPID — italic, stretched, motion-blur feel with speed lines */}
-              <span
-                className="font-black italic text-lg tracking-tighter leading-none"
-                style={{
-                  fontFamily: 'Oswald, sans-serif',
-                  transform: 'skewX(-12deg)',
-                  background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  textShadow: 'none',
-                  letterSpacing: '-0.05em',
-                  filter: 'drop-shadow(2px 0 4px rgba(148,163,184,0.5))',
-                }}
-              >
-                RAPID
-              </span>
-              {/* FIRE — blazing orange-to-yellow gradient with glow */}
-              <span
-                className="font-black italic text-lg leading-none"
-                style={{
-                  fontFamily: 'Oswald, sans-serif',
-                  transform: 'skewX(-12deg)',
-                  background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.8)) drop-shadow(0 0 12px rgba(239,68,68,0.5))',
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                🔥FIRE
-              </span>
-            </div>
-            
+          <div className="flex items-baseline gap-0.5 leading-none select-none">
+            {/* RAPID */}
+            <span
+              className="font-black italic text-lg tracking-tighter leading-none"
+              style={{
+                fontFamily: 'Oswald, sans-serif',
+                transform: 'skewX(-12deg)',
+                background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: 'none',
+                letterSpacing: '-0.05em',
+                filter: 'drop-shadow(2px 0 4px rgba(148,163,184,0.5))',
+              }}
+            >
+              RAPID
+            </span>
+            {/* FIRE */}
+            <span
+              className="font-black italic text-lg leading-none"
+              style={{
+                fontFamily: 'Oswald, sans-serif',
+                transform: 'skewX(-12deg)',
+                background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.8)) drop-shadow(0 0 12px rgba(239,68,68,0.5))',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              🔥FIRE
+            </span>
+            {/* TEXAS 10 inline */}
+            <span className="text-yellow-500/50 text-xs font-bold leading-none mx-0.5">—</span>
+            <span
+              className="font-black italic text-xs leading-none tracking-widest"
+              style={{
+                fontFamily: 'Oswald, sans-serif',
+                transform: 'skewX(-12deg)',
+                background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))',
+              }}
+            >
+              TEXAS 10
+            </span>
           </div>
           {/* Player count selector */}
           {gamePhase === 'betting' && roundId === 1 && Object.values(handBets).every(b => Object.keys(b || {}).length === 0) && (
@@ -728,7 +740,7 @@ export default function RapidFireGame() {
           {/* Community Cards */}
           <div className="border border-yellow-700/30 rounded-xl bg-green-900/20 py-1.5 px-8 flex items-center justify-between flex-shrink-0">
             {/* Logo — left side */}
-            <div className="flex flex-col leading-none select-none flex-shrink-0">
+            <div className="flex flex-col items-center leading-none select-none flex-shrink-0">
               <div className="flex items-baseline gap-0.5">
                 <span className="font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: 'clamp(1.1rem, 2.8vw, 2rem)', transform: 'skewX(-12deg)', background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.05em', filter: 'drop-shadow(2px 0 4px rgba(148,163,184,0.5))' }}>RAPID</span>
                 <span className="font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: 'clamp(1.1rem, 2.8vw, 2rem)', transform: 'skewX(-12deg)', background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.8)) drop-shadow(0 0 12px rgba(239,68,68,0.5))', letterSpacing: '-0.02em' }}>🔥FIRE</span>
@@ -743,7 +755,7 @@ export default function RapidFireGame() {
             <CommunityCards cards={communityCards} phase={gamePhase} />
 
             {/* Mirror logo — right side */}
-            <div className="flex flex-col leading-none select-none flex-shrink-0 items-end">
+            <div className="flex flex-col items-center leading-none select-none flex-shrink-0">
               <div className="flex items-baseline gap-0.5">
                 <span className="font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: 'clamp(1.1rem, 2.8vw, 2rem)', transform: 'skewX(-12deg)', background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.05em', filter: 'drop-shadow(2px 0 4px rgba(148,163,184,0.5))' }}>RAPID</span>
                 <span className="font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: 'clamp(1.1rem, 2.8vw, 2rem)', transform: 'skewX(-12deg)', background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.8)) drop-shadow(0 0 12px rgba(239,68,68,0.5))', letterSpacing: '-0.02em' }}>🔥FIRE</span>
