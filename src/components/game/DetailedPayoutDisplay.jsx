@@ -28,7 +28,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
   return (
     <AnimatePresence>
       {winInfo && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center gap-4 p-4">
+      <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center gap-4 p-4">
         {hasAnyWins ? (
           winInfo.playerPayouts.map((payout, playerId) => {
             if (!payout || payout.wins.length === 0) return null;
