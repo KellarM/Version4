@@ -70,7 +70,7 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           return (
             <motion.button
               key={opt.key}
-              onClick={() => {
+              onMouseDown={() => {
                 if (canBet && canBetThisRank) {
                   onRankBet(opt.key);
                 } else if (!canBetThisRank && gamePhase === 'betting') {

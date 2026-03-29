@@ -747,9 +747,11 @@ export default function RapidFireGame() {
         currentHandBets={handBetCount}
         alertType={rankAlertType}
       />
+      {showInsufficientFunds && (
+        <div onMouseUp={() => setShowInsufficientFunds(false)} className="fixed inset-0 pointer-events-auto z-50" />
+      )}
       <InsufficientFundsAlert 
         isVisible={showInsufficientFunds}
-        onMouseUp={() => setShowInsufficientFunds(false)}
       />
 
       {/* Player Stats Panel */}

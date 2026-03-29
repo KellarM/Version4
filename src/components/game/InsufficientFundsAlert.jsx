@@ -1,13 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function InsufficientFundsAlert({ isVisible, onMouseUp }) {
+export default function InsufficientFundsAlert({ isVisible }) {
   return (
     <AnimatePresence>
       {isVisible && (
-        <div 
-          className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center"
-          onMouseUp={onMouseUp}
-        >
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
