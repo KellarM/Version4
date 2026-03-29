@@ -228,14 +228,13 @@ Deno.serve(async (req) => {
       ST1_Original: {
         name: 'ST1: Original (Hands 2,5,6,7,8,9)',
         execute: (balance, game) => {
-          if (balance < 5) return null; // Bankrupt threshold
+          if (balance < 5) return null;
           const bets = {};
           const handBet = balance < 300 ? Math.floor(balance / 6) : 50;
-          if (handBet < 1) return null; // Can't place meaningful bets
+          if (handBet < 1) return null;
           if (balance < handBet * 6) return null;
-          
           [2, 5, 6, 7, 8, 9].forEach(id => { bets[`h${id}`] = handBet; });
-          bets.riverHedge = true;
+          bets.riverHedge = handBet; // actual dollar amount
           return { bets, balance };
         },
       },
@@ -283,39 +282,37 @@ Deno.serve(async (req) => {
           
           [6, 8].forEach(id => { bets[`h${id}`] = handBet; });
           bets['rFlush'] = handBet;
-          bets['riverHedge'] = true;
+          bets.riverHedge = handBet; // actual dollar amount
           return { bets, balance };
         },
       },
       StraightHunter: {
         name: 'Straight Hunter (Hands targeting straights + Straight rank)',
         execute: (balance) => {
-          if (balance < 5) return null; // Bankrupt threshold
+          if (balance < 5) return null;
           const bets = {};
           const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
-          if (handBet < 1) return null; // Can't place meaningful bets
-          const totalBetsNeeded = (3 + 1) * handBet; // 3 hands + 1 rank
+          if (handBet < 1) return null;
+          const totalBetsNeeded = (3 + 1) * handBet;
           if (balance < totalBetsNeeded) return null;
-          
           [1, 5, 10].forEach(id => { bets[`h${id}`] = handBet; });
           bets['rStraight'] = handBet;
-          bets['riverHedge'] = true;
+          bets.riverHedge = handBet; // actual dollar amount
           return { bets, balance };
         },
       },
       ColorBoardSpecialist: {
         name: 'Color Specialist (Light hands + all colors)',
         execute: (balance) => {
-          if (balance < 5) return null; // Bankrupt threshold
+          if (balance < 5) return null;
           const bets = {};
           const handBet = balance < 200 ? Math.floor(balance / 9) : 20;
-          if (handBet < 1) return null; // Can't place meaningful bets
-          const totalBetsNeeded = (2 + 6) * handBet; // 2 hands + 6 colors
+          if (handBet < 1) return null;
+          const totalBetsNeeded = (2 + 6) * handBet;
           if (balance < totalBetsNeeded) return null;
-          
           [1, 4].forEach(id => { bets[`h${id}`] = handBet; });
           ['3R', '3B', '4R', '4B', '5R', '5B'].forEach(c => { bets[`c${c}`] = handBet; });
-          bets['riverHedge'] = true;
+          bets.riverHedge = handBet; // actual dollar amount
           return { bets, balance };
         },
       },
@@ -346,7 +343,7 @@ Deno.serve(async (req) => {
           if (balance < handBet * 2) return null;
           
           bets['h8'] = handBet;
-          bets['riverAggressive'] = true;
+          bets.riverAggressive = handBet; // actual dollar amount
           return { bets, balance };
         },
       },
@@ -363,7 +360,7 @@ Deno.serve(async (req) => {
           [2, 6, 8].forEach(id => { bets[`h${id}`] = smallBet; });
           ['One Pair', 'Flush', 'Straight'].forEach(r => { bets[`r${r}`] = smallBet; });
           ['3R', '4R'].forEach(c => { bets[`c${c}`] = smallBet; });
-          bets['riverHedge'] = true;
+          bets.riverHedge = smallBet; // actual dollar amount
           return { bets, balance };
         },
       },
@@ -528,7 +525,7 @@ Deno.serve(async (req) => {
           } else if (secondaryStrategy === 'ColorBoardSpecialist') {
             ['3R', '3B'].forEach(c => { bets[`c${c}`] = (bets[`c${c}`] || 0) + Math.floor(secondBet * 0.6); });
           } else if (secondaryStrategy === 'RiverFocused') {
-            bets['riverHedge'] = true;
+            bets['riverHedge'] = secondBet; // actual dollar amount
           } else if (secondaryStrategy === 'DiversifiedHedge') {
             [1, 5, 9].forEach(id => { bets[`h${id}`] = (bets[`h${id}`] || 0) + Math.floor(secondBet * 0.5); });
           }
@@ -570,15 +567,11 @@ Deno.serve(async (req) => {
       if (!gameResult || Object.keys(gameResult.bets).length === 0) break; // Strategy can't afford bets
       const { bets } = gameResult;
 
-      // Calculate total bet (includes hand, rank, color, and low/high bets)
+      // Calculate total bet — all numeric values in bets (hands, ranks, colors, riverHedge, riverAggressive)
       let totalBet = 0;
       Object.entries(bets).forEach(([key, val]) => {
-        if (typeof val === 'number') totalBet += val;
+        if (key !== 'strategy' && typeof val === 'number') totalBet += val;
       });
-      // Include river hedge bet amount if specified (default $0 if flag only)
-      if (bets.riverHedge === true) {
-        totalBet += 0; // riverHedge is a flag, not a dollar amount
-      }
 
       if (balance < totalBet) break;
       balance -= totalBet;
@@ -649,9 +642,10 @@ Deno.serve(async (req) => {
           });
         }
       }
-      // Log losing rank bets
+      // Log losing rank bets (exclude riverHedge/riverAggressive keys)
+      const RIVER_KEYS = ['riverHedge', 'riverAggressive'];
       for (const [key, amount] of Object.entries(bets)) {
-        if (key.startsWith('r') && key !== `r${gameRank}` && amount > 0) {
+        if (key.startsWith('r') && !RIVER_KEYS.includes(key) && key !== `r${gameRank}` && typeof amount === 'number' && amount > 0) {
           betsLog.push({
             position: key.slice(1),
             type: 'rank',
@@ -691,63 +685,34 @@ Deno.serve(async (req) => {
 
 
 
-      // River Low/High bet tracking
-      const riverLowHighBetAmount = (bets.riverLow || bets.riverHigh) ? (bets.riverLow || bets.riverHigh) : 0;
-      if (riverLowHighBetAmount > 0) {
-        const betType = bets.riverLow ? 'LOW' : 'HIGH';
-        const isWinner = winningLowHigh === betType;
-        if (isWinner) {
-          const payout = riverLowHighBetAmount * (1 + 0.83); // LOW_HIGH_PAYOUT
+      // River Hedge bet — resolves as LOW/HIGH on river card
+      const winningLowHigh = riverIsLow ? 'LOW' : 'HIGH';
+
+      if (bets.riverHedge > 0) {
+        // Hedge always bets opposite of what is currently more likely (50/50 on river)
+        // Pays out at 0.83:1 if river card is LOW
+        const hedgeWon = riverIsLow; // hedge bets LOW by convention
+        const hedgeAmount = bets.riverHedge;
+        if (hedgeWon) {
+          const payout = hedgeAmount * (1 + 0.83);
           gameWin += payout;
-          betsLog.push({
-            position: `River ${betType}($${riverLowHighBetAmount})`,
-            type: 'lowHigh',
-            bet: riverLowHighBetAmount,
-            won: true,
-            payout,
-          });
+          betsLog.push({ position: `River Hedge LOW ($${hedgeAmount})`, type: 'river', bet: hedgeAmount, won: true, payout });
         } else {
-          betsLog.push({
-            position: `River ${betType}($${riverLowHighBetAmount})`,
-            type: 'lowHigh',
-            bet: riverLowHighBetAmount,
-            won: false,
-            payout: 0,
-          });
+          betsLog.push({ position: `River Hedge LOW ($${hedgeAmount})`, type: 'river', bet: hedgeAmount, won: false, payout: 0 });
         }
-      } else if (!bets.riverHedge && !bets.riverAggressive) {
-        // Only show "No Bet Made" if there's no hedge/aggressive bet either
-        betsLog.push({
-          position: 'River (No Bet Made)',
-          type: 'lowHigh',
-          bet: 0,
-          won: false,
-          payout: 0,
-        });
-      }
-      
-      // Legacy river hedge/aggressive (optional payouts - use table bet as reference)
-      if (bets.riverHedge && Math.random() < 0.5) {
-        const riverPayout = Math.floor(totalBet * 0.15);
-        gameWin += riverPayout;
-        betsLog.push({
-          position: 'River Hedge',
-          type: 'hedge',
-          bet: 0,
-          won: true,
-          payout: riverPayout,
-        });
-      }
-      if (bets.riverAggressive && Math.random() < 0.35) {
-        const riverPayout = Math.floor(totalBet * 0.5);
-        gameWin += riverPayout;
-        betsLog.push({
-          position: 'River Aggressive',
-          type: 'hedge',
-          bet: 0,
-          won: true,
-          payout: riverPayout,
-        });
+      } else if (bets.riverAggressive > 0) {
+        // Aggressive bets HIGH
+        const aggressiveWon = !riverIsLow;
+        const aggressiveAmount = bets.riverAggressive;
+        if (aggressiveWon) {
+          const payout = aggressiveAmount * (1 + 0.83);
+          gameWin += payout;
+          betsLog.push({ position: `River Aggressive HIGH ($${aggressiveAmount})`, type: 'river', bet: aggressiveAmount, won: true, payout });
+        } else {
+          betsLog.push({ position: `River Aggressive HIGH ($${aggressiveAmount})`, type: 'river', bet: aggressiveAmount, won: false, payout: 0 });
+        }
+      } else {
+        betsLog.push({ position: 'River', type: 'river', bet: 0, won: false, payout: 0 });
       }
 
       const netGame = gameWin - totalBet;
