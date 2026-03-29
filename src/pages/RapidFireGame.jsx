@@ -950,8 +950,7 @@ export default function RapidFireGame() {
               {btn && (
                 <motion.button
                   whileTap={btn.disabled ? {} : { scale: 0.97 }}
-                  onClick={btn.disabled ? null : btn.action}
-                  disabled={btn.disabled}
+                  onClick={!btn.disabled && btn.action ? btn.action : undefined}
                   className={`px-5 py-2 rounded-xl font-black text-sm tracking-wider transition-all
                     ${btn.disabled
                       ? 'border border-gray-600 bg-gray-800 text-gray-500 cursor-not-allowed'
