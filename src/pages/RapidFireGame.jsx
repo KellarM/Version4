@@ -19,6 +19,7 @@ import ToolsMenu from '@/components/game/ToolsMenu';
 import DetailedPayoutDisplay from '@/components/game/DetailedPayoutDisplay';
 import HandBetLimitAlert from '@/components/game/HandBetLimitAlert';
 import RankBetLimitAlert from '@/components/game/RankBetLimitAlert';
+import InsufficientFundsAlert from '@/components/game/InsufficientFundsAlert';
 
 const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -81,6 +82,7 @@ export default function RapidFireGame() {
   const [showHandLimitAlert, setShowHandLimitAlert] = useState(false);
   const [showRankLimitAlert, setShowRankLimitAlert] = useState(false);
   const [rankAlertType, setRankAlertType] = useState('limit');
+  const [showInsufficientFunds, setShowInsufficientFunds] = useState(false);
   const [displayWindowVisible, setDisplayWindowVisible] = useState(false);
   const [previousBets, setPreviousBets] = useState(null); // { handBets, redBlackBets, rankBets, totalBet }
   const [repeatUsedThisRound, setRepeatUsedThisRound] = useState(false);
@@ -176,6 +178,12 @@ export default function RapidFireGame() {
       return;
     }
 
+    // Check insufficient funds
+    if (existing === 0 && balance < selectedChip) {
+      setShowInsufficientFunds(true);
+      return;
+    }
+
     // Right-click / if already bet: remove it
     if (existing > 0 && balance < selectedChip) {
       setHandBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[handId]; return { ...prev, [pid]: n }; });
@@ -216,6 +224,12 @@ export default function RapidFireGame() {
       return;
     }
 
+    // Check insufficient funds
+    if (existing === 0 && balance < selectedChip) {
+      setShowInsufficientFunds(true);
+      return;
+    }
+
     if (existing > 0 && balance < selectedChip) {
       setRankBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
       setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
@@ -248,6 +262,13 @@ export default function RapidFireGame() {
   const handleRedBlackBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
     const existing = (redBlackBets[pid] || {})[key] || 0;
+    
+    // Check insufficient funds
+    if (existing === 0 && balance < selectedChip) {
+      setShowInsufficientFunds(true);
+      return;
+    }
+    
     if (existing > 0 && balance < selectedChip) {
       setRedBlackBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
       setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
@@ -725,6 +746,10 @@ export default function RapidFireGame() {
         onClose={() => setShowRankLimitAlert(false)} 
         currentHandBets={handBetCount}
         alertType={rankAlertType}
+      />
+      <InsufficientFundsAlert 
+        isVisible={showInsufficientFunds}
+        onMouseUp={() => setShowInsufficientFunds(false)}
       />
 
       {/* Player Stats Panel */}
