@@ -93,7 +93,7 @@ export default function FixedHandCard({
 
       {/* Hand number + payout */}
       <div className="flex items-center justify-between mb-1">
-        <span className="text-yellow-400 font-bold text-xs">H{hand.id}</span>
+        <span className="text-yellow-400 font-bold text-lg">H{hand.id}</span>
         <span className="text-yellow-300/80 text-xs font-semibold">{hand.payout}:1</span>
       </div>
 
@@ -151,7 +151,7 @@ export default function FixedHandCard({
       {/* Lock icon when disabled by constraint */}
       {disabledByConstraint && betAmount === 0 && (
         <div className="absolute inset-0 rounded-xl flex items-center justify-center pointer-events-none">
-          <span className="text-red-400 font-black text-4xl">🔒</span>
+          <span className="text-red-400 font-black text-2xl">🔒</span>
         </div>
       )}
 
