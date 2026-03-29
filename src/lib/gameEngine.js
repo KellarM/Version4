@@ -2,23 +2,25 @@
 // RAPID FIRE - TEXAS 10 | Game Engine
 // ============================================================
 
+import { CARDED_HAND_PAYOUTS } from '@/lib/payoutConstants';
+
 export const SUITS = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
 export const SUIT_COLORS = { spades: 'black', hearts: 'red', diamonds: 'red', clubs: 'black' };
 
 // The 10 fixed carded hands (20 locked cards, never in deck)
-// RAPID FIRE TEXAS 10 — Calibrated to 96.5% RTP (empirical profiler, 500K game Monte Carlo on real 32-card engine)
-// Payouts derived from actual win frequencies: fairPayout = (0.965 / winFreq) - 1
+// Payouts sourced from payoutConstants.js (CARDED_HAND_PAYOUTS) — single source of truth
+
 export const FIXED_HANDS = [
-  { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: 16.5  },
-  { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: 2.25  },
-  { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },    { rank: 'J',  suit: 'spades' }],   payout: 18.0  },
-  { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },   { rank: '10', suit: 'spades' }],   payout: 18.0  },
-  { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },    { rank: '9',  suit: 'clubs'  }],   payout: 11.25 },
-  { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }], payout: 10.5  },
-  { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7',  suit: 'spades' }],   payout: 4.4   },
-  { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: 20.0  },
-  { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: 8.2   },
-  { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: 17.0  },
+  { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: CARDED_HAND_PAYOUTS[0]  },
+  { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: CARDED_HAND_PAYOUTS[1]  },
+  { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },    { rank: 'J',  suit: 'spades' }],   payout: CARDED_HAND_PAYOUTS[2]  },
+  { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },   { rank: '10', suit: 'spades' }],   payout: CARDED_HAND_PAYOUTS[3]  },
+  { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },    { rank: '9',  suit: 'clubs'  }],   payout: CARDED_HAND_PAYOUTS[4]  },
+  { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }], payout: CARDED_HAND_PAYOUTS[5]  },
+  { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7',  suit: 'spades' }],   payout: CARDED_HAND_PAYOUTS[6]  },
+  { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: CARDED_HAND_PAYOUTS[7]  },
+  { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: CARDED_HAND_PAYOUTS[8]  },
+  { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: CARDED_HAND_PAYOUTS[9]  },
 ];
 
 // The 32-card dealer deck (52 - 20 fixed)
@@ -166,15 +168,7 @@ export function findLeadingHand(communityCards) {
   return { handIds: leaders, handResult: best };
 }
 
-// Red/Black payouts (calibrated from empirical 32-card frequencies)
-export const RED_BLACK_PAYOUTS = {
-  '3R': { label: '3 Red Cards', payout: 0.90 },
-  '3B': { label: '3 Black Cards', payout: 0.90 },
-  '4R': { label: '4 Red Cards', payout: 4.75 },
-  '4B': { label: '4 Black Cards', payout: 4.75 },
-  '5R': { label: '5 Red Cards', payout: 45.0 },
-  '5B': { label: '5 Black Cards', payout: 45.0 },
-};
+// NOTE: Red/Black payouts are defined in payoutConstants.js (COLOR_BOARD_PAYOUTS) — single source of truth
 
 // The winning Red/Black bets based on final community cards
 // Cumulative: if 4 red showing, both 3R and 4R win
@@ -193,28 +187,18 @@ export function resolveLowHigh(riverCard) {
   return isLowCard(riverCard) ? 'LOW' : 'HIGH';
 }
 
-export const LOW_HIGH_PAYOUT = 0.93; // 0.93:1 (empirical ~50/50 split)
-
-// Red/Black display payouts for the table
-export const RB_TABLE = [
-  { key: '5R', label: '5 Red', payout: '5.1 to 1' },
-  { key: '5B', label: '5 Black', payout: '5.1 to 1' },
-  { key: '4R', label: '4 Red', payout: '1.3 to 1' },
-  { key: '4B', label: '4 Black', payout: '1.3 to 1' },
-  { key: '3R', label: '3 Red', payout: '0.33 to 1' },
-  { key: '3B', label: '3 Black', payout: '0.33 to 1' },
-];
+// NOTE: LOW_HIGH_PAYOUT is defined in payoutConstants.js — single source of truth
 
 // Display table for RankBets UI (payout string shown to players)
-// Updated from 10M calibration — March 2026
+// Calibrated from 10M real engine run — empirical 32-card frequencies
 export const HAND_RANK_PAYOUTS = [
   { name: 'Royal Flush',     payout: 'Progressive', special: true },
   { name: 'Straight Flush',  payout: 'Progressive', special: true },
-  { name: 'Four of a Kind',  payout: '3.61:1'  },
-  { name: 'Full House',      payout: '0.93:1'  },
-  { name: 'Flush',           payout: '1.24:1'  },
-  { name: 'Straight',        payout: '1.81:1'  },
-  { name: 'Three of a Kind', payout: '0.93:1'  },
-  { name: 'Two Pair',        payout: '4.60:1'  },
-  { name: 'One Pair',        payout: '5.59:1'  },
+  { name: 'Four of a Kind',  payout: 'Progressive', special: true },  // 0.17% → jackpot
+  { name: 'Full House',      payout: '35:1'         },  // 2.60% freq
+  { name: 'Flush',           payout: 'Progressive', special: true },  // 0.33% → jackpot
+  { name: 'Straight',        payout: '19.5:1'       },  // 4.62% freq
+  { name: 'Three of a Kind', payout: '44:1'         },  // 2.11% freq
+  { name: 'Two Pair',        payout: '19:1'         },  // 4.75% freq
+  { name: 'One Pair',        payout: '1.28:1'       },  // 42.26% freq
 ];

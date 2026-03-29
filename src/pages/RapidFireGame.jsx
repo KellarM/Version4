@@ -5,7 +5,7 @@ import {
   resolveRedBlack, resolveLowHigh, cardColor, isLowCard,
   SUITS, cardDisplay
 } from '@/lib/gameEngine';
-import { HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } from '@/lib/payoutConstants';
+import { HAND_RANK_PAYOUTS as RANK_PAYOUT_MAP, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } from '@/lib/payoutConstants';
 import FixedHandCard from '@/components/game/FixedHandCard';
 import CommunityCards from '@/components/game/CommunityCards';
 import SideBets from '@/components/game/SideBets';
@@ -119,6 +119,8 @@ export default function RapidFireGame() {
   const rankBetCount = Object.keys(pRankBets).length;
 
   // Betting constraints
+  // Max 2 simultaneous hand bets — prevents multi-hand exploitation
+  const MAX_HAND_BETS = 2;
   const canBetRank = handBetCount === 0 || handBetCount === 1;
   const canBetHand = rankBetCount === 0 || rankBetCount === 1;
   const canBetMultipleRanks = handBetCount !== 1;
@@ -150,12 +152,16 @@ export default function RapidFireGame() {
     const currentCount = Object.keys(handBets[pid] || {}).length;
     
     // Check constraints
+    if (existing === 0 && currentCount >= MAX_HAND_BETS) {
+      // Max 2 simultaneous hand bets — prevents multi-hand exploitation
+      return;
+    }
     if (existing === 0 && currentCount > 0 && rankBetCount === 1) {
       // Can only bet 1 hand if 1 rank is already bet
       return;
     }
     if (existing === 0 && rankBetCount > 1) {
-      // Cannot bet on hands if multiple ranks are bet
+      // Cannot bet on ranks if multiple hands are bet
       return;
     }
 
@@ -414,13 +420,12 @@ export default function RapidFireGame() {
 
       // River hedge is not a real bet type — ignore any flag
 
-      // Rank bets
+      // Rank bets — use numeric payout map from payoutConstants.js
       if (handResult) {
         const rankBetAmt = prk[handResult.name] || 0;
         if (rankBetAmt > 0) {
-          const rankDef = HAND_RANK_PAYOUTS.find(r => r.name === handResult.name);
-          if (rankDef && rankDef.payout !== 'Progressive') {
-            const ratio = parseFloat(rankDef.payout);
+          const ratio = RANK_PAYOUT_MAP[handResult.name];
+          if (ratio !== null && ratio !== undefined) {
             w += calculatePayout(rankBetAmt, ratio);
           }
         }
@@ -814,7 +819,7 @@ export default function RapidFireGame() {
                   onDropChip={handleDropChip}
                   gamePhase={gamePhase}
                   disabled={balance < selectedChip && !pHandBets[hand.id]}
-                  disabledByConstraint={rankBetCount > 1}
+                  disabledByConstraint={rankBetCount > 1 || (handBetCount >= MAX_HAND_BETS && !pHandBets[hand.id])}
                 />
               ))}
             </div>
