@@ -126,8 +126,8 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
       {/* Centered diagonal logo — suit replaces fire */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.75, paddingTop: '30%' }}>
         <div className="flex flex-col items-center gap-0 leading-none" style={{ transform: 'rotate(-45deg)' }}>
-          {/* RAPID {suit} FIRE — wider gap so suit sits cleanly between */}
-          <div className="flex items-center leading-none" style={{ gap: '4px' }}>
+          {/* RAPID   FIRE — wide gap between, no extra suit symbol */}
+          <div className="flex items-center leading-none" style={{ gap: '8px' }}>
             <span className="font-black italic leading-none"
               style={{
                 fontFamily: 'Oswald, sans-serif',
@@ -140,17 +140,6 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
                 filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.9)) drop-shadow(0px 0px 2px rgba(0,0,0,0.7))',
               }}
             >RAPID</span>
-            {/* Suit symbol — upright, counter-skewed, larger so it sits centred */}
-            <span
-              style={{
-                fontSize: '0.85rem',
-                lineHeight: 1,
-                color: isRed ? '#dc2626' : '#1e293b',
-                display: 'inline-block',
-                transform: 'skewX(12deg)',
-                filter: 'drop-shadow(0px 0px 1px rgba(0,0,0,0.8))',
-              }}
-            >{suitSymbol}</span>
             <span className="font-black italic leading-none"
               style={{
                 fontFamily: 'Oswald, sans-serif',
