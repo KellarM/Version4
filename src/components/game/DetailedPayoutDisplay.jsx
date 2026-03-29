@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { HAND_RANK_PAYOUTS as RANK_PAYOUT_MAP, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
-import { cardDisplay } from '@/lib/gameEngine';
+import { cardDisplay, SUITS, FIXED_HANDS } from '@/lib/gameEngine';
 
 const PLAYER_COLORS = [
   { bg: 'from-yellow-600 to-yellow-700', border: 'border-yellow-400', text: 'text-yellow-100' },
@@ -12,6 +12,16 @@ const PLAYER_COLORS = [
 
 export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
   if (!winInfo || !winInfo.playerPayouts) return null;
+
+  // Helper to get hand symbol display
+  const getHandSymbol = (label) => {
+    const handMatch = label.match(/Hand (\d+)/);
+    if (!handMatch) return label;
+    const handId = parseInt(handMatch[1]);
+    const hand = FIXED_HANDS.find(h => h.id === handId);
+    if (!hand) return label;
+    return `${hand.cards[0].rank}${SUITS[hand.cards[0].suit]} / ${hand.cards[1].rank}${SUITS[hand.cards[1].suit]}`;
+  };
 
   return (
     <AnimatePresence>
@@ -52,7 +62,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                       className="bg-black/30 rounded-lg p-3 border border-white/20"
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <div className="font-bold text-sm">{win.label}</div>
+                        <div className="font-bold text-sm">{getHandSymbol(win.label)}</div>
                         <div className="text-right">
                           <div className="text-xs opacity-80">Bet: ${win.bet.toFixed(2)}</div>
                           <div className="text-xs opacity-80">Odds: {win.odds}</div>
