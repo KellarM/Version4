@@ -560,15 +560,14 @@ export default function RapidFireGame() {
 
       totalBetsAllPlayers += playerTotalBet;
       totalWinningsAllPlayers += w;
-      // NET winnings = payouts received minus bets placed
-      const netWinning = w - playerTotalBet;
-      playerWinnings.push(netWinning);
+      // Push total payout (balance update will add this to current balance)
+      playerWinnings.push(w);
       
-      // Build payout display data
+      // Build payout display data (net = payout - bet)
       playerPayouts.push({
         wins,
         totalBet: playerTotalBet,
-        netWin: netWinning,
+        netWin: w - playerTotalBet,
       });
     }
 
@@ -585,10 +584,13 @@ export default function RapidFireGame() {
     setStraightFlushJackpot(p => p + 5);
     setOnePairJackpot(p => p + 0.5);
 
-    // Update all player balances
+    // Update all player balances (add payouts received)
     setBalances(prev => {
       const n = [...prev];
-      for (let i = 0; i < playerCount; i++) n[i] = Math.max(0, (n[i] || STARTING_BALANCE) + playerWinnings[i]);
+      for (let i = 0; i < playerCount; i++) {
+        // Current balance already had bets deducted, so just add payout back
+        n[i] = Math.max(0, n[i] + playerWinnings[i]);
+      }
       return n;
     });
 
