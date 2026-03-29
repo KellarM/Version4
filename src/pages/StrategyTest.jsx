@@ -17,6 +17,7 @@ const STRATEGIES = [
   { value: 'BalancedSpread', label: 'Balanced Spread' },
   { value: 'DiversifiedHedge', label: 'Diversified Hedge' },
   { value: 'AdaptiveHybrid', label: 'Adaptive Hybrid' },
+  { value: 'The8Bet', label: '🎯 THE "8" BET+ (Hands 1,3,4,5,6,8,9,10 + River Hedge)' },
   { value: 'MetaAdaptive', label: '🤖 MetaAdaptive (AI-Mixer)' },
 ];
 
@@ -141,6 +142,18 @@ const STRATEGY_DETAILS = {
       'Exploits momentum and adjusts to variance automatically',
     ],
     adaptation: 'Fundamental: strategy switches every game based on performance.',
+  },
+  The8Bet: {
+    description: 'High-coverage hand strategy betting on 8 of 10 hands — skipping only KK (too frequent, low payout) and 77 (same reason) — with a 50% river hedge for downside protection.',
+    steps: [
+      'Bet equal units on hands 1, 3, 4, 5, 6, 8, 9, 10 (the 8 high-payout hands)',
+      'These 8 hands cover ~60% of all winning outcomes at 10.5x–20x payouts',
+      'Any one win returns 10.5x–20x on that bet unit — enough to cover all 8 hand bets',
+      'River hedge = 50% of total hand bets (e.g. 8×$20 hands → $80 river hedge)',
+      'River hedge bets LOW and pays 0.93:1 if LOW hits (~50% of the time)',
+      'Hedge partially offsets losses on rounds where none of the 8 hands win',
+    ],
+    adaptation: 'Scales unit down from $20 when balance drops below $400 (target: 20 units = total hand stake).',
   },
   MetaAdaptive: {
     description: 'AI-driven multi-strategy mixer that dynamically selects & blends all 10 strategies targeting 95–98% RTP',

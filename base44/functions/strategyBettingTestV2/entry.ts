@@ -129,16 +129,16 @@ Deno.serve(async (req) => {
     }
 
     const FIXED_HANDS = [
-      { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: 8.10 },
-      { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: 6.75 },
-      { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },    { rank: 'J',  suit: 'spades' }],   payout: 8.52 },
-      { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },   { rank: '10', suit: 'spades' }],   payout: 7.90 },
-      { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },    { rank: '9',  suit: 'clubs'  }],   payout: 8.31 },
-      { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }], payout: 10.18 },
-      { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7',  suit: 'spades' }],   payout: 7.48 },
-      { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: 11.95 },
-      { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: 7.27 },
-      { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: 9.77 },
+      { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: 16.5  },
+      { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: 2.25  },
+      { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },    { rank: 'J',  suit: 'spades' }],   payout: 18.0  },
+      { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },   { rank: '10', suit: 'spades' }],   payout: 18.0  },
+      { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },    { rank: '9',  suit: 'clubs'  }],   payout: 11.25 },
+      { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }], payout: 10.5  },
+      { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7',  suit: 'spades' }],   payout: 4.4   },
+      { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: 20.0  },
+      { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: 8.2   },
+      { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: 17.0  },
     ];
 
     const DEALER_DECK = [
@@ -176,21 +176,21 @@ Deno.serve(async (req) => {
     };
 
     const RANK_PAYOUTS = {
-      'One Pair': 5.87,
-      'Two Pair': 4.83,
-      'Three of a Kind': 0.98,
-      'Straight': 1.90,
-      'Flush': 1.30,
-      'Full House': 0.98,
-      'Four of a Kind': 3.79,
+      'One Pair': null,
+      'Two Pair': null,
+      'Three of a Kind': 30.0,
+      'Straight': null,
+      'Flush': null,
+      'Full House': 0.50,
+      'Four of a Kind': 1.80,
       'Straight Flush': null,  // Progressive
       'Royal Flush': null,     // Progressive
     };
 
     const COLOR_PAYOUTS = {
-      '3R': 0.78, '3B': 0.78,
-      '4R': 5.04, '4B': 5.04,
-      '5R': 19.74, '5B': 19.74,
+      '3R': 0.90, '3B': 0.90,
+      '4R': 4.75, '4B': 4.75,
+      '5R': 45.0, '5B': 45.0,
     };
 
     const RED_COUNT_PROBS = [0.03125, 0.15625, 0.3125, 0.3125, 0.15625, 0.03125];
@@ -410,6 +410,24 @@ Deno.serve(async (req) => {
             ['3R', '3B'].forEach(c => { bets[`c${c}`] = bet; });
             bets.strategy = 'Balanced';
           }
+          return { bets, balance };
+        },
+      },
+      The8Bet: {
+        name: 'THE "8" BET+ (Hands 1,3,4,5,6,8,9,10 + River Hedge)',
+        execute: (balance) => {
+          if (balance < 10) return null;
+          // 8 hands: equal unit bets on hands 1,3,4,5,6,8,9,10 (skipping KK=2 and 77=7)
+          const handIds = [1, 3, 4, 5, 6, 8, 9, 10];
+          const unit = balance < 400 ? Math.floor(balance / 20) : 20;
+          if (unit < 1) return null;
+          const totalHandBet = handIds.length * unit; // 8 × unit
+          const riverBet = Math.floor(totalHandBet / 2);  // 50% of total hand bets
+          if (balance < totalHandBet + riverBet) return null;
+          const bets = {};
+          handIds.forEach(id => { bets[`h${id}`] = unit; });
+          // River hedge: after flop+turn we know the color lean; hedge LOW as conservative play
+          bets.riverHedge = riverBet;
           return { bets, balance };
         },
       },
