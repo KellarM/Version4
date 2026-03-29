@@ -883,8 +883,26 @@ export default function RapidFireGame() {
                     e.preventDefault();
                     const data = e.dataTransfer.getData('text/plain');
                     if (!data) return;
-                    const { from, pid: dragPid } = JSON.parse(data);
-                    handleDropChip(from, 'bank', dragPid);
+                    try {
+                      const parsed = JSON.parse(data);
+                      const { from, type, pid: dragPid } = parsed;
+                      
+                      if (type === 'hand') {
+                        handleDropChip(from, 'bank', dragPid);
+                      } else if (type === 'rank') {
+                        const amt = (rankBets[dragPid] || {})[from] || 0;
+                        if (amt > 0) {
+                          setRankBets(prev => { const n = { ...(prev[dragPid] || {}) }; delete n[from]; return { ...prev, [dragPid]: n }; });
+                          setBalances(b => { const n = [...b]; n[dragPid] += amt; return n; });
+                        }
+                      } else if (type === 'rb') {
+                        const amt = (redBlackBets[dragPid] || {})[from] || 0;
+                        if (amt > 0) {
+                          setRedBlackBets(prev => { const n = { ...(prev[dragPid] || {}) }; delete n[from]; return { ...prev, [dragPid]: n }; });
+                          setBalances(b => { const n = [...b]; n[dragPid] += amt; return n; });
+                        }
+                      }
+                    } catch (e) {}
                   }}
                   className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-dashed border-yellow-600/50 bg-yellow-900/20 text-yellow-500/60 text-xs font-bold transition-all hover:border-yellow-400 hover:bg-yellow-900/40"
                   title="Drag chip here to refund to bank"

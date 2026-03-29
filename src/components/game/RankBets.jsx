@@ -72,6 +72,28 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
               key={opt.key}
               onClick={() => canBet && canBetThisRank && onRankBet(opt.key)}
               onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveRankBet(opt.key); }}
+              onDragOver={(e) => { if (gamePhase === 'betting') { e.preventDefault(); e.stopPropagation(); } }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (gamePhase !== 'betting') return;
+                const data = e.dataTransfer.getData('text/plain');
+                if (!data) return;
+                try {
+                  const { from, type, pid } = JSON.parse(data);
+                  if (type === 'rank' && from !== opt.key) {
+                    // Move rank bet from one rank to another
+                    const amt = (rankBets[from] || 0);
+                    if (amt > 0) {
+                      onRemoveRankBet(from);
+                      // Trigger multiple bets if needed
+                      for (let i = 0; i < amt; i += selectedChip) {
+                        onRankBet(opt.key);
+                      }
+                    }
+                  }
+                } catch (e) {}
+              }}
               whileTap={canBet && canBetThisRank ? { scale: 0.97 } : {}}
               className={`relative flex items-center justify-between px-2 py-1 rounded-lg border-2 text-xs font-bold transition-all duration-200
                 ${cls}
@@ -93,9 +115,16 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
                   {chipsHere.map(({ pid, amt, color }, idx) => (
                     <span
                       key={pid}
-                      style={{ zIndex: 10 + idx }}
-                      className={`${color.bg} ${color.text} text-xs font-black rounded-full w-5 h-5 flex items-center justify-center border ${color.border} shadow`}
-                      title={`P${pid + 1}: $${amt}`}
+                      draggable={gamePhase === 'betting'}
+                      onDragStart={(e) => {
+                        e.stopPropagation();
+                        const amount = (rankBets[opt.key] || 0);
+                        e.dataTransfer.setData('text/plain', JSON.stringify({ from: opt.key, type: 'rank', pid, amount }));
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      style={{ zIndex: 10 + idx, cursor: gamePhase === 'betting' ? 'grab' : 'default' }}
+                      className={`${color.bg} ${color.text} text-xs font-black rounded-full w-5 h-5 flex items-center justify-center border ${color.border} shadow transition-transform hover:scale-110`}
+                      title={`P${pid + 1}: $${amt} — drag to move`}
                     >
                       {amt >= 100 ? '99+' : amt}
                     </span>

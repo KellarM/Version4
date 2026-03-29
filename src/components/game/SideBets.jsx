@@ -77,6 +77,26 @@ export default function SideBets({
         key={opt.key}
         onClick={() => canBetRB && onRedBlackBet(opt.key)}
         onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveRedBlackBet(opt.key); }}
+        onDragOver={(e) => { if (gamePhase === 'betting') { e.preventDefault(); e.stopPropagation(); } }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (gamePhase !== 'betting') return;
+          const data = e.dataTransfer.getData('text/plain');
+          if (!data) return;
+          try {
+            const { from, type, pid } = JSON.parse(data);
+            if (type === 'rb' && from !== opt.key) {
+              const amt = (redBlackBets[from] || 0);
+              if (amt > 0) {
+                onRemoveRedBlackBet(from);
+                for (let i = 0; i < amt; i += selectedChip) {
+                  onRedBlackBet(opt.key);
+                }
+              }
+            }
+          } catch (e) {}
+        }}
         whileTap={canBetRB ? { scale: 0.95 } : {}}
         className={`relative rounded-lg px-1 py-0.5 text-xs font-bold border-2 transition-all duration-300 ${cls} ${canBetRB ? 'cursor-pointer' : 'cursor-default'}`}
       >
@@ -92,9 +112,16 @@ export default function SideBets({
               return (
                 <span
                   key={pid}
-                  style={{ zIndex: 10 + idx }}
-                  className={`${c.bg} ${c.text} text-xs font-black rounded-full w-5 h-5 flex items-center justify-center border ${c.border} shadow`}
-                  title={`P${pid + 1}: $${amt}`}
+                  draggable={gamePhase === 'betting'}
+                  onDragStart={(e) => {
+                    e.stopPropagation();
+                    const amount = (redBlackBets[opt.key] || 0);
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ from: opt.key, type: 'rb', pid, amount }));
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  style={{ zIndex: 10 + idx, cursor: gamePhase === 'betting' ? 'grab' : 'default' }}
+                  className={`${c.bg} ${c.text} text-xs font-black rounded-full w-5 h-5 flex items-center justify-center border ${c.border} shadow transition-transform hover:scale-110`}
+                  title={`P${pid + 1}: $${amt} — drag to move`}
                 >
                   {amt >= 100 ? '99+' : amt}
                 </span>
