@@ -16,6 +16,7 @@ import PayoutTable from '@/components/game/PayoutTable';
 import NewPlayerButton from '@/components/game/NewPlayerButton';
 import PlayerStatsPanel from '@/components/game/PlayerStatsPanel';
 import ToolsMenu from '@/components/game/ToolsMenu';
+import DetailedPayoutDisplay from '@/components/game/DetailedPayoutDisplay';
 
 const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -389,6 +390,7 @@ export default function RapidFireGame() {
 
     let newRF = royalFlushJackpot;
     let newSF = straightFlushJackpot;
+    const playerPayouts = [];
 
     for (let i = 0; i < playerCount; i++) {
       const ph = snapHandBets[i] || {};
@@ -397,6 +399,7 @@ export default function RapidFireGame() {
       const plh = snapLowHighBets[i] || null;
 
       let w = 0;
+      const wins = [];
 
       // Carded hand bets
       if (leader) {
@@ -404,7 +407,14 @@ export default function RapidFireGame() {
           const bet = ph[wid] || 0;
           if (bet > 0) {
             const hand = FIXED_HANDS.find(h => h.id === wid);
-            w += calculatePayout(bet, hand.payout);
+            const payout = calculatePayout(bet, hand.payout);
+            w += payout;
+            wins.push({
+              label: `Hand ${wid}`,
+              bet,
+              odds: `${hand.payout}:1`,
+              payout,
+            });
           }
         });
       }
@@ -414,12 +424,28 @@ export default function RapidFireGame() {
         const bet = prb[key] || 0;
         if (bet > 0) {
           const ratio = COLOR_BOARD_PAYOUTS[key];
-          w += calculatePayout(bet, ratio);
+          const payout = calculatePayout(bet, ratio);
+          w += payout;
+          wins.push({
+            label: key,
+            bet,
+            odds: `${ratio}:1`,
+            payout,
+          });
         }
       });
 
       // Low/High
-      if (plh && winLH === plh.type) w += calculatePayout(plh.amount, LOW_HIGH_PAYOUT);
+      if (plh && winLH === plh.type) {
+        const payout = calculatePayout(plh.amount, LOW_HIGH_PAYOUT);
+        w += payout;
+        wins.push({
+          label: plh.type,
+          bet: plh.amount,
+          odds: `${LOW_HIGH_PAYOUT}:1`,
+          payout,
+        });
+      }
 
       // River hedge is not a real bet type — ignore any flag
 
@@ -429,7 +455,14 @@ export default function RapidFireGame() {
         if (rankBetAmt > 0) {
           const ratio = RANK_PAYOUT_MAP[handResult.name];
           if (ratio !== null && ratio !== undefined) {
-            w += calculatePayout(rankBetAmt, ratio);
+            const payout = calculatePayout(rankBetAmt, ratio);
+            w += payout;
+            wins.push({
+              label: handResult.name,
+              bet: rankBetAmt,
+              odds: `${ratio}:1`,
+              payout,
+            });
           }
         }
         // Jackpots — require minimum qualifying bet
@@ -468,6 +501,13 @@ export default function RapidFireGame() {
       // NET winnings = payouts received minus bets placed
       const netWinning = w - playerTotalBet;
       playerWinnings.push(netWinning);
+      
+      // Build payout display data
+      playerPayouts.push({
+        wins,
+        totalBet: playerTotalBet,
+        netWin: netWinning,
+      });
     }
 
     setRoyalFlushJackpot(newRF);
@@ -509,9 +549,11 @@ export default function RapidFireGame() {
     setCasinoProfit(p => p + roundProfit);
     setRoundsPlayed(r => r + 1);
 
-    // Show win info for active player
-    const activeWin = playerWinnings[pid] || 0;
-    setLastWinInfo(activeWin > 0 ? { amount: activeWin, allWinnings: playerWinnings } : null);
+    // Show detailed payout info for all players
+    setLastWinInfo({
+      playerPayouts,
+      playerCount,
+    });
     setGamePhase('winner');
 
     // History — capture ALL winning outcomes regardless of wagers
@@ -788,32 +830,8 @@ export default function RapidFireGame() {
             </div>
           </div>
 
-          {/* Win Overlay */}
-          <AnimatePresence>
-            {lastWinInfo && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 pointer-events-none flex items-center justify-center z-50"
-              >
-                <div className="bg-yellow-900/90 border-2 border-yellow-400 rounded-2xl px-8 py-4 shadow-yellow-400/50 shadow-2xl text-center">
-                  <div className="text-yellow-300 text-2xl font-black">🏆 YOU WIN!</div>
-                  <div className="text-yellow-400 text-3xl font-black">${lastWinInfo.amount.toFixed(2)}</div>
-                  {playerCount > 1 && lastWinInfo.allWinnings && (
-                    <div className="flex gap-3 mt-2 justify-center">
-                      {lastWinInfo.allWinnings.slice(0, playerCount).map((w, i) => (
-                        <div key={i} className="text-center">
-                          <div className="text-yellow-400/60 text-xs">P{i+1}</div>
-                          <div className={`text-sm font-bold ${w > 0 ? 'text-green-300' : 'text-gray-400'}`}>${w.toFixed(0)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Detailed Payout Display */}
+          <DetailedPayoutDisplay winInfo={lastWinInfo} playerCount={playerCount} />
 
           {/* 10 Fixed Hands Grid */}
           <div className="flex-1 min-h-0">
