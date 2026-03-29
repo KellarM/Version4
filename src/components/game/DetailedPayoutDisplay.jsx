@@ -41,27 +41,30 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
 
               {/* Winning bets breakdown */}
               <div className="space-y-2 mb-4 max-h-96 overflow-y-auto">
-                {payout.wins.map((win, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 + idx * 0.1 }}
-                    className="bg-black/30 rounded-lg p-3 border border-white/20"
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="font-bold text-sm">{win.label}</div>
-                      <div className="text-right">
-                        <div className="text-xs opacity-80">Bet: ${win.bet.toFixed(2)}</div>
-                        <div className="text-xs opacity-80">Odds: {win.odds}</div>
+                {payout.wins.map((win, idx) => {
+                  const profit = win.payout - win.bet;
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 + idx * 0.1 }}
+                      className="bg-black/30 rounded-lg p-3 border border-white/20"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="font-bold text-sm">{win.label}</div>
+                        <div className="text-right">
+                          <div className="text-xs opacity-80">Bet: ${win.bet.toFixed(2)}</div>
+                          <div className="text-xs opacity-80">Odds: {win.odds}</div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs opacity-70">Payout</span>
-                      <span className="font-bold text-yellow-200">${win.payout.toFixed(2)}</span>
-                    </div>
-                  </motion.div>
-                ))}
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="opacity-70">${profit.toFixed(2)} + BET OF ${win.bet.toFixed(2)}</span>
+                        <span className="font-bold text-yellow-200">= ${win.payout.toFixed(2)}</span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
 
               {/* Totals */}

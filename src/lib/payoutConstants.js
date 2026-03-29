@@ -39,12 +39,12 @@ export const CARDED_HAND_PAYOUTS = [
 export const HAND_RANK_PAYOUTS = {
   'Royal Flush':     null,    // Progressive jackpot
   'Straight Flush':  null,    // Progressive jackpot
-  'Four of a Kind':  60.71,
-  'Full House':      12.03,
-  'Flush':           15.26,
-  'Straight':        23.44,
-  'Three of a Kind': 18.11,
-  'Two Pair':        75.97,
+  'Four of a Kind':  12.77,
+  'Full House':      2.53,
+  'Flush':           3.21,
+  'Straight':        4.93,
+  'Three of a Kind': 3.81,
+  'Two Pair':        15.98,
   'One Pair':        null,    // Progressive jackpot
 };
 
