@@ -125,7 +125,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
       </div>
 
       {/* Centered diagonal watermark */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.75, paddingTop: '30%' }}>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.75 }}>
         <div className="flex flex-col items-center gap-0 leading-none" style={{ transform: 'rotate(-45deg)' }}>
           <div className="flex items-center leading-none" style={{ gap: '20px' }}>
             <span className="font-black italic leading-none"
