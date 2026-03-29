@@ -142,13 +142,19 @@ export default function RapidFireGame() {
   const rankBetCount = Object.keys(pRankBets).length;
 
   // Betting constraints
-  // 1 hand: all rank bets allowed
-  // 2 hands: max 2 non-progressive rank bets (progressives always open)
-  // 3-4 hands: all non-progressive rank bets closed (progressives stay open)
+  // Progressives (RF, SF, OP) don't lock hand bets
+  // Non-progressive ranks: 4OAK, Full House, Flush, Straight, 3OAK, Two Pair
   const MAX_HAND_BETS = 4;
-  const canBetRank = handBetCount <= 2;
-  const canBetHand = rankBetCount === 0;
-  const rankBetsLocked = handBetCount >= 3;
+  const progressiveRanks = ['Royal Flush', 'Straight Flush', 'One Pair'];
+  const nonProgRankBetCount = Object.keys(pRankBets).filter(key => !progressiveRanks.includes(key)).length;
+  
+  // Hand betting rules based on non-progressive rank bets:
+  // 0 non-prog: allow 4 hands
+  // 1-2 non-prog: allow 1-2 hands
+  // 3+ non-prog: lock all hands
+  const canBetHand = nonProgRankBetCount <= 2;
+  const handBetsLockedByRanks = nonProgRankBetCount >= 3;
+  const maxHandBetsAllowed = nonProgRankBetCount === 0 ? 4 : 2;
 
   const totalBet = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
     Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
@@ -174,16 +180,12 @@ export default function RapidFireGame() {
     const currentCount = Object.keys(handBets[pid] || {}).length;
     
     // Check constraints
-    if (existing === 0 && currentCount >= MAX_HAND_BETS) {
+    if (existing === 0 && currentCount >= maxHandBetsAllowed) {
       setShowHandLimitAlert(true);
       return;
     }
-    if (existing === 0 && currentCount > 0 && rankBetCount === 1) {
-      // Can only bet 1 hand if 1 rank is already bet
-      return;
-    }
-    if (existing === 0 && rankBetCount > 1) {
-      // Cannot bet on ranks if multiple hands are bet
+    if (handBetsLockedByRanks && existing === 0) {
+      setShowHandLimitAlert(true);
       return;
     }
 
@@ -202,7 +204,7 @@ export default function RapidFireGame() {
     if (balance <= 0 || balance < selectedChip) return;
     setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid, handBets, rankBetCount]);
+  }, [gamePhase, balance, selectedChip, pid, handBets, nonProgRankBetCount, maxHandBetsAllowed, handBetsLockedByRanks]);
 
   const handleRemoveHandBet = useCallback((handId) => {
     if (gamePhase !== 'betting') return;
@@ -977,7 +979,7 @@ export default function RapidFireGame() {
                   onDropChip={handleDropChip}
                   gamePhase={gamePhase}
                   disabled={balance < selectedChip && !pHandBets[hand.id]}
-                  disabledByConstraint={rankBetCount > 1 || (handBetCount >= MAX_HAND_BETS && !pHandBets[hand.id])}
+                  disabledByConstraint={handBetsLockedByRanks || (handBetCount >= maxHandBetsAllowed && !pHandBets[hand.id])}
                   onAttemptLockedBet={() => setShowHandLimitAlert(true)}
                 />
               ))}
