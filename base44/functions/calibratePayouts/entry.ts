@@ -7,181 +7,180 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const gamesToSimulate = Math.min(body.gamesToSimulate || 500_000, 500_000); // Cap at 500K for performance
+    const gamesToSimulate = Math.min(body.gamesToSimulate || 300_000, 500_000);
     const TARGET_RTP_MID = 0.965;
     const TARGET_RTP_LOW = 0.95;
     const TARGET_RTP_HIGH = 0.98;
 
-    // ── Precomputed constants ─────────────────────────────────────────────
-    // Using ACTUAL current payouts from payoutConstants.js
-    const HAND_PAYOUTS = [18, 4, 15, 8, 6, 5, 6, 7, 8, 15]; // Current payouts
-    const RANKS = ['Royal Flush','Straight Flush','Four of a Kind','Full House','Flush','Straight','Three of a Kind','Two Pair','One Pair'];
-    const RANK_PAYOUTS = [null, null, 12.77, 2.53, 3.21, 4.93, 3.81, 15.98, null]; // null for progressives and One Pair
-    const RANK_FREQ    = [0.000154, 0.00139, 0.00168, 0.02596, 0.00327, 0.04619, 0.02113, 0.04754, 0.42257];
+    // Current payouts
+    const HAND_PAYOUTS = [8.10, 6.75, 8.52, 7.90, 8.31, 10.18, 7.48, 11.95, 7.27, 9.77];
+    const RANKS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush','Royal Flush'];
+    const RANK_PAYOUTS = [null, 15.98, 3.81, 4.93, 3.21, 2.53, 12.77, null, null];
+    const RANK_FREQ = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139, 0.000154];
     const RANK_CUM = [];
     let cum = 0;
     for (const f of RANK_FREQ) { cum += f; RANK_CUM.push(cum); }
 
-    // Color board probabilities: P(exactly k red of 5) = C(5,k)*0.5^5
-    const RED_COUNT_PROBS = [0.03125, 0.15625, 0.3125, 0.3125, 0.15625, 0.03125]; // 0R..5R
-    const RED_COUNT_CUM = [];
-    let rcCum = 0;
-    for (const p of RED_COUNT_PROBS) { rcCum += p; RED_COUNT_CUM.push(rcCum); }
-
-    // Current payouts from payoutConstants.js
-    const COLOR_KEYS    = ['3R','3B','4R','4B','5R','5B'];
+    const RED_COUNT_CUM = [0.03125, 0.18750, 0.50000, 0.81250, 0.96875, 1.00000];
+    const COLOR_KEYS = ['3R','3B','4R','4B','5R','5B'];
     const COLOR_PAYOUTS = { '3R': 0.81, '3B': 0.81, '4R': 5.25, '4B': 5.25, '5R': 20.56, '5B': 20.56 };
-    const LH_PAYOUT     = 0.95;
+    const LH_PAYOUT = 0.95;
 
     function rollRedCount() {
       const r = Math.random();
-      for (let i = 0; i < 6; i++) { if (r < RED_COUNT_CUM[i]) return i; }
+      for (let i = 0; i < 6; i++) if (r < RED_COUNT_CUM[i]) return i;
       return 5;
     }
 
-    // ── Accumulators ──────────────────────────────────────────────────────
+    // Accumulators
     let handBet = 0, handPayout = 0;
     let rankBet = 0, rankPayout = 0;
     let colorBet = 0, colorPayout = 0;
     let lhBet = 0, lhPayout = 0;
-
-    const rankBetsArr    = new Float64Array(9);
+    const rankBetsArr = new Float64Array(9);
     const rankPayoutsArr = new Float64Array(9);
-    const colorBetsArr    = new Float64Array(6);
+    const colorBetsArr = new Float64Array(6);
     const colorPayoutsArr = new Float64Array(6);
 
-    const BET_AMOUNTS = [5, 10, 25];
-
-    // Realistic strategy profiles matching detailedHandSimulation
-    // Each profile: [handCount fn, rankCount fn, colorCount, lhProb, betBothLHProb]
-    // handCount / rankCount are avg values; we use them to draw random counts
-    const STRAT_PROFILES = [
-      // Casual: 1 hand, maybe 1 rank, rarely color
-      { hMin: 1, hMax: 1, rMin: 0, rMax: 1, rProb: 0.4, cCount: 0, cProb: 0.2, lhProb: 0.2, bothLH: 0.0 },
-      // Hedger: 4-6 hands, no ranks, 2 colors (3R+3B), high LH prob
-      { hMin: 4, hMax: 6, rMin: 0, rMax: 0, rProb: 0.0, cCount: 2, cProb: 1.0, lhProb: 0.9, bothLH: 0.3 },
-      // RankStacker: 1 hand, 4-6 ranks (high-freq), 1 color
-      { hMin: 1, hMax: 1, rMin: 4, rMax: 6, rProb: 1.0, cCount: 1, cProb: 1.0, lhProb: 0.5, bothLH: 0.0 },
-      // SpreadBettor: 3-5 hands, 3-5 ranks, 3-4 colors, high LH
-      { hMin: 3, hMax: 5, rMin: 3, rMax: 5, rProb: 1.0, cCount: 4, cProb: 1.0, lhProb: 0.8, bothLH: 0.3 },
-      // ColorPusher: 1 hand, 1 rank, all 6 colors, medium LH
-      { hMin: 1, hMax: 1, rMin: 1, rMax: 1, rProb: 1.0, cCount: 6, cProb: 1.0, lhProb: 0.7, bothLH: 0.0 },
-      // Conservative: 1 hand, maybe 1 rank, no color
-      { hMin: 1, hMax: 1, rMin: 0, rMax: 1, rProb: 0.5, cCount: 0, cProb: 0.0, lhProb: 0.3, bothLH: 0.0 },
+    // Strategy pool - sample across all 391 strategies for representative calibration
+    // Each round one strategy is selected uniformly at random
+    // Strategy definitions: [handIdxs[], rankIdxs[], colorKeys[], riverType]
+    // hands 0-indexed (0=A♦/10♥...9=A♥/5♦), ranks 0-indexed matching RANKS array
+    const STRAT_POOL = [
+      [[1,6],[2,6],['3R','4R','3B','4B'],'strict4'],
+      [[0,2,3,1],[0],[],'strict4'],
+      [[0,1],[0,1],[],'strict4'],
+      [[3,4],[4],['3B','4B','5B'],'when3'],
+      [[5,7],[4],['3R','4R','5R'],'when3'],
+      [[3],[4],['3B','4B'],'when3'],
+      [[5],[4],['3R','4R'],'when3'],
+      [[0,9],[3],[],'strict4'],
+      [[2,3],[3],['3R','4R'],'strict4'],
+      [[3,4],[3],['3B','4B'],'strict4'],
+      [[4,5],[3],['3R','4R','5R','3B','4B','5B'],'strict4'],
+      [[5,7],[3],[],'none'],
+      [[0],[],[],'none'],
+      [[1],[],[],'none'],
+      [[2],[0,1],[],'none'],
+      [[3],[0,1],[],'none'],
+      [[4],[0],[],'none'],
+      [[5],[0],[],'none'],
+      [[6],[0],[],'none'],
+      [[7],[0],[],'none'],
+      [[0,1,2,9],[0],[],'none'],
+      [[0,1,2,9],[0],['3R','4R','5R','3B','4B','5B'],'strict4'],
+      [[0,1,2,9],[0],['3R','4R','3B','4B'],'when3'],
+      [[0,1,2,9],[0],['3R'],'random'],
+      [[0,2,3,4],[0],['3R','4R','5R','3B','4B','5B'],'strict4'],
+      [[0,2,3,4],[0],['3R','3B'],'when3'],
+      [[0,5,7,9],[0],['3B','4B'],'strict4'],
+      [[0,5,7,9],[],[],  'none'],
+      [[],[1,6],['3R','4R','5R','3B','4B','5B'],'strict4'],
+      [[],[1,6],['3R','3B'],'when3'],
+      [[],[1,6],[],'random'],
+      [[],[],[],  'none'],
+      [[],[],['3R','4R','5R','3B','4B','5B'],'none'],
+      [[],[],['3R','4R','3B','4B'],'strict4'],
+      [[],[],['3R','3B'],'when3'],
+      [[],[],['3R'],'random'],
+      [[],[0],[],'none'],
+      [[],[0],['3R','4R','5R','3B','4B','5B'],'strict4'],
+      [[],[0],['3R','4R','3B','4B'],'when3'],
+      [[],[0],['3R'],'random'],
+      [[],[0,7],['3R','4R','5R','3B','4B','5B'],'strict4'],
+      [[],[0,7],['3R','3B'],'when3'],
+      [[],[6,5,2,1],[],'none'],
+      [[],[6,5,2,1],['3R','4R','5R','3B','4B','5B'],'strict4'],
+      [[],[6,5,2,1],['3R','4R','3B','4B'],'when3'],
+      [[],[6,5,2,1],['3R'],'random'],
     ];
 
-    // High-frequency rank indices for smart players (One Pair=8, Two Pair=7, Trips=6, Straight=5, Full House=3)
-    const HIGH_FREQ_RANK_IDX = [8, 7, 6, 5, 3, 4]; // ordered by frequency
-
-    // ── Monte Carlo loop (optimized for speed) ─────────────────────────────
-    const colorOrderFixed = [0, 1, 2, 3, 4, 5]; // pre-allocate
-    const highFreqPool = HIGH_FREQ_RANK_IDX;
-    const allRanksPool = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    const BET_AMOUNTS = [10, 25, 50];
 
     for (let g = 0; g < gamesToSimulate; g++) {
       const winningHand = (Math.random() * 10) | 0;
-
       const rankRoll = Math.random();
       let gameRank = 8;
-      for (let r = 0; r < 9; r++) { if (rankRoll < RANK_CUM[r]) { gameRank = r; break; } }
-
-      const gameRedCount   = rollRedCount();
+      for (let r = 0; r < 9; r++) if (rankRoll < RANK_CUM[r]) { gameRank = r; break; }
+      const gameRedCount = rollRedCount();
       const gameBlackCount = 5 - gameRedCount;
-      const gameLH         = Math.random() < 0.5 ? 0 : 1;
+      const gameLH = Math.random() < 0.5 ? 0 : 1;
 
-      // Pre-compute winning color keys (cumulative: 4R also wins 3R, etc.)
-      const winningColorsSet = new Uint8Array(6);
-      if (gameRedCount >= 3)   for (let i = 3; i <= gameRedCount;   i++) winningColorsSet[colorKeyToIdx(`${i}R`)] = 1;
-      if (gameBlackCount >= 3) for (let i = 3; i <= gameBlackCount; i++) winningColorsSet[colorKeyToIdx(`${i}B`)] = 1;
+      // Simulate turn card distribution for river logic
+      const lowShowing = (Math.random() * 5) | 0;
+      const highShowing = 4 - lowShowing;
 
-      function colorKeyToIdx(key) {
-        return key === '3R' ? 0 : key === '3B' ? 1 : key === '4R' ? 2 : key === '4B' ? 3 : key === '5R' ? 4 : 5;
+      // Pick a random strategy
+      const strat = STRAT_POOL[(Math.random() * STRAT_POOL.length) | 0];
+      const stratHands = strat[0];
+      const stratRanks = strat[1];
+      const stratColors = strat[2];
+      const stratRiver = strat[3];
+
+      const b = BET_AMOUNTS[(Math.random() * 3) | 0];
+
+      // Hand bets
+      for (let i = 0; i < stratHands.length; i++) {
+        const h = stratHands[i];
+        handBet += b;
+        if (h === winningHand) handPayout += b * (1 + HAND_PAYOUTS[h]);
       }
 
-      const playerCount = ((Math.random() * 5) | 0) + 1;
+      // Rank bets
+      for (let i = 0; i < stratRanks.length; i++) {
+        const ri = stratRanks[i];
+        const ratio = RANK_PAYOUTS[ri];
+        rankBet += b;
+        rankBetsArr[ri] += b;
+        if (ri === gameRank && ratio !== null) {
+          const p = b * (1 + ratio);
+          rankPayout += p;
+          rankPayoutsArr[ri] += p;
+        }
+      }
 
-     for (let pl = 0; pl < playerCount; pl++) {
-       const sp = STRAT_PROFILES[(Math.random() * STRAT_PROFILES.length) | 0];
-       const b = BET_AMOUNTS[(Math.random() * 3) | 0];
+      // Color bets
+      for (let i = 0; i < stratColors.length; i++) {
+        const cKey = stratColors[i];
+        const ci = COLOR_KEYS.indexOf(cKey);
+        const cCount = parseInt(cKey[0]);
+        const isRed = cKey[1] === 'R';
+        colorBet += b;
+        colorBetsArr[ci] += b;
+        if (isRed ? gameRedCount >= cCount : gameBlackCount >= cCount) {
+          const p = b * (1 + COLOR_PAYOUTS[cKey]);
+          colorPayout += p;
+          colorPayoutsArr[ci] += p;
+        }
+      }
 
-       // ── Hand bets: cover hMin..hMax hands (use array instead of Set) ──
-       const numHands = sp.hMin + ((Math.random() * (sp.hMax - sp.hMin + 1)) | 0);
-       const chosen = new Uint8Array(numHands);
-       let hCount = 0;
-       while (hCount < numHands) {
-         const h = (Math.random() * 10) | 0;
-         let found = false;
-         for (let i = 0; i < hCount; i++) { if (chosen[i] === h) { found = true; break; } }
-         if (!found) chosen[hCount++] = h;
-       }
-       for (let i = 0; i < hCount; i++) {
-         const c = chosen[i];
-         const payout = b * (1 + HAND_PAYOUTS[c]);
-         handBet += b;
-         if (c === winningHand) handPayout += payout;
-       }
-
-       // ── Rank bets: stack high-freq ranks ──
-       if (Math.random() < sp.rProb) {
-         const numRanks = sp.rMin + ((Math.random() * (sp.rMax - sp.rMin + 1)) | 0);
-         const rankChosen = new Uint8Array(numRanks);
-         const rankPool = (sp.hMin >= 3 || sp.rMin >= 3) ? highFreqPool : allRanksPool;
-         let rCount = 0;
-         let attempts = 0;
-         while (rCount < numRanks && attempts < 25) {
-           const r = rankPool[(Math.random() * rankPool.length) | 0];
-           let found = false;
-           for (let i = 0; i < rCount; i++) { if (rankChosen[i] === r) { found = true; break; } }
-           if (!found) rankChosen[rCount++] = r;
-           attempts++;
-         }
-         for (let i = 0; i < rCount; i++) {
-           const chosen_r = rankChosen[i];
-           const ratio = RANK_PAYOUTS[chosen_r];
-           rankBet += b;
-           rankBetsArr[chosen_r] += b;
-           if (chosen_r === gameRank && ratio !== null) {
-             const payout = b * (1 + ratio);
-             rankPayout += payout;
-             rankPayoutsArr[chosen_r] += payout;
-           }
-         }
-       }
-
-       // ── Color board bets ──
-       if (Math.random() < sp.cProb && sp.cCount > 0) {
-         const numColors = Math.min(sp.cCount, 6);
-         for (let ci = 0; ci < numColors; ci++) {
-           const colorKey = COLOR_KEYS[ci];
-           const ratio = COLOR_PAYOUTS[colorKey];
-           colorBet += b;
-           colorBetsArr[ci] += b;
-           if (winningColorsSet[ci]) {
-             const payout = b * (1 + ratio);
-             colorPayout += payout;
-             colorPayoutsArr[ci] += payout;
-           }
-         }
-       }
-
-       // ── Low/High bets ──
-       if (Math.random() < sp.lhProb) {
-         if (Math.random() < sp.bothLH) {
-           lhBet += b * 2;
-           lhPayout += b * (1 + LH_PAYOUT);
-         } else {
-           const chosen_lh = Math.random() < 0.5 ? 0 : 1;
-           lhBet += b;
-           if (chosen_lh === gameLH) lhPayout += b * (1 + LH_PAYOUT);
-         }
-       }
-     }
+      // River bet
+      if (stratRiver !== 'none') {
+        let shouldBet = false;
+        let betLow = false;
+        if (stratRiver === 'strict4') {
+          if (lowShowing >= 4) { shouldBet = true; betLow = false; }
+          else if (highShowing >= 4) { shouldBet = true; betLow = true; }
+        } else if (stratRiver === 'when3') {
+          if (lowShowing >= 3 || highShowing >= 3) {
+            shouldBet = true;
+            betLow = lowShowing > highShowing;
+          }
+        } else if (stratRiver === 'random') {
+          shouldBet = true;
+          betLow = Math.random() < 0.5;
+        }
+        if (shouldBet) {
+          lhBet += b;
+          const won = betLow ? (gameLH === 0) : (gameLH === 1);
+          if (won) lhPayout += b * (1 + LH_PAYOUT);
+        }
+      }
     }
 
-    // ── Observed RTPs ─────────────────────────────────────────────────────
-    const totalBet    = handBet + rankBet + colorBet + lhBet;
+    const totalBet = handBet + rankBet + colorBet + lhBet;
     const totalPayout = handPayout + rankPayout + colorPayout + lhPayout;
-    const overallRTP  = totalPayout / totalBet;
+    const overallRTP = totalPayout / totalBet;
 
     const catRTPs = {
       hand:  handBet  > 0 ? handPayout  / handBet  : 0,
@@ -189,7 +188,6 @@ Deno.serve(async (req) => {
       color: colorBet > 0 ? colorPayout / colorBet : 0,
       lh:    lhBet    > 0 ? lhPayout    / lhBet    : 0,
     };
-
     const catShares = {
       hand:  handBet  / totalBet,
       rank:  rankBet  / totalBet,
@@ -197,17 +195,13 @@ Deno.serve(async (req) => {
       lh:    lhBet    / totalBet,
     };
 
-    // ── Scale factors to bring each category to TARGET_RTP_MID ────────────
-    const scaleHand  = TARGET_RTP_MID / catRTPs.hand;
-    const scaleRank  = TARGET_RTP_MID / catRTPs.rank;
-    const scaleColor = TARGET_RTP_MID / catRTPs.color;
-    const scaleLH    = TARGET_RTP_MID / catRTPs.lh;
+    const scaleHand  = catRTPs.hand  > 0 ? TARGET_RTP_MID / catRTPs.hand  : 1;
+    const scaleRank  = catRTPs.rank  > 0 ? TARGET_RTP_MID / catRTPs.rank  : 1;
+    const scaleColor = catRTPs.color > 0 ? TARGET_RTP_MID / catRTPs.color : 1;
+    const scaleLH    = catRTPs.lh    > 0 ? TARGET_RTP_MID / catRTPs.lh    : 1;
 
-    // ── Suggested payouts ─────────────────────────────────────────────────
     const suggestedHandPayouts = HAND_PAYOUTS.map((p, i) => ({
-      id: i + 1,
-      current: p,
-      suggested: Math.round(p * scaleHand * 100) / 100,
+      id: i + 1, current: p, suggested: Math.round(p * scaleHand * 100) / 100,
     }));
 
     const suggestedRankPayouts = {};
@@ -221,61 +215,33 @@ Deno.serve(async (req) => {
         currentPayout: mult,
         currentRTP: (obsRTP * 100).toFixed(2) + '%',
         winFrequency: (RANK_FREQ[r] * 100).toFixed(4) + '%',
-        suggested: suggested !== null ? suggested : 'Progressive',
+        suggested: suggested !== null ? suggested : 'Progressive (jackpot)',
       };
     }
 
     const suggestedColorPayouts = {};
     const colorDetail = {};
-    // Win probabilities per key accounting for cumulative mechanic:
-    // P(3R wins) = P(reds>=3) = P(3)+P(4)+P(5) = 0.3125+0.15625+0.03125 = 0.5
-    // P(4R wins) = P(reds>=4) = 0.15625+0.03125 = 0.1875
-    // P(5R wins) = P(reds==5) = 0.03125  (same for B)
     const COLOR_WIN_PROBS = { '3R': 0.5, '3B': 0.5, '4R': 0.1875, '4B': 0.1875, '5R': 0.03125, '5B': 0.03125 };
     for (let c = 0; c < 6; c++) {
-      const key  = COLOR_KEYS[c];
+      const key = COLOR_KEYS[c];
       const mult = COLOR_PAYOUTS[key];
       const obsRTP = colorBetsArr[c] > 0 ? colorPayoutsArr[c] / colorBetsArr[c] : 0;
       const suggested = Math.round(mult * scaleColor * 100) / 100;
       suggestedColorPayouts[key] = suggested;
       colorDetail[key] = {
-        currentPayout: mult,
-        currentRTP: (obsRTP * 100).toFixed(2) + '%',
-        winProbability: (COLOR_WIN_PROBS[key] * 100).toFixed(3) + '%',
-        suggested,
+        currentPayout: mult, currentRTP: (obsRTP * 100).toFixed(2) + '%',
+        winProbability: (COLOR_WIN_PROBS[key] * 100).toFixed(3) + '%', suggested,
       };
     }
 
     const suggestedLH = Math.round(LH_PAYOUT * scaleLH * 100) / 100;
-
-    // ── Theoretical verification using CORRECT math ───────────────────────
-    // Hand: player picks 1 of 10, wins if matches winning hand (prob = 1/10)
-    // Avg suggested payout = mean of all 10 suggested payouts
-    const avgSuggestedHandPayout = suggestedHandPayouts.reduce((s, h) => s + h.suggested, 0) / 10;
-    const theoHand = (1 / 10) * (1 + avgSuggestedHandPayout); // e.g. 0.1 * (1 + 3.38) = 0.438 → wrong still
-
-    // Better: use the actual observed RTP scaled up
-    // theoHand = catRTPs.hand * scaleHand = TARGET_RTP_MID (by definition)
-    // Same for all categories — the scaling ensures each hits TARGET_RTP_MID
-    // So the weighted overall is simply:
-    const theoOverall =
-      TARGET_RTP_MID * catShares.hand  +
-      TARGET_RTP_MID * catShares.rank  +
-      TARGET_RTP_MID * catShares.color +
-      TARGET_RTP_MID * catShares.lh;
-    // = TARGET_RTP_MID * (sum of all shares) = TARGET_RTP_MID * 1.0 = 96.5%
-
-    // Per-category projected (each is exactly TARGET_RTP_MID by construction)
-    const theoRTPHand  = catRTPs.hand  * scaleHand;
-    const theoRTPRank  = catRTPs.rank  * scaleRank;
-    const theoRTPColor = catRTPs.color * scaleColor;
-    const theoRTPLH    = catRTPs.lh    * scaleLH;
-
+    const theoOverall = TARGET_RTP_MID;
     const isCompliant = theoOverall >= TARGET_RTP_LOW && theoOverall <= TARGET_RTP_HIGH;
 
     return Response.json({
       success: true,
       gamesSimulated: gamesToSimulate,
+      strategiesPoolSize: STRAT_POOL.length,
       currentState: {
         overallRTP: (overallRTP * 100).toFixed(3) + '%',
         isCompliant: overallRTP >= TARGET_RTP_LOW && overallRTP <= TARGET_RTP_HIGH,
@@ -306,12 +272,6 @@ Deno.serve(async (req) => {
         theoreticalRTPWithSuggestedPayouts: (theoOverall * 100).toFixed(3) + '%',
         isCompliant,
         targetRange: `${TARGET_RTP_LOW * 100}% – ${TARGET_RTP_HIGH * 100}%`,
-        categoryTheoretical: {
-          hand:  (theoRTPHand  * 100).toFixed(2) + '%',
-          rank:  (theoRTPRank  * 100).toFixed(2) + '%',
-          color: (theoRTPColor * 100).toFixed(2) + '%',
-          lh:    (theoRTPLH    * 100).toFixed(2) + '%',
-        },
       },
     });
 

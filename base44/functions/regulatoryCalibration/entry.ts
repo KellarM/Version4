@@ -7,129 +7,426 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    // Cap at 2M per strategy to stay within Deno CPU limits (12 strategies × 2M = 24M total)
-    const GAMES_PER_STRATEGY = Math.min(body.gamesPerStrategy || 1_000_000, 2_000_000);
+    const GAMES_PER_STRATEGY = Math.min(body.gamesPerStrategy || 500_000, 1_000_000);
 
-    // ── Payout tables (flat arrays for fast access) ──
-    const HAND_PAYOUTS = [8.10, 6.75, 8.52, 7.90, 8.31, 10.18, 7.48, 11.95, 7.27, 9.77]; // index 0 = hand 1
-
+    // Payout tables
+    const HAND_PAYOUTS = [8.10, 6.75, 8.52, 7.90, 8.31, 10.18, 7.48, 11.95, 7.27, 9.77];
     const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush','Royal Flush'];
-    const RANK_FREQS = [0.42256, 0.04754, 0.02113, 0.00462, 0.00327, 0.00261, 0.00168, 0.00139, 0.000154];
-    const RANK_PAYOUTS_ARR = [5.87, 4.83, 0.98, 1.90, 1.30, 0.98, 3.79, -1, -1]; // -1 = progressive (no base payout)
-
-    // Build cumulative rank freq array
+    const RANK_FREQS = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139, 0.000154];
+    const RANK_PAYOUTS_ARR = [null, 15.98, 3.81, 4.93, 3.21, 2.53, 12.77, null, null]; // null = progressive
     const RANK_CUM = [];
     let _rc = 0;
     for (const f of RANK_FREQS) { _rc += f; RANK_CUM.push(_rc); }
-
-    // Binomial red-count distribution for 5 cards from a balanced deck (approx 0.5)
     const RED_CUM = [0.03125, 0.18750, 0.50000, 0.81250, 0.96875, 1.00000];
-
-    // Color payouts indexed by [redCount][colorBet]
-    // colorBet: 0=3R, 1=3B, 2=4R, 3=4B, 4=5R, 5=5B
-    // A color bet wins cumulatively: 4R wins if redCount>=4, 5R wins if redCount>=5, etc.
-    const COLOR_PAYOUTS_MAP = { '3R': 0.78, '3B': 0.78, '4R': 5.04, '4B': 5.04, '5R': 19.74, '5B': 19.74 };
-    const LOW_HIGH_PAYOUT = 0.83;
+    const COLOR_PAYOUTS_MAP = { '3R': 0.81, '3B': 0.81, '4R': 5.25, '4B': 5.25, '5R': 20.56, '5B': 20.56 };
+    const LH_PAYOUT = 0.95;
 
     function rollRank() {
       const r = Math.random();
-      for (let i = 0; i < RANK_CUM.length; i++) { if (r < RANK_CUM[i]) return i; }
+      for (let i = 0; i < RANK_CUM.length; i++) if (r < RANK_CUM[i]) return i;
       return 0;
     }
-
     function rollRedCount() {
       const r = Math.random();
-      for (let i = 0; i < 6; i++) { if (r < RED_CUM[i]) return i; }
+      for (let i = 0; i < 6; i++) if (r < RED_CUM[i]) return i;
       return 5;
     }
 
-    // ── Strategy definitions — stored as pre-parsed numeric arrays for speed ──
-    // Each strategy: { name, description, hands[], rankIdxs[], colors[], riverHedge, riverAggressive, betPerUnit }
+    // 391 strategies — river: 'none' | 'strict4' | 'when3' | 'random'
     const STRATEGIES = [
-      {
-        name: 'ST1_Original',
-        desc: 'Hands 2,5,6,7,8,9 + river hedge',
-        hands: [1,4,5,6,7,8], rankIdxs: [], colors: [], riverHedge: true, riverAgg: false, unit: 50,
-      },
-      {
-        name: 'ConservativeHedger',
-        desc: '4 hands (3,6,8,10) + 4 colors',
-        hands: [2,5,7,9], rankIdxs: [], colors: ['3R','3B','4R','4B'], riverHedge: false, riverAgg: false, unit: 25,
-      },
-      {
-        name: 'RankStacker',
-        desc: '2 hands (6,8) + 5 ranks',
-        hands: [5,7], rankIdxs: [0,1,2,3,5], colors: [], riverHedge: false, riverAgg: false, unit: 30,
-      },
-      {
-        name: 'FlushHunter',
-        desc: '3 hands (3,4,5) + Flush + river hedge',
-        hands: [2,3,4], rankIdxs: [4], colors: [], riverHedge: true, riverAgg: false, unit: 50,
-      },
-      {
-        name: 'StraightHunter',
-        desc: '3 hands (1,5,10) + Straight + river hedge',
-        hands: [0,4,9], rankIdxs: [3], colors: [], riverHedge: true, riverAgg: false, unit: 50,
-      },
-      {
-        name: 'ColorBoardSpecialist',
-        desc: '2 hands (1,4) + all 6 colors + river hedge',
-        hands: [0,3], rankIdxs: [], colors: ['3R','3B','4R','4B','5R','5B'], riverHedge: true, riverAgg: false, unit: 20,
-      },
-      {
-        name: 'HighPayoutFocus',
-        desc: '2 hands (6,8) + Trips/FullHouse/Quads',
-        hands: [5,7], rankIdxs: [2,5,6], colors: [], riverHedge: false, riverAgg: false, unit: 50,
-      },
-      {
-        name: 'RiverFocused',
-        desc: 'Hand 8 + aggressive river (HIGH)',
-        hands: [7], rankIdxs: [], colors: [], riverHedge: false, riverAgg: true, unit: 50,
-      },
-      {
-        name: 'BalancedSpread',
-        desc: '3 hands + 3 ranks + 2 colors + river hedge',
-        hands: [1,5,7], rankIdxs: [0,4,3], colors: ['3R','4R'], riverHedge: true, riverAgg: false, unit: 30,
-      },
-      {
-        name: 'DiversifiedHedge',
-        desc: '6 hands + 2 ranks + 2 colors',
-        hands: [0,2,4,6,8,9], rankIdxs: [0,1], colors: ['3R','3B'], riverHedge: false, riverAgg: false, unit: 15,
-      },
-      {
-        name: 'AdaptiveHybrid',
-        desc: '4 hands + 2 ranks (baseline adaptive)',
-        hands: [1,4,5,7], rankIdxs: [0,1], colors: [], riverHedge: false, riverAgg: false, unit: 30,
-      },
-      {
-        name: 'MetaAdaptive',
-        desc: 'AI blend baseline (balanced mode)',
-        hands: [1,5,7], rankIdxs: [0,4], colors: ['3R','3B'], riverHedge: true, riverAgg: false, unit: 25,
-      },
+      { name: 'Kind Combo', hands:[1,6], ranks:[6], colors:[], river:'strict4' },
+      { name: "High Odd's", hands:[0,2,3,1], ranks:[0], colors:[], river:'strict4' },
+      { name: 'Pair Combo', hands:[0,1], ranks:[0,1], colors:[], river:'strict4' },
+      { name: 'Kind Combo 2', hands:[1,6], ranks:[6,2], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: "High Odd's 2", hands:[0,2,3,1], ranks:[0], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Pair Combo 2', hands:[0,1], ranks:[0,1], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Kind Combo 3', hands:[1,6], ranks:[6,2], colors:['3R','4R'], river:'strict4' },
+      { name: "High Odd's 3", hands:[0,2,3,1], ranks:[0], colors:['3R','4R'], river:'strict4' },
+      { name: 'Pair Combo 3', hands:[0,1], ranks:[0,1], colors:['3R','4R'], river:'strict4' },
+      { name: 'Kind Combo 4', hands:[1,6], ranks:[6,2], colors:['3B','4B'], river:'none' },
+      { name: "High Odd's 4", hands:[0,2,3,1], ranks:[0], colors:['3B','4B'], river:'none' },
+      { name: 'Pair Combo 4', hands:[0,1], ranks:[0,1], colors:['3B','4B'], river:'none' },
+      { name: 'Kind Combo 5', hands:[1,6], ranks:[6,2], colors:['3B'], river:'none' },
+      { name: "High Odd's 5", hands:[0,2,3,1], ranks:[0], colors:['3B'], river:'none' },
+      { name: 'Pair Combo 5', hands:[0,1], ranks:[0,1], colors:['3B'], river:'none' },
+      { name: 'Kind Combo 6', hands:[1,6], ranks:[6,2], colors:['3R'], river:'none' },
+      { name: "High Odd's 6", hands:[0,2,3,1], ranks:[0], colors:['3R'], river:'none' },
+      { name: 'Pair Combo 6', hands:[0,1], ranks:[0,1], colors:['3R'], river:'none' },
+      { name: 'Black Flush 1', hands:[3,4], ranks:[4], colors:['3B','4B','5B'], river:'when3' },
+      { name: 'Black Flush 2', hands:[3,4], ranks:[4], colors:['3B','4B'], river:'when3' },
+      { name: 'Black Flush 3', hands:[3,4], ranks:[4], colors:['3B'], river:'when3' },
+      { name: 'Black Flush 4', hands:[3,4], ranks:[4], colors:['3B','4B','5B'], river:'none' },
+      { name: 'Black Flush 5', hands:[3,4], ranks:[4], colors:['3B','4B'], river:'none' },
+      { name: 'Black Flush 6', hands:[3,4], ranks:[4], colors:['3B'], river:'none' },
+      { name: 'Single Black Flush 1', hands:[3], ranks:[4], colors:['3B','4B','5B'], river:'when3' },
+      { name: 'Single Black Flush 2', hands:[3], ranks:[4], colors:['3B','4B'], river:'when3' },
+      { name: 'Single Black Flush 3', hands:[3], ranks:[4], colors:['3B'], river:'when3' },
+      { name: 'Single Black Flush 4', hands:[3], ranks:[4], colors:['3B','4B','5B'], river:'none' },
+      { name: 'Single Black Flush 5', hands:[3], ranks:[4], colors:['3B','4B'], river:'none' },
+      { name: 'Single Black Flush 6', hands:[3], ranks:[4], colors:['3B'], river:'none' },
+      { name: 'Single Black Flush 7', hands:[4], ranks:[4], colors:['3B','4B','5B'], river:'when3' },
+      { name: 'Single Black Flush 8', hands:[4], ranks:[4], colors:['3B','4B'], river:'when3' },
+      { name: 'Single Black Flush 9', hands:[4], ranks:[4], colors:['3B'], river:'when3' },
+      { name: 'Single Black Flush 10', hands:[4], ranks:[4], colors:['3B','4B','5B'], river:'none' },
+      { name: 'Single Black Flush 11', hands:[4], ranks:[4], colors:['3B','4B'], river:'none' },
+      { name: 'Single Black Flush 12', hands:[4], ranks:[4], colors:['3B'], river:'none' },
+      { name: 'Red Flush 1', hands:[5,7], ranks:[4], colors:['3R','4R','5R'], river:'when3' },
+      { name: 'Red Flush 2', hands:[5,7], ranks:[4], colors:['3R','4R'], river:'when3' },
+      { name: 'Red Flush 3', hands:[5,7], ranks:[4], colors:['3R'], river:'when3' },
+      { name: 'Red Flush 4', hands:[5,7], ranks:[4], colors:['3R','4R','5R'], river:'none' },
+      { name: 'Red Flush 5', hands:[5,7], ranks:[4], colors:['3R','4R'], river:'none' },
+      { name: 'Red Flush 6', hands:[5,7], ranks:[4], colors:['3R'], river:'none' },
+      { name: 'Single Red Flush 1', hands:[5], ranks:[4], colors:['3R','4R','5R'], river:'when3' },
+      { name: 'Single Red Flush 2', hands:[5], ranks:[4], colors:['3R','4R'], river:'when3' },
+      { name: 'Single Red Flush 3', hands:[5], ranks:[4], colors:['3R'], river:'when3' },
+      { name: 'Single Red Flush 4', hands:[5], ranks:[4], colors:['3R','4R','5R'], river:'none' },
+      { name: 'Single Red Flush 5', hands:[5], ranks:[4], colors:['3R','4R'], river:'none' },
+      { name: 'Single Red Flush 6', hands:[5], ranks:[4], colors:['3R'], river:'none' },
+      { name: 'Single Red Flush 7', hands:[7], ranks:[4], colors:['3R','4R','5R'], river:'when3' },
+      { name: 'Single Red Flush 8', hands:[7], ranks:[4], colors:['3R','4R'], river:'when3' },
+      { name: 'Single Red Flush 9', hands:[7], ranks:[4], colors:['3R'], river:'when3' },
+      { name: 'Single Red Flush 10', hands:[7], ranks:[4], colors:['3R','4R','5R'], river:'none' },
+      { name: 'Single Red Flush 11', hands:[7], ranks:[4], colors:['3R','4R'], river:'none' },
+      { name: 'Single Red Flush 12', hands:[7], ranks:[4], colors:['3R'], river:'none' },
+      // Straight mixes 1-75 (hands indexed 0-based)
+      { name: 'Straight Mix 1', hands:[0,9], ranks:[3], colors:[], river:'strict4' },
+      { name: 'Straight Mix 2', hands:[2,3], ranks:[3], colors:[], river:'strict4' },
+      { name: 'Straight Mix 3', hands:[3,4], ranks:[3], colors:[], river:'strict4' },
+      { name: 'Straight Mix 4', hands:[4,5], ranks:[3], colors:[], river:'strict4' },
+      { name: 'Straight Mix 5', hands:[5,7], ranks:[3], colors:[], river:'strict4' },
+      { name: 'Straight Mix 6', hands:[0,9], ranks:[3], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Straight Mix 7', hands:[2,3], ranks:[3], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Straight Mix 8', hands:[3,4], ranks:[3], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Straight Mix 9', hands:[4,5], ranks:[3], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Straight Mix 10', hands:[5,7], ranks:[3], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Straight Mix 11', hands:[0,9], ranks:[3], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Straight Mix 12', hands:[2,3], ranks:[3], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Straight Mix 13', hands:[3,4], ranks:[3], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Straight Mix 14', hands:[4,5], ranks:[3], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Straight Mix 15', hands:[5,7], ranks:[3], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Straight Mix 16', hands:[0,9], ranks:[3], colors:['3R','4R'], river:'strict4' },
+      { name: 'Straight Mix 17', hands:[2,3], ranks:[3], colors:['3R','4R'], river:'strict4' },
+      { name: 'Straight Mix 18', hands:[3,4], ranks:[3], colors:['3R','4R'], river:'strict4' },
+      { name: 'Straight Mix 19', hands:[4,5], ranks:[3], colors:['3R','4R'], river:'strict4' },
+      { name: 'Straight Mix 20', hands:[5,7], ranks:[3], colors:['3R','4R'], river:'strict4' },
+      { name: 'Straight Mix 21', hands:[0,9], ranks:[3], colors:['3B','4B'], river:'strict4' },
+      { name: 'Straight Mix 22', hands:[2,3], ranks:[3], colors:['3B','4B'], river:'strict4' },
+      { name: 'Straight Mix 23', hands:[3,4], ranks:[3], colors:['3B','4B'], river:'strict4' },
+      { name: 'Straight Mix 24', hands:[4,5], ranks:[3], colors:['3B','4B'], river:'strict4' },
+      { name: 'Straight Mix 25', hands:[5,7], ranks:[3], colors:['3B','4B'], river:'strict4' },
+      { name: 'Straight Mix 26', hands:[0,9], ranks:[3], colors:['3R'], river:'strict4' },
+      { name: 'Straight Mix 27', hands:[2,3], ranks:[3], colors:['3R'], river:'strict4' },
+      { name: 'Straight Mix 28', hands:[3,4], ranks:[3], colors:['3R'], river:'strict4' },
+      { name: 'Straight Mix 29', hands:[4,5], ranks:[3], colors:['3R'], river:'strict4' },
+      { name: 'Straight Mix 30', hands:[5,7], ranks:[3], colors:['3R'], river:'strict4' },
+      { name: 'Straight Mix 31', hands:[0,9], ranks:[3], colors:['3B'], river:'strict4' },
+      { name: 'Straight Mix 32', hands:[2,3], ranks:[3], colors:['3B'], river:'strict4' },
+      { name: 'Straight Mix 33', hands:[3,4], ranks:[3], colors:['3B'], river:'strict4' },
+      { name: 'Straight Mix 34', hands:[4,5], ranks:[3], colors:['3B'], river:'strict4' },
+      { name: 'Straight Mix 35', hands:[5,7], ranks:[3], colors:['3B'], river:'strict4' },
+      { name: 'Straight Mix 36', hands:[0,9], ranks:[3], colors:[], river:'none' },
+      { name: 'Straight Mix 37', hands:[2,3], ranks:[3], colors:[], river:'none' },
+      { name: 'Straight Mix 38', hands:[3,4], ranks:[3], colors:[], river:'none' },
+      { name: 'Straight Mix 39', hands:[4,5], ranks:[3], colors:[], river:'none' },
+      { name: 'Straight Mix 40', hands:[5,7], ranks:[3], colors:[], river:'none' },
+      { name: 'Straight Mix 41', hands:[0,9], ranks:[3], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Straight Mix 42', hands:[2,3], ranks:[3], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Straight Mix 43', hands:[3,4], ranks:[3], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Straight Mix 44', hands:[4,5], ranks:[3], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Straight Mix 45', hands:[5,7], ranks:[3], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Straight Mix 46', hands:[0,9], ranks:[3], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Straight Mix 47', hands:[2,3], ranks:[3], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Straight Mix 48', hands:[3,4], ranks:[3], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Straight Mix 49', hands:[4,5], ranks:[3], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Straight Mix 50', hands:[5,7], ranks:[3], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Straight Mix 51', hands:[0,9], ranks:[3], colors:['3R','4R'], river:'none' },
+      { name: 'Straight Mix 52', hands:[2,3], ranks:[3], colors:['3R','4R'], river:'none' },
+      { name: 'Straight Mix 53', hands:[3,4], ranks:[3], colors:['3R','4R'], river:'none' },
+      { name: 'Straight Mix 54', hands:[4,5], ranks:[3], colors:['3R','4R'], river:'none' },
+      { name: 'Straight Mix 55', hands:[5,7], ranks:[3], colors:['3R','4R'], river:'none' },
+      { name: 'Straight Mix 56', hands:[0,9], ranks:[3], colors:['3B','4B'], river:'none' },
+      { name: 'Straight Mix 57', hands:[2,3], ranks:[3], colors:['3B','4B'], river:'none' },
+      { name: 'Straight Mix 58', hands:[3,4], ranks:[3], colors:['3B','4B'], river:'none' },
+      { name: 'Straight Mix 59', hands:[4,5], ranks:[3], colors:['3B','4B'], river:'none' },
+      { name: 'Straight Mix 60', hands:[5,7], ranks:[3], colors:['3B','4B'], river:'none' },
+      { name: 'Straight Mix 61', hands:[0,9], ranks:[3], colors:['3R'], river:'none' },
+      { name: 'Straight Mix 62', hands:[2,3], ranks:[3], colors:['3R'], river:'none' },
+      { name: 'Straight Mix 63', hands:[3,4], ranks:[3], colors:['3R'], river:'none' },
+      { name: 'Straight Mix 64', hands:[4,5], ranks:[3], colors:['3R'], river:'none' },
+      { name: 'Straight Mix 65', hands:[5,7], ranks:[3], colors:['3R'], river:'none' },
+      { name: 'Straight Mix 66', hands:[0,9], ranks:[3], colors:['3B'], river:'none' },
+      { name: 'Straight Mix 67', hands:[2,3], ranks:[3], colors:['3B'], river:'none' },
+      { name: 'Straight Mix 68', hands:[3,4], ranks:[3], colors:['3B'], river:'none' },
+      { name: 'Straight Mix 69', hands:[4,5], ranks:[3], colors:['3B'], river:'none' },
+      { name: 'Straight Mix 70', hands:[5,7], ranks:[3], colors:['3B'], river:'none' },
+      { name: 'Straight Mix 71', hands:[0,9], ranks:[3], colors:[], river:'none' },
+      { name: 'Straight Mix 72', hands:[2,3], ranks:[3], colors:[], river:'none' },
+      { name: 'Straight Mix 73', hands:[3,4], ranks:[3], colors:[], river:'none' },
+      { name: 'Straight Mix 74', hands:[4,5], ranks:[3], colors:[], river:'none' },
+      { name: 'Straight Mix 75', hands:[5,7], ranks:[3], colors:[], river:'none' },
+      // Singles 1-10
+      { name: 'Single 1', hands:[0], ranks:[], colors:[], river:'none' },
+      { name: 'Single 2', hands:[1], ranks:[], colors:[], river:'none' },
+      { name: 'Single 3', hands:[2], ranks:[], colors:[], river:'none' },
+      { name: 'Single 4', hands:[3], ranks:[], colors:[], river:'none' },
+      { name: 'Single 5', hands:[4], ranks:[], colors:[], river:'none' },
+      { name: 'Single 6', hands:[5], ranks:[], colors:[], river:'none' },
+      { name: 'Single 7', hands:[6], ranks:[], colors:[], river:'none' },
+      { name: 'Single 8', hands:[7], ranks:[], colors:[], river:'none' },
+      { name: 'Single 9', hands:[8], ranks:[], colors:[], river:'none' },
+      { name: 'Single 10', hands:[9], ranks:[], colors:[], river:'none' },
+      // Single Mix 1-30 (One Pair + Two Pair, then One Pair only x20)
+      { name: 'Single Mix 1', hands:[0], ranks:[0,1], colors:[], river:'none' },
+      { name: 'Single Mix 2', hands:[1], ranks:[0,1], colors:[], river:'none' },
+      { name: 'Single Mix 3', hands:[2], ranks:[0,1], colors:[], river:'none' },
+      { name: 'Single Mix 4', hands:[3], ranks:[0,1], colors:[], river:'none' },
+      { name: 'Single Mix 5', hands:[4], ranks:[0,1], colors:[], river:'none' },
+      { name: 'Single Mix 6', hands:[5], ranks:[0,1], colors:[], river:'none' },
+      { name: 'Single Mix 7', hands:[6], ranks:[0,1], colors:[], river:'none' },
+      { name: 'Single Mix 8', hands:[7], ranks:[0,1], colors:[], river:'none' },
+      { name: 'Single Mix 9', hands:[8], ranks:[0,1], colors:[], river:'none' },
+      { name: 'Single Mix 10', hands:[9], ranks:[0,1], colors:[], river:'none' },
+      { name: 'Single Mix 11', hands:[0], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 12', hands:[1], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 13', hands:[2], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 14', hands:[3], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 15', hands:[4], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 16', hands:[5], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 17', hands:[6], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 18', hands:[7], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 19', hands:[8], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 20', hands:[9], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 21', hands:[0], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 22', hands:[1], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 23', hands:[2], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 24', hands:[3], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 25', hands:[4], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 26', hands:[5], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 27', hands:[6], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 28', hands:[7], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 29', hands:[8], ranks:[0], colors:[], river:'none' },
+      { name: 'Single Mix 30', hands:[9], ranks:[0], colors:[], river:'none' },
+      // Foursome groups (hands 0-indexed: 0=A♦/10♥,1=K♣/K♠,2=Q♣/J♠,9=A♥/5♦)
+      { name: 'Foursome 1', hands:[0,1,2,9], ranks:[0], colors:[], river:'none' },
+      { name: 'Foursome 2', hands:[0,1,2,9], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Foursome 3', hands:[0,1,2,9], ranks:[0], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Foursome 4', hands:[0,1,2,9], ranks:[0], colors:['3R','4R'], river:'none' },
+      { name: 'Foursome 5', hands:[0,1,2,9], ranks:[0], colors:['3B','4B'], river:'none' },
+      { name: 'Foursome 6', hands:[0,1,2,9], ranks:[0], colors:['3R'], river:'none' },
+      { name: 'Foursome 7', hands:[0,1,2,9], ranks:[0], colors:['3B'], river:'none' },
+      { name: 'Foursome 8', hands:[0,1,2,9], ranks:[0], colors:[], river:'strict4' },
+      { name: 'Foursome 9', hands:[0,1,2,9], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Foursome 10', hands:[0,1,2,9], ranks:[0], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Foursome 11', hands:[0,1,2,9], ranks:[0], colors:['3R','4R'], river:'strict4' },
+      { name: 'Foursome 12', hands:[0,1,2,9], ranks:[0], colors:['3B','4B'], river:'strict4' },
+      { name: 'Foursome 13', hands:[0,1,2,9], ranks:[0], colors:['3R'], river:'strict4' },
+      { name: 'Foursome 14', hands:[0,1,2,9], ranks:[0], colors:['3B'], river:'strict4' },
+      { name: 'Foursome 15', hands:[0,1,2,9], ranks:[0], colors:[], river:'when3' },
+      { name: 'Foursome 16', hands:[0,1,2,9], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'when3' },
+      { name: 'Foursome 17', hands:[0,1,2,9], ranks:[0], colors:['3R','4R','3B','4B'], river:'when3' },
+      { name: 'Foursome 18', hands:[0,1,2,9], ranks:[0], colors:['3R','4R'], river:'when3' },
+      { name: 'Foursome 19', hands:[0,1,2,9], ranks:[0], colors:['3B','4B'], river:'when3' },
+      { name: 'Foursome 20', hands:[0,1,2,9], ranks:[0], colors:['3R'], river:'when3' },
+      { name: 'Foursome 21', hands:[0,1,2,9], ranks:[0], colors:['3B'], river:'when3' },
+      { name: 'Foursome 22', hands:[0,1,2,9], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'random' },
+      { name: 'Foursome 23', hands:[0,1,2,9], ranks:[0], colors:['3R','4R','3B','4B'], river:'random' },
+      { name: 'Foursome 24', hands:[0,1,2,9], ranks:[0], colors:['3R','4R'], river:'random' },
+      { name: 'Foursome 25', hands:[0,1,2,9], ranks:[0], colors:['3B','4B'], river:'random' },
+      { name: 'Foursome 26', hands:[0,1,2,9], ranks:[0], colors:['3R'], river:'random' },
+      { name: 'Foursome 27', hands:[0,1,2,9], ranks:[0], colors:['3B'], river:'random' },
+      // Foursome 2/4 group 1 (hands 0,2,3,4)
+      { name: 'Foursome 2/4 1', hands:[0,2,3,4], ranks:[0], colors:[], river:'none' },
+      { name: 'Foursome 2/4 2', hands:[0,2,3,4], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Foursome 2/4 3', hands:[0,2,3,4], ranks:[0], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Foursome 2/4 4', hands:[0,2,3,4], ranks:[0], colors:['3R','3B'], river:'strict4' },
+      { name: 'Foursome 2/4 5', hands:[0,2,3,4], ranks:[0], colors:['3R'], river:'strict4' },
+      { name: 'Foursome 2/4 6', hands:[0,2,3,4], ranks:[0], colors:['3B'], river:'strict4' },
+      { name: 'Foursome 2/4 7', hands:[0,2,3,4], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'when3' },
+      { name: 'Foursome 2/4 8', hands:[0,2,3,4], ranks:[0], colors:['3R','4R','3B','4B'], river:'when3' },
+      { name: 'Foursome 2/4 9', hands:[0,2,3,4], ranks:[0], colors:['3R','3B'], river:'when3' },
+      { name: 'Foursome 2/4 10', hands:[0,2,3,4], ranks:[0], colors:['3R'], river:'when3' },
+      { name: 'Foursome 2/4 11', hands:[0,2,3,4], ranks:[0], colors:['3B'], river:'when3' },
+      { name: 'Foursome 2/4 12', hands:[0,2,3,4], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'random' },
+      { name: 'Foursome 2/4 13', hands:[0,2,3,4], ranks:[0], colors:['3R','4R','3B','4B'], river:'random' },
+      { name: 'Foursome 2/4 14', hands:[0,2,3,4], ranks:[0], colors:['3R','3B'], river:'random' },
+      { name: 'Foursome 2/4 15', hands:[0,2,3,4], ranks:[0], colors:['3R'], river:'random' },
+      { name: 'Foursome 2/4 16', hands:[0,2,3,4], ranks:[0], colors:['3B'], river:'random' },
+      // Foursome 2/4 group 2 (hands 0,5,7,9)
+      { name: 'Foursome 2/4 17', hands:[0,5,7,9], ranks:[0], colors:[], river:'none' },
+      { name: 'Foursome 2/4 18', hands:[0,5,7,9], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Foursome 2/4 19', hands:[0,5,7,9], ranks:[0], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Foursome 2/4 20', hands:[0,5,7,9], ranks:[0], colors:['3R','3B'], river:'strict4' },
+      { name: 'Foursome 2/4 21', hands:[0,5,7,9], ranks:[0], colors:['3R'], river:'strict4' },
+      { name: 'Foursome 2/4 22', hands:[0,5,7,9], ranks:[0], colors:['3B'], river:'strict4' },
+      { name: 'Foursome 2/4 23', hands:[0,5,7,9], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'when3' },
+      { name: 'Foursome 2/4 24', hands:[0,5,7,9], ranks:[0], colors:['3R','4R','3B','4B'], river:'when3' },
+      { name: 'Foursome 2/4 25', hands:[0,5,7,9], ranks:[0], colors:['3R','3B'], river:'when3' },
+      { name: 'Foursome 2/4 26', hands:[0,5,7,9], ranks:[0], colors:['3R'], river:'when3' },
+      { name: 'Foursome 2/4 27', hands:[0,5,7,9], ranks:[0], colors:['3B'], river:'when3' },
+      { name: 'Foursome 2/4 28', hands:[0,5,7,9], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'random' },
+      { name: 'Foursome 2/4 29', hands:[0,5,7,9], ranks:[0], colors:['3R','4R','3B','4B'], river:'random' },
+      { name: 'Foursome 2/4 30', hands:[0,5,7,9], ranks:[0], colors:['3R','3B'], river:'random' },
+      { name: 'Foursome 2/4 31', hands:[0,5,7,9], ranks:[0], colors:['3R'], river:'random' },
+      { name: 'Foursome 2/4 32', hands:[0,5,7,9], ranks:[0], colors:['3B'], river:'random' },
+      // No-rank Foursome 2/4 (hands 0,2,3,4)
+      { name: 'Foursome NR 2/4 1', hands:[0,2,3,4], ranks:[], colors:[], river:'none' },
+      { name: 'Foursome NR 2/4 2', hands:[0,2,3,4], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Foursome NR 2/4 3', hands:[0,2,3,4], ranks:[], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Foursome NR 2/4 4', hands:[0,2,3,4], ranks:[], colors:['3R','3B'], river:'strict4' },
+      { name: 'Foursome NR 2/4 5', hands:[0,2,3,4], ranks:[], colors:['3R'], river:'strict4' },
+      { name: 'Foursome NR 2/4 6', hands:[0,2,3,4], ranks:[], colors:['3B'], river:'strict4' },
+      { name: 'Foursome NR 2/4 7', hands:[0,2,3,4], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'when3' },
+      { name: 'Foursome NR 2/4 8', hands:[0,2,3,4], ranks:[], colors:['3R','4R','3B','4B'], river:'when3' },
+      { name: 'Foursome NR 2/4 9', hands:[0,2,3,4], ranks:[], colors:['3R','3B'], river:'when3' },
+      { name: 'Foursome NR 2/4 10', hands:[0,2,3,4], ranks:[], colors:['3R'], river:'when3' },
+      { name: 'Foursome NR 2/4 11', hands:[0,2,3,4], ranks:[], colors:['3B'], river:'when3' },
+      { name: 'Foursome NR 2/4 12', hands:[0,2,3,4], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'random' },
+      { name: 'Foursome NR 2/4 13', hands:[0,2,3,4], ranks:[], colors:['3R','4R','3B','4B'], river:'random' },
+      { name: 'Foursome NR 2/4 14', hands:[0,2,3,4], ranks:[], colors:['3R','3B'], river:'random' },
+      { name: 'Foursome NR 2/4 15', hands:[0,2,3,4], ranks:[], colors:['3R'], river:'random' },
+      { name: 'Foursome NR 2/4 16', hands:[0,2,3,4], ranks:[], colors:['3B'], river:'random' },
+      // No-rank Foursome 2/4 (hands 0,5,7,9)
+      { name: 'Foursome NR 2/4 17', hands:[0,5,7,9], ranks:[], colors:[], river:'none' },
+      { name: 'Foursome NR 2/4 18', hands:[0,5,7,9], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Foursome NR 2/4 19', hands:[0,5,7,9], ranks:[], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Foursome NR 2/4 20', hands:[0,5,7,9], ranks:[], colors:['3R','3B'], river:'strict4' },
+      { name: 'Foursome NR 2/4 21', hands:[0,5,7,9], ranks:[], colors:['3R'], river:'strict4' },
+      { name: 'Foursome NR 2/4 22', hands:[0,5,7,9], ranks:[], colors:['3B'], river:'strict4' },
+      { name: 'Foursome NR 2/4 23', hands:[0,5,7,9], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'when3' },
+      { name: 'Foursome NR 2/4 24', hands:[0,5,7,9], ranks:[], colors:['3R','4R','3B','4B'], river:'when3' },
+      { name: 'Foursome NR 2/4 25', hands:[0,5,7,9], ranks:[], colors:['3R','3B'], river:'when3' },
+      { name: 'Foursome NR 2/4 26', hands:[0,5,7,9], ranks:[], colors:['3R'], river:'when3' },
+      { name: 'Foursome NR 2/4 27', hands:[0,5,7,9], ranks:[], colors:['3B'], river:'when3' },
+      { name: 'Foursome NR 2/4 28', hands:[0,5,7,9], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'random' },
+      { name: 'Foursome NR 2/4 29', hands:[0,5,7,9], ranks:[], colors:['3R','4R','3B','4B'], river:'random' },
+      { name: 'Foursome NR 2/4 30', hands:[0,5,7,9], ranks:[], colors:['3R','3B'], river:'random' },
+      { name: 'Foursome NR 2/4 31', hands:[0,5,7,9], ranks:[], colors:['3R'], river:'random' },
+      { name: 'Foursome NR 2/4 32', hands:[0,5,7,9], ranks:[], colors:['3B'], river:'random' },
+      // Rank High Odds (Two Pair=1, Four of a Kind=6)
+      { name: 'Rank High Odds 1', hands:[], ranks:[1,6], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Rank High Odds 2', hands:[], ranks:[1,6], colors:['3R','4R','5R','3B','4B','5B'], river:'when3' },
+      { name: 'Rank High Odds 3', hands:[], ranks:[1,6], colors:['3R','4R','5R','3B','4B','5B'], river:'random' },
+      { name: 'Rank High Odds 4', hands:[], ranks:[1,6], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Rank High Odds 5', hands:[], ranks:[1,6], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Rank High Odds 6', hands:[], ranks:[1,6], colors:['3R','4R','3B','4B'], river:'when3' },
+      { name: 'Rank High Odds 7', hands:[], ranks:[1,6], colors:['3R','4R','3B','4B'], river:'random' },
+      { name: 'Rank High Odds 8', hands:[], ranks:[1,6], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Rank High Odds 9', hands:[], ranks:[1,6], colors:['3R','3B'], river:'strict4' },
+      { name: 'Rank High Odds 10', hands:[], ranks:[1,6], colors:['3R','3B'], river:'when3' },
+      { name: 'Rank High Odds 11', hands:[], ranks:[1,6], colors:['3R','3B'], river:'random' },
+      { name: 'Rank High Odds 12', hands:[], ranks:[1,6], colors:['3R','3B'], river:'none' },
+      { name: 'Rank High Odds 13', hands:[], ranks:[1,6], colors:['3R'], river:'strict4' },
+      { name: 'Rank High Odds 14', hands:[], ranks:[1,6], colors:['3R'], river:'when3' },
+      { name: 'Rank High Odds 15', hands:[], ranks:[1,6], colors:['3R'], river:'random' },
+      { name: 'Rank High Odds 16', hands:[], ranks:[1,6], colors:['3R'], river:'none' },
+      { name: 'Rank High Odds 17', hands:[], ranks:[1,6], colors:['3B'], river:'strict4' },
+      { name: 'Rank High Odds 18', hands:[], ranks:[1,6], colors:['3B'], river:'when3' },
+      { name: 'Rank High Odds 19', hands:[], ranks:[1,6], colors:['3B'], river:'random' },
+      { name: 'Rank High Odds 20', hands:[], ranks:[1,6], colors:['3B'], river:'none' },
+      { name: 'Rank High Odds 21', hands:[], ranks:[1,6], colors:[], river:'strict4' },
+      { name: 'Rank High Odds 22', hands:[], ranks:[1,6], colors:[], river:'when3' },
+      { name: 'Rank High Odds 23', hands:[], ranks:[1,6], colors:[], river:'random' },
+      { name: 'Rank High Odds 24', hands:[], ranks:[1,6], colors:[], river:'none' },
+      // Color Board
+      { name: 'Color Board 1', hands:[], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Color Board 2', hands:[], ranks:[], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Color Board 3', hands:[], ranks:[], colors:['3R','3B'], river:'none' },
+      { name: 'Color Board 4', hands:[], ranks:[], colors:['3R'], river:'none' },
+      { name: 'Color Board 5', hands:[], ranks:[], colors:['3B'], river:'none' },
+      { name: 'Color Board 6', hands:[], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Color Board 7', hands:[], ranks:[], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Color Board 8', hands:[], ranks:[], colors:['3R','3B'], river:'strict4' },
+      { name: 'Color Board 9', hands:[], ranks:[], colors:['3R'], river:'strict4' },
+      { name: 'Color Board 10', hands:[], ranks:[], colors:['3B'], river:'strict4' },
+      { name: 'Color Board 11', hands:[], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'when3' },
+      { name: 'Color Board 12', hands:[], ranks:[], colors:['3R','4R','3B','4B'], river:'when3' },
+      { name: 'Color Board 13', hands:[], ranks:[], colors:['3R','3B'], river:'when3' },
+      { name: 'Color Board 14', hands:[], ranks:[], colors:['3R'], river:'when3' },
+      { name: 'Color Board 15', hands:[], ranks:[], colors:['3B'], river:'when3' },
+      { name: 'Color Board 16', hands:[], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'random' },
+      { name: 'Color Board 17', hands:[], ranks:[], colors:['3R','4R','3B','4B'], river:'random' },
+      { name: 'Color Board 18', hands:[], ranks:[], colors:['3R','3B'], river:'random' },
+      { name: 'Color Board 19', hands:[], ranks:[], colors:['3R'], river:'random' },
+      { name: 'Color Board 20', hands:[], ranks:[], colors:['3B'], river:'random' },
+      // Progressive 1-40
+      { name: 'Progressive 1', hands:[], ranks:[0], colors:[], river:'none' },
+      { name: 'Progressive 2', hands:[], ranks:[0], colors:[], river:'strict4' },
+      { name: 'Progressive 3', hands:[], ranks:[0], colors:[], river:'when3' },
+      { name: 'Progressive 4', hands:[], ranks:[0], colors:[], river:'random' },
+      { name: 'Progressive 5', hands:[], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Progressive 6', hands:[], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Progressive 7', hands:[], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'when3' },
+      { name: 'Progressive 8', hands:[], ranks:[0], colors:['3R','4R','5R','3B','4B','5B'], river:'random' },
+      { name: 'Progressive 9', hands:[], ranks:[0], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Progressive 10', hands:[], ranks:[0], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Progressive 11', hands:[], ranks:[0], colors:['3R','4R','3B','4B'], river:'when3' },
+      { name: 'Progressive 12', hands:[], ranks:[0], colors:['3R','4R','3B','4B'], river:'random' },
+      { name: 'Progressive 13', hands:[], ranks:[0], colors:['3R'], river:'none' },
+      { name: 'Progressive 14', hands:[], ranks:[0], colors:['3R'], river:'strict4' },
+      { name: 'Progressive 15', hands:[], ranks:[0], colors:['3R'], river:'when3' },
+      { name: 'Progressive 16', hands:[], ranks:[0], colors:['3R'], river:'random' },
+      { name: 'Progressive 17', hands:[], ranks:[0], colors:['3B'], river:'none' },
+      { name: 'Progressive 18', hands:[], ranks:[0], colors:['3B'], river:'strict4' },
+      { name: 'Progressive 19', hands:[], ranks:[0], colors:['3B'], river:'when3' },
+      { name: 'Progressive 20', hands:[], ranks:[0], colors:['3B'], river:'random' },
+      { name: 'Progressive 21', hands:[], ranks:[0,7], colors:[], river:'none' },
+      { name: 'Progressive 22', hands:[], ranks:[0,7], colors:[], river:'strict4' },
+      { name: 'Progressive 23', hands:[], ranks:[0,7], colors:[], river:'when3' },
+      { name: 'Progressive 24', hands:[], ranks:[0,7], colors:[], river:'random' },
+      { name: 'Progressive 25', hands:[], ranks:[0,7], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Progressive 26', hands:[], ranks:[0,7], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Progressive 27', hands:[], ranks:[0,7], colors:['3R','4R','5R','3B','4B','5B'], river:'when3' },
+      { name: 'Progressive 28', hands:[], ranks:[0,7], colors:['3R','4R','5R','3B','4B','5B'], river:'random' },
+      { name: 'Progressive 29', hands:[], ranks:[0,7], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Progressive 30', hands:[], ranks:[0,7], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Progressive 31', hands:[], ranks:[0,7], colors:['3R','4R','3B','4B'], river:'when3' },
+      { name: 'Progressive 32', hands:[], ranks:[0,7], colors:['3R','4R','3B','4B'], river:'random' },
+      { name: 'Progressive 33', hands:[], ranks:[0,7], colors:['3R'], river:'none' },
+      { name: 'Progressive 34', hands:[], ranks:[0,7], colors:['3R'], river:'strict4' },
+      { name: 'Progressive 35', hands:[], ranks:[0,7], colors:['3R'], river:'when3' },
+      { name: 'Progressive 36', hands:[], ranks:[0,7], colors:['3R'], river:'random' },
+      { name: 'Progressive 37', hands:[], ranks:[0,7], colors:['3B'], river:'none' },
+      { name: 'Progressive 38', hands:[], ranks:[0,7], colors:['3B'], river:'strict4' },
+      { name: 'Progressive 39', hands:[], ranks:[0,7], colors:['3B'], river:'when3' },
+      { name: 'Progressive 40', hands:[], ranks:[0,7], colors:['3B'], river:'random' },
+      // Power Rank (4OAK=6, Full House=5, Trips=2, Two Pair=1)
+      { name: 'Power Rank 1', hands:[], ranks:[6,5,2,1], colors:[], river:'none' },
+      { name: 'Power Rank 2', hands:[], ranks:[6,5,2,1], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
+      { name: 'Power Rank 3', hands:[], ranks:[6,5,2,1], colors:['3R','4R','3B','4B'], river:'none' },
+      { name: 'Power Rank 4', hands:[], ranks:[6,5,2,1], colors:['3R'], river:'none' },
+      { name: 'Power Rank 5', hands:[], ranks:[6,5,2,1], colors:['3B'], river:'none' },
+      { name: 'Power Rank 6', hands:[], ranks:[6,5,2,1], colors:[], river:'strict4' },
+      { name: 'Power Rank 7', hands:[], ranks:[6,5,2,1], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { name: 'Power Rank 8', hands:[], ranks:[6,5,2,1], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { name: 'Power Rank 9', hands:[], ranks:[6,5,2,1], colors:['3R'], river:'strict4' },
+      { name: 'Power Rank 10', hands:[], ranks:[6,5,2,1], colors:['3B'], river:'strict4' },
+      { name: 'Power Rank 11', hands:[], ranks:[6,5,2,1], colors:[], river:'when3' },
+      { name: 'Power Rank 12', hands:[], ranks:[6,5,2,1], colors:['3R','4R','5R','3B','4B','5B'], river:'when3' },
+      { name: 'Power Rank 13', hands:[], ranks:[6,5,2,1], colors:['3R','4R','3B','4B'], river:'when3' },
+      { name: 'Power Rank 14', hands:[], ranks:[6,5,2,1], colors:['3R'], river:'when3' },
+      { name: 'Power Rank 15', hands:[], ranks:[6,5,2,1], colors:['3B'], river:'when3' },
+      { name: 'Power Rank 16', hands:[], ranks:[6,5,2,1], colors:[], river:'random' },
+      { name: 'Power Rank 17', hands:[], ranks:[6,5,2,1], colors:['3R','4R','5R','3B','4B','5B'], river:'random' },
+      { name: 'Power Rank 18', hands:[], ranks:[6,5,2,1], colors:['3R','4R','3B','4B'], river:'random' },
+      { name: 'Power Rank 19', hands:[], ranks:[6,5,2,1], colors:['3R'], river:'random' },
+      { name: 'Power Rank 20', hands:[], ranks:[6,5,2,1], colors:['3B'], river:'random' },
     ];
 
     const results = [];
 
     for (const strat of STRATEGIES) {
-      const { hands, rankIdxs, colors, riverHedge, riverAgg, unit } = strat;
+      const { hands, ranks, colors, river } = strat;
+      const unit = 25; // fixed unit bet per position
 
-      // Pre-compute color win probabilities (analytical, not simulated — much faster)
-      // P(redCount >= N) from binomial(5, 0.5)
-      const RED_PROBS = [1/32, 5/32, 10/32, 10/32, 5/32, 1/32]; // P(exactly k red)
-      function pRedAtLeast(n) { let p = 0; for (let k = n; k <= 5; k++) p += RED_PROBS[k]; return p; }
-      function pBlackAtLeast(n) { let p = 0; for (let k = n; k <= 5; k++) p += RED_PROBS[5 - k]; return p; }
-
-      // Total bet per game
       const totalBetPerGame =
         hands.length * unit +
-        rankIdxs.length * unit +
+        ranks.length * unit +
         colors.length * unit +
-        (riverHedge ? unit : 0) +
-        (riverAgg ? unit : 0);
+        (river !== 'none' ? unit : 0);
 
-      // ── Simulate ──
-      let totalBets = 0;
-      let totalPayouts = 0;
+      if (totalBetPerGame === 0) continue;
+
+      let totalBets = 0, totalPayouts = 0;
       let handBets = 0, handPays = 0;
       let rankBets = 0, rankPays = 0;
       let colorBets = 0, colorPays = 0;
@@ -143,6 +440,9 @@ Deno.serve(async (req) => {
         const redCount = rollRedCount();
         const blackCount = 5 - redCount;
         const riverIsLow = Math.random() < 0.5;
+        // For strict4/when3: simulate turn showing 4 cards
+        const lowShowing = Math.floor(Math.random() * 5); // 0-4 low of 4 turn cards
+        const highShowing = 4 - lowShowing;
 
         let gameWin = 0;
 
@@ -157,11 +457,11 @@ Deno.serve(async (req) => {
         }
 
         // Rank payouts
-        for (let i = 0; i < rankIdxs.length; i++) {
+        for (let i = 0; i < ranks.length; i++) {
           rankBets += unit;
-          if (rankIdxs[i] === rankIdx) {
+          if (ranks[i] === rankIdx) {
             const mult = RANK_PAYOUTS_ARR[rankIdx];
-            if (mult >= 0) {
+            if (mult !== null) {
               const p = unit * (1 + mult);
               rankPays += p;
               gameWin += p;
@@ -169,39 +469,45 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Color payouts (cumulative)
-        if (colors.length > 0) {
-          for (let i = 0; i < colors.length; i++) {
-            colorBets += unit;
-            const cKey = colors[i];
-            const cCount = parseInt(cKey[0]);
-            const isRed = cKey[1] === 'R';
-            const wins = isRed ? redCount >= cCount : blackCount >= cCount;
-            if (wins) {
-              const p = unit * (1 + COLOR_PAYOUTS_MAP[cKey]);
-              colorPays += p;
+        // Color payouts
+        for (let i = 0; i < colors.length; i++) {
+          colorBets += unit;
+          const cKey = colors[i];
+          const cCount = parseInt(cKey[0]);
+          const isRed = cKey[1] === 'R';
+          if (isRed ? redCount >= cCount : blackCount >= cCount) {
+            const p = unit * (1 + COLOR_PAYOUTS_MAP[cKey]);
+            colorPays += p;
+            gameWin += p;
+          }
+        }
+
+        // River
+        if (river !== 'none') {
+          let shouldBet = false;
+          let betLow = false;
+
+          if (river === 'strict4') {
+            if (lowShowing >= 4) { shouldBet = true; betLow = false; } // bet HIGH
+            else if (highShowing >= 4) { shouldBet = true; betLow = true; } // bet LOW
+          } else if (river === 'when3') {
+            if (lowShowing >= 3 || highShowing >= 3) {
+              shouldBet = true;
+              betLow = lowShowing > highShowing; // contrarian
+            }
+          } else if (river === 'random') {
+            shouldBet = true;
+            betLow = Math.random() < 0.5;
+          }
+
+          if (shouldBet) {
+            riverBets += unit;
+            const won = betLow ? riverIsLow : !riverIsLow;
+            if (won) {
+              const p = unit * (1 + LH_PAYOUT);
+              riverPays += p;
               gameWin += p;
             }
-          }
-        }
-
-        // River hedge (bets LOW)
-        if (riverHedge) {
-          riverBets += unit;
-          if (riverIsLow) {
-            const p = unit * (1 + LOW_HIGH_PAYOUT);
-            riverPays += p;
-            gameWin += p;
-          }
-        }
-
-        // River aggressive (bets HIGH)
-        if (riverAgg) {
-          riverBets += unit;
-          if (!riverIsLow) {
-            const p = unit * (1 + LOW_HIGH_PAYOUT);
-            riverPays += p;
-            gameWin += p;
           }
         }
 
@@ -210,17 +516,10 @@ Deno.serve(async (req) => {
       }
 
       const rtp = totalBets > 0 ? totalPayouts / totalBets : 0;
-      const hRtp = handBets > 0 ? handPays / handBets : null;
-      const rkRtp = rankBets > 0 ? rankPays / rankBets : null;
-      const cRtp = colorBets > 0 ? colorPays / colorBets : null;
-      const rvRtp = riverBets > 0 ? riverPays / riverBets : null;
-
       const TARGET = 0.965;
-      const scaleFactor = totalPayouts > 0 ? (TARGET * totalBets) / totalPayouts : null;
 
       results.push({
         strategy: strat.name,
-        description: strat.desc,
         gamesSimulated: N,
         totalBetPerGame,
         totalBets: Math.round(totalBets),
@@ -230,15 +529,14 @@ Deno.serve(async (req) => {
         compliant: rtp >= 0.95 && rtp <= 0.98,
         status: rtp > 0.98 ? '🔴 TOO HIGH' : rtp < 0.95 ? '🔴 TOO LOW' : '🟢 COMPLIANT',
         categoryBreakdown: {
-          hands:  hRtp  != null ? { rtp: (hRtp * 100).toFixed(2) + '%',  betShare: ((handBets / totalBets) * 100).toFixed(1) + '%' }  : null,
-          ranks:  rkRtp != null ? { rtp: (rkRtp * 100).toFixed(2) + '%', betShare: ((rankBets / totalBets) * 100).toFixed(1) + '%' }  : null,
-          colors: cRtp  != null ? { rtp: (cRtp * 100).toFixed(2) + '%',  betShare: ((colorBets / totalBets) * 100).toFixed(1) + '%' } : null,
-          river:  rvRtp != null ? { rtp: (rvRtp * 100).toFixed(2) + '%', betShare: ((riverBets / totalBets) * 100).toFixed(1) + '%' } : null,
+          hands:  handBets  > 0 ? { rtp: (handPays/handBets*100).toFixed(2)+'%',   betShare: (handBets/totalBets*100).toFixed(1)+'%' }   : null,
+          ranks:  rankBets  > 0 ? { rtp: (rankPays/rankBets*100).toFixed(2)+'%',   betShare: (rankBets/totalBets*100).toFixed(1)+'%' }   : null,
+          colors: colorBets > 0 ? { rtp: (colorPays/colorBets*100).toFixed(2)+'%', betShare: (colorBets/totalBets*100).toFixed(1)+'%' } : null,
+          river:  riverBets > 0 ? { rtp: (riverPays/riverBets*100).toFixed(2)+'%', betShare: (riverBets/totalBets*100).toFixed(1)+'%' } : null,
         },
         calibration: {
           targetRTP: '96.5%',
-          currentRTP: (rtp * 100).toFixed(3) + '%',
-          scaleFactor: scaleFactor != null ? scaleFactor.toFixed(5) : null,
+          scaleFactor: rtp > 0 ? (TARGET / rtp).toFixed(5) : null,
           direction: rtp > TARGET
             ? 'REDUCE payouts by ' + (((rtp - TARGET) / rtp) * 100).toFixed(2) + '%'
             : rtp < TARGET
@@ -246,73 +544,18 @@ Deno.serve(async (req) => {
             : 'ON TARGET',
         },
       });
+
+      // Reset per-strategy counters
+      handBets = 0; handPays = 0;
+      rankBets = 0; rankPays = 0;
+      colorBets = 0; colorPays = 0;
+      riverBets = 0; riverPays = 0;
     }
 
-    // ── Blended aggregate ──
     const aggBets = results.reduce((s, r) => s + r.totalBets, 0);
     const aggPays = results.reduce((s, r) => s + r.totalPayouts, 0);
     const aggRtp = aggBets > 0 ? aggPays / aggBets : 0;
     const compliantCount = results.filter(r => r.compliant).length;
-
-    // ── Blended per-category (weighted by bet volume) ──
-    let catHandBets = 0, catHandPays = 0;
-    let catRankBets = 0, catRankPays = 0;
-    let catColorBets = 0, catColorPays = 0;
-    let catRiverBets = 0, catRiverPays = 0;
-
-    for (const r of results) {
-      const N = r.gamesSimulated;
-      const tb = r.totalBets;
-      if (r.categoryBreakdown.hands) {
-        const share = parseFloat(r.categoryBreakdown.hands.betShare) / 100;
-        const bets = tb * share;
-        catHandBets += bets;
-        catHandPays += bets * parseFloat(r.categoryBreakdown.hands.rtp) / 100;
-      }
-      if (r.categoryBreakdown.ranks) {
-        const share = parseFloat(r.categoryBreakdown.ranks.betShare) / 100;
-        const bets = tb * share;
-        catRankBets += bets;
-        catRankPays += bets * parseFloat(r.categoryBreakdown.ranks.rtp) / 100;
-      }
-      if (r.categoryBreakdown.colors) {
-        const share = parseFloat(r.categoryBreakdown.colors.betShare) / 100;
-        const bets = tb * share;
-        catColorBets += bets;
-        catColorPays += bets * parseFloat(r.categoryBreakdown.colors.rtp) / 100;
-      }
-      if (r.categoryBreakdown.river) {
-        const share = parseFloat(r.categoryBreakdown.river.betShare) / 100;
-        const bets = tb * share;
-        catRiverBets += bets;
-        catRiverPays += bets * parseFloat(r.categoryBreakdown.river.rtp) / 100;
-      }
-    }
-
-    const blendedHandRtp = catHandBets > 0 ? catHandPays / catHandBets : 0;
-    const blendedRankRtp = catRankBets > 0 ? catRankPays / catRankBets : 0;
-    const blendedColorRtp = catColorBets > 0 ? catColorPays / catColorBets : 0;
-    const blendedRiverRtp = catRiverBets > 0 ? catRiverPays / catRiverBets : 0;
-
-    // ── Calibration recommendations ──
-    const TARGET = 0.965;
-    const catRtps = [
-      { category: 'hands',  rtp: blendedHandRtp },
-      { category: 'ranks',  rtp: blendedRankRtp },
-      { category: 'colors', rtp: blendedColorRtp },
-      { category: 'river',  rtp: blendedRiverRtp },
-    ];
-    const recommendations = catRtps
-      .filter(c => c.rtp > 0 && Math.abs(c.rtp - TARGET) > 0.005)
-      .map(c => ({
-        category: c.category,
-        currentRTP: (c.rtp * 100).toFixed(2) + '%',
-        targetRTP: '96.50%',
-        action: c.rtp > TARGET
-          ? `REDUCE ${c.category} payouts by ~${(((c.rtp - TARGET) / c.rtp) * 100).toFixed(1)}%`
-          : `INCREASE ${c.category} payouts by ~${(((TARGET - c.rtp) / TARGET) * 100).toFixed(1)}%`,
-        scaleFactor: (TARGET / c.rtp).toFixed(4),
-      }));
 
     return Response.json({
       success: true,
@@ -322,7 +565,6 @@ Deno.serve(async (req) => {
         totalStrategies: results.length,
         totalGamesSimulated: GAMES_PER_STRATEGY * results.length,
         targetRTP: '95.0% – 98.0% (center: 96.5%)',
-        note: GAMES_PER_STRATEGY < 10_000_000 ? `Capped at ${GAMES_PER_STRATEGY.toLocaleString()}/strategy to stay within server CPU limits. Results are statistically stable at 2M+.` : undefined,
       },
       blendedResults: {
         aggregateRTP: (aggRtp * 100).toFixed(3) + '%',
@@ -334,15 +576,6 @@ Deno.serve(async (req) => {
           ? '🔴 BLENDED RTP TOO LOW — Increase payouts'
           : '🔴 BLENDED RTP TOO HIGH — Reduce payouts',
       },
-      categoryBlendedRTP: {
-        hands:  (blendedHandRtp * 100).toFixed(2) + '%',
-        ranks:  (blendedRankRtp * 100).toFixed(2) + '%',
-        colors: (blendedColorRtp * 100).toFixed(2) + '%',
-        river:  (blendedRiverRtp * 100).toFixed(2) + '%',
-      },
-      calibrationRecommendations: recommendations.length > 0
-        ? recommendations
-        : [{ action: 'All categories within 0.5% of target. No changes needed.' }],
       strategyResults: results,
     });
 
