@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, AlertTriangle, Play, RefreshCw, Shield, BarChart2, Layers } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Play, RefreshCw, Shield, BarChart2, Layers, FlaskConical } from 'lucide-react';
+import IndividualBetAudit from '@/components/calibration/IndividualBetAudit';
 
 const TARGET_LOW = 95;
 const TARGET_HIGH = 98;
@@ -64,6 +65,7 @@ function RTPMeter({ rtp }) {
 }
 
 export default function GamingLicenseCalibration() {
+  const [activeTab, setActiveTab] = useState('certification');
   const [tier, setTier] = useState(null);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);       // batches completed
@@ -217,8 +219,32 @@ export default function GamingLicenseCalibration() {
           </p>
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b border-slate-700">
+          <button
+            onClick={() => setActiveTab('certification')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all -mb-px
+              ${activeTab === 'certification' ? 'border-yellow-400 text-yellow-300' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+          >
+            <Shield className="w-4 h-4" /> Certification Audit
+          </button>
+          <button
+            onClick={() => setActiveTab('individual')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all -mb-px
+              ${activeTab === 'individual' ? 'border-yellow-400 text-yellow-300' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+          >
+            <FlaskConical className="w-4 h-4" /> Individual Bet Audit
+          </button>
+        </div>
+
+        {/* Individual Bet Audit Tab */}
+        {activeTab === 'individual' && <IndividualBetAudit />}
+
+        {/* Certification Tab content below */}
+        {activeTab !== 'certification' ? null : null}
+
         {/* Tier Selection */}
-        {!running && !finalReport && (
+        {activeTab === 'certification' && !running && !finalReport && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             {TIERS.map(t => (
               <motion.button
@@ -248,7 +274,7 @@ export default function GamingLicenseCalibration() {
         )}
 
         {/* Running State */}
-        {running && (
+        {activeTab === 'certification' && running && (
           <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -291,7 +317,7 @@ export default function GamingLicenseCalibration() {
         )}
 
         {/* Final Report */}
-        {finalReport && !running && (
+        {activeTab === 'certification' && finalReport && !running && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
 
             {/* Certification Banner */}
