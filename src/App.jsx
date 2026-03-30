@@ -15,6 +15,7 @@ import PayoutCalibration from './pages/PayoutCalibration';
 import StrategyTest from './pages/StrategyTest';
 import RegulatoryCompliance from './pages/RegulatoryCompliance';
 import FrequencyProfiler from './pages/FrequencyProfiler';
+import GamingLicenseCalibration from './pages/GamingLicenseCalibration';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -50,6 +51,7 @@ const AuthenticatedApp = () => {
       <Route path="/strategy-test" element={<StrategyTest />} />
       <Route path="/regulatory" element={<RegulatoryCompliance />} />
       <Route path="/frequency-profiler" element={<FrequencyProfiler />} />
+      <Route path="/gaming-license" element={<GamingLicenseCalibration />} />
       <Route path="/promo" element={<PromoSequence />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

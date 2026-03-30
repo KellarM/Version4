@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Wrench, BarChart2, Search, Sliders, Target, Scale, Activity, Play } from 'lucide-react';
+import { Wrench, BarChart2, Search, Sliders, Target, Scale, Activity, Play, Award } from 'lucide-react';
 
 const TOOLS = [
   { icon: BarChart2, label: 'Player Stats',        type: 'stats' },
@@ -10,6 +10,7 @@ const TOOLS = [
   { icon: Target,    label: 'Strategy Test',        href: '/strategy-test' },
   { icon: Scale,     label: 'Regulatory Audit',     href: '/regulatory' },
   { icon: Activity,  label: 'Frequency Profiler',   href: '/frequency-profiler' },
+  { icon: Award,     label: 'Gaming License Calibration', href: '/gaming-license' },
 ];
 
 // Updated betting rules (as of 2026-03-29)
