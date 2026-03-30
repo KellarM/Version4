@@ -15,6 +15,11 @@ const PLAYER_COLORS = [
 export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
 
+  // Reset to first winner when winInfo changes — must be before any early returns
+  useEffect(() => {
+    setCurrentPlayerIndex(0);
+  }, [winInfo]);
+
   if (!winInfo || !winInfo.playerPayouts) return null;
 
   const hasAnyWins = winInfo.playerPayouts?.some(p => p.wins.length > 0);
@@ -28,11 +33,6 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
   };
 
   const nextWinnerIdx = getNextWinningPlayer(currentPlayerIndex);
-  
-  // Reset to first winner when winInfo changes
-  useEffect(() => {
-    setCurrentPlayerIndex(0);
-  }, [winInfo]);
 
   // Helper to get hand symbol display
   const getHandSymbol = (label) => {
