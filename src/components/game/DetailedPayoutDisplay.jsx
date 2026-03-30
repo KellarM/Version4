@@ -72,13 +72,15 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] backdrop-blur-sm pointer-events-auto relative`}
               >
                 {/* Close Button */}
-                <button
+                <motion.button
                   onClick={handleNext}
-                  className="absolute top-4 right-4 p-2 hover:bg-black/20 rounded-lg transition-all"
+                  animate={{ scale: [1, 1.15, 1], opacity: [1, 0.6, 1] }}
+                  transition={{ duration: 0.6, repeat: Infinity }}
+                  className="absolute top-4 right-4 p-2 rounded-lg bg-yellow-400 border-2 border-yellow-300 shadow-lg shadow-yellow-400/60"
                   title="Next winner"
                 >
-                  <X className="w-6 h-6 text-gray-600" />
-                </button>
+                  <X className="w-7 h-7 text-black font-black" strokeWidth={3} />
+                </motion.button>
 
                 {/* Header */}
                 <div className="text-center mb-4">
