@@ -76,25 +76,31 @@ export default function PayoutCalibration() {
         </div>
 
         {/* Controls */}
-        <div className="mb-8 flex gap-3 flex-wrap items-center">
-          {[100000, 500000, 1000000, 10000000].map(n => (
+        <div className="mb-8">
+          <div className="flex gap-3 flex-wrap items-center mb-3">
+            {[50000, 100000, 250000, 500000].map(n => (
+              <button
+                key={n}
+                onClick={() => runCalibration(n)}
+                disabled={loading}
+                className="px-5 py-2.5 rounded-lg font-semibold bg-slate-700 hover:bg-slate-600 disabled:bg-gray-700 disabled:text-gray-500 text-sm transition-all"
+              >
+                {n >= 1000000 ? `${n / 1000000}M` : `${n / 1000}K`} Games
+              </button>
+            ))}
             <button
-              key={n}
-              onClick={() => runCalibration(n)}
+              onClick={() => runCalibration(500000)}
               disabled={loading}
-              className="px-5 py-2.5 rounded-lg font-semibold bg-slate-700 hover:bg-slate-600 disabled:bg-gray-700 disabled:text-gray-500 text-sm transition-all"
+              className="px-5 py-2.5 rounded-lg font-bold bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-700 disabled:text-gray-500 text-black text-sm transition-all flex items-center gap-2"
             >
-              {n >= 1000000 ? `${n / 1000000}M` : `${n / 1000}K`} Games
+              <Zap className="w-4 h-4" />
+              500K (Recommended)
             </button>
-          ))}
-          <button
-            onClick={() => runCalibration(10000000)}
-            disabled={loading}
-            className="px-5 py-2.5 rounded-lg font-bold bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-700 disabled:text-gray-500 text-black text-sm transition-all flex items-center gap-2"
-          >
-            <Zap className="w-4 h-4" />
-            Full 10M (Recommended)
-          </button>
+          </div>
+          <p className="text-gray-500 text-xs flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3 text-yellow-500" />
+            Max capped at 500K — larger simulations time out and crash the page.
+          </p>
         </div>
 
         {/* Loading */}
@@ -103,7 +109,7 @@ export default function PayoutCalibration() {
             <div className="inline-flex flex-col items-center gap-4">
               <RefreshCw className="w-12 h-12 text-yellow-400 animate-spin" />
               <p className="text-gray-300 text-lg">Running Monte Carlo simulation...</p>
-              <p className="text-gray-500 text-sm">10M games takes ~15 seconds</p>
+              <p className="text-gray-500 text-sm">500K games takes ~5–8 seconds</p>
             </div>
           </div>
         )}
