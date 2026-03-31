@@ -625,14 +625,14 @@ export default function RapidFireGame() {
 
     setGamePhase('winner');
 
-    // Delay display window by 4 seconds
+    // Delay display window by 1 second
     setTimeout(() => {
       setLastWinInfo({
         playerPayouts,
         playerCount,
       });
       setDisplayWindowVisible(true);
-    }, 4000);
+    }, 1000);
 
     // History — capture ALL winning outcomes regardless of wagers
     const reds = finalComm.filter(c => cardColor(c) === 'red').length;
