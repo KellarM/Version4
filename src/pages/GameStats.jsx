@@ -302,11 +302,12 @@ export default function GameStats() {
   // Build display matrices with percentages
   const rankCountMatrix  = state ? state.handRankMatrix  : null;
   const colorCountMatrix = state ? state.handColorMatrix : null;
-  const rankPctMatrix    = state ? state.handRankMatrix.map((m, i) =>
-    Object.fromEntries(RANK_COLS.map(k=>[k, state.handWinCount[i]>0?(m[k]/TOTAL_DEALS*100):0]))
+  const totalWins = state ? state.handWinCount.reduce((s,v)=>s+v,0) : 1;
+  const rankPctMatrix    = state ? state.handRankMatrix.map((m) =>
+  Object.fromEntries(RANK_COLS.map(k=>[k, (m[k]/totalWins*100)]))
   ) : null;
-  const colorPctMatrix   = state ? state.handColorMatrix.map((m, i) =>
-    Object.fromEntries(COLOR_COLS.map(k=>[k, (m[k]/TOTAL_DEALS*100)]))
+  const colorPctMatrix   = state ? state.handColorMatrix.map((m) =>
+  Object.fromEntries(COLOR_COLS.map(k=>[k, (m[k]/TOTAL_DEALS*100)]))
   ) : null;
 
   return (
@@ -386,17 +387,26 @@ export default function GameStats() {
         </div>
 
         {/* Summary stats */}
-        {state && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            {HAND_LABELS.map((h,i)=>(
-              <div key={h.id} className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 text-center">
-                <p className="text-yellow-400 font-bold text-sm">{h.id}({h.label})</p>
-                <p className="text-2xl font-black text-white">{state.handWinCount[i].toLocaleString()}</p>
-                <p className="text-gray-400 text-xs">{((state.handWinCount[i]/TOTAL_DEALS)*100).toFixed(2)}% wins</p>
+        {state && (() => {
+          const totalWins = state.handWinCount.reduce((s,v)=>s+v,0);
+          return (
+            <div className="space-y-3 mb-6">
+              <div className="flex items-center gap-3 text-xs text-gray-400 bg-slate-800/40 border border-slate-700 rounded-lg px-4 py-2">
+                <span className="text-yellow-300 font-bold">Note:</span>
+                Ties are counted for every winning hand. Total hand wins ({totalWins.toLocaleString()}) exceed total deals ({TOTAL_DEALS.toLocaleString()}) because {(totalWins-TOTAL_DEALS).toLocaleString()} deals had shared winners.
               </div>
-            ))}
-          </div>
-        )}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {HAND_LABELS.map((h,i)=>(
+                  <div key={h.id} className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 text-center">
+                    <p className="text-yellow-400 font-bold text-sm">{h.id}({h.label})</p>
+                    <p className="text-2xl font-black text-white">{state.handWinCount[i].toLocaleString()}</p>
+                    <p className="text-gray-400 text-xs">{((state.handWinCount[i]/totalWins)*100).toFixed(2)}% of wins</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Rank Matrices */}
         {state && (

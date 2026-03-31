@@ -135,12 +135,11 @@ Deno.serve(async (req) => {
       const scores = ENC_HANDS.map(([h0,h1])=>best7enc(h0,h1,commEnc));
       const maxScore = Math.max(...scores);
 
-      // Winning hand (highest score, first in list on tie)
-      const winnerIdx = scores.indexOf(maxScore);
-      const winnerHand = FIXED_HANDS[winnerIdx];
-      const winnerLabel = `${winnerHand.id}(${winnerHand.label})`;
-      const rankKey = maxScore>=0 ? RANK_KEY_MAP[maxScore] : '1 Pair';
+      // ALL tied winners share the win — find every hand matching maxScore
+      const winnerIdxs = scores.map((s,i)=>s===maxScore?i:-1).filter(i=>i>=0);
+      const rankKey   = maxScore>=0 ? RANK_KEY_MAP[maxScore] : '1 Pair';
       const rankLabel = maxScore>=0 ? RANK_IDX_MAP[maxScore] : 'I(1 Pair)';
+      const winnerLabels = winnerIdxs.map(i=>`${FIXED_HANDS[i].id}(${FIXED_HANDS[i].label})`).join(' / ');
 
       // Color board
       const reds = commCards.filter(c=>SUIT_COLOR[c.s]==='red').length;
@@ -149,21 +148,26 @@ Deno.serve(async (req) => {
       if(reds>=3) for(let n=3;n<=reds;n++) colorHits.push(`${n}R`);
       if(blacks>=3) for(let n=3;n<=blacks;n++) colorHits.push(`${n}B`);
 
-      // Tally
-      handWinCount[winnerIdx]++;
-      if(rankKey) { rankTotals[rankKey]++; handRankMatrix[winnerIdx][rankKey]++; }
-      for(const ck of colorHits){ colorTotals[ck]++; handColorMatrix[winnerIdx][ck]++; }
+      // Tally — credit every tied winner
+      for(const wi of winnerIdxs) {
+        handWinCount[wi]++;
+        if(rankKey) { handRankMatrix[wi][rankKey]++; }
+        for(const ck of colorHits) { handColorMatrix[wi][ck]++; }
+      }
+      // Rank totals count once per deal (the rank occurred once)
+      if(rankKey) rankTotals[rankKey]++;
+      for(const ck of colorHits) colorTotals[ck]++;
 
-      // Detail row
+      // Detail row — mark 1 for every tied winner
       const colorCols = Object.fromEntries(COLOR_COLS.map(k=>[k,colorHits.includes(k)?1:0]));
-      const handCols = Object.fromEntries(FIXED_HANDS.map((h,i)=>[`${h.id}(${h.label})`,i===winnerIdx?1:0]));
+      const handCols  = Object.fromEntries(FIXED_HANDS.map((h,i)=>[`${h.id}(${h.label})`,winnerIdxs.includes(i)?1:0]));
       rows.push({
         c1r:commCards[0].r, c1s:SUIT_LONG[commCards[0].s],
         c2r:commCards[1].r, c2s:SUIT_LONG[commCards[1].s],
         c3r:commCards[2].r, c3s:SUIT_LONG[commCards[2].s],
         c4r:commCards[3].r, c4s:SUIT_LONG[commCards[3].s],
         c5r:commCards[4].r, c5s:SUIT_LONG[commCards[4].s],
-        winningHand: winnerLabel,
+        winningHand: winnerLabels,
         handRank: rankLabel,
         ...colorCols,
         ...handCols,
