@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
 
     const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush','Royal Flush'];
     const RANK_FREQS = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139, 0.000154];
-    const RANK_PAYOUTS = [null, 16.76, 3.95, 4.58, 3.10, 2.53, 12.43, null, null]; // null = progressive
+    const RANK_PAYOUTS = [null, 16.76, 3.95, 5.02, 3.10, 2.53, 12.43, null, null]; // null = progressive
     const RANK_CUM = [];
     let rc = 0;
     for (const f of RANK_FREQS) { rc += f; RANK_CUM.push(rc); }

@@ -47,7 +47,7 @@ export const HAND_RANK_PAYOUTS = {
   'Four of a Kind':  12.43,   // (was 12.77)
   'Full House':      2.53,    // unchanged
   'Flush':           3.10,    // (was 3.21)
-  'Straight':        4.58,    // (was 4.93)
+  'Straight':        5.02,    // (was 4.58)
   'Three of a Kind': 3.95,    // (was 3.81)
   'Two Pair':        16.76,   // (was 15.98)
   'One Pair':        null,    // Progressive jackpot — seed $1,584

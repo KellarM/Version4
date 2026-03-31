@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
       'One Pair':        null,   // Progressive jackpot
       'Two Pair':        16.76,
       'Three of a Kind': 3.95,
-      'Straight':        4.58,
+      'Straight':        5.02,
       'Flush':           3.10,
       'Full House':      2.53,
       'Four of a Kind':  12.43,

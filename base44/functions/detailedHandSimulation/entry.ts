@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     const RANK_PAYOUT_MAP = {
       'Royal Flush': null, 'Straight Flush': null,
       'Four of a Kind': 12.43, 'Full House': 2.53, 'Flush': 3.10,
-      'Straight': 4.58, 'Three of a Kind': 3.95, 'Two Pair': 16.76, 'One Pair': null,
+      'Straight': 5.02, 'Three of a Kind': 3.95, 'Two Pair': 16.76, 'One Pair': null,
     };
     const RANK_FREQS = {
       'Royal Flush': 0.000154, 'Straight Flush': 0.00139, 'Four of a Kind': 0.00168,

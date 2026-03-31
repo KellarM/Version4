@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
     const RANK_PAYOUTS_MAP = {
       'Royal Flush':null,'Straight Flush':null,'Four of a Kind':12.43,
-      'Full House':2.53,'Flush':3.10,'Straight':4.58,
+      'Full House':2.53,'Flush':3.10,'Straight':5.02,
       'Three of a Kind':3.95,'Two Pair':16.76,'One Pair':null,
     };
     const COLOR_PAYOUTS = {'3R':0.93,'3B':0.93,'4R':4.81,'4B':4.81,'5R':43.36,'5B':43.46};
