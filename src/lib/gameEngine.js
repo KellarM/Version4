@@ -189,16 +189,6 @@ export function resolveLowHigh(riverCard) {
 
 // NOTE: LOW_HIGH_PAYOUT is defined in payoutConstants.js — single source of truth
 
-// Display table for RankBets UI (payout string shown to players)
-// Calibrated from 10M real engine run — empirical 32-card frequencies
-export const HAND_RANK_PAYOUTS = [
-  { name: 'Royal Flush',     payout: 'Progressive', special: true },
-  { name: 'Straight Flush',  payout: 'Progressive', special: true },
-  { name: 'Four of a Kind',  payout: 'Progressive', special: true },  // 0.17% → jackpot
-  { name: 'Full House',      payout: '35:1'         },  // 2.60% freq
-  { name: 'Flush',           payout: 'Progressive', special: true },  // 0.33% → jackpot
-  { name: 'Straight',        payout: '19.5:1'       },  // 4.62% freq
-  { name: 'Three of a Kind', payout: '44:1'         },  // 2.11% freq
-  { name: 'Two Pair',        payout: '19:1'         },  // 4.75% freq
-  { name: 'One Pair',        payout: '1.28:1'       },  // 42.26% freq
-];
+// NOTE: HAND_RANK_PAYOUTS is defined in payoutConstants.js — single source of truth
+// Re-export for any legacy imports
+export { HAND_RANK_PAYOUTS } from '@/lib/payoutConstants';

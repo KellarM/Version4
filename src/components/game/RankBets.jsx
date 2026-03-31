@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { HAND_RANK_PAYOUTS } from '@/lib/payoutConstants';
 
 const PLAYER_CHIP_COLORS = [
   { bg: 'bg-yellow-500',  text: 'text-black',  border: 'border-yellow-400'  },
@@ -10,15 +11,15 @@ const PLAYER_CHIP_COLORS = [
 
 // High Card removed - always at least 1 pair minimum (K/K)
 export const RANK_BET_OPTIONS = [
-  { key: 'Royal Flush',     label: 'Royal Flush',     payout: 'Progressive', color: 'purple', minBet: 25 },
-  { key: 'Straight Flush',  label: 'Straight Flush',  payout: 'Progressive', color: 'orange', minBet: 15 },
-  { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: '12.77:1',     color: 'yellow' },
-  { key: 'Full House',      label: 'Full House',       payout: '2.53:1',      color: 'green'  },
-  { key: 'Flush',           label: 'Flush',            payout: '3.21:1',      color: 'blue'   },
-  { key: 'Straight',        label: 'Straight',         payout: '4.93:1',      color: 'teal'   },
-  { key: 'Three of a Kind', label: 'Three of a Kind',  payout: '3.81:1',      color: 'green'  },
-  { key: 'Two Pair',        label: 'Two Pair',         payout: '15.98:1',     color: 'green'  },
-  { key: 'One Pair',        label: 'One Pair',         payout: 'Progressive', color: 'green',  minBet: 10 },
+  { key: 'Royal Flush',     label: 'Royal Flush',     payout: 'Progressive',                                      color: 'purple', minBet: 25 },
+  { key: 'Straight Flush',  label: 'Straight Flush',  payout: 'Progressive',                                      color: 'orange', minBet: 15 },
+  { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: `${HAND_RANK_PAYOUTS['Four of a Kind']}:1`,         color: 'yellow' },
+  { key: 'Full House',      label: 'Full House',       payout: `${HAND_RANK_PAYOUTS['Full House']}:1`,             color: 'green'  },
+  { key: 'Flush',           label: 'Flush',            payout: `${HAND_RANK_PAYOUTS['Flush']}:1`,                 color: 'blue'   },
+  { key: 'Straight',        label: 'Straight',         payout: `${HAND_RANK_PAYOUTS['Straight']}:1`,              color: 'teal'   },
+  { key: 'Three of a Kind', label: 'Three of a Kind',  payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1`,       color: 'green'  },
+  { key: 'Two Pair',        label: 'Two Pair',         payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,              color: 'green'  },
+  { key: 'One Pair',        label: 'One Pair',         payout: 'Progressive',                                      color: 'green',  minBet: 10 },
 ];
 
 // Winner always highlights in gold/yellow with flash animation

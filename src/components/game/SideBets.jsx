@@ -1,16 +1,17 @@
 import { motion } from 'framer-motion';
 import { cardColor, isLowCard } from '@/lib/gameEngine';
+import { COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 
 // Left col = Red (3R top → 5R bottom), Right col = Black (3B top → 5B bottom)
 const RED_OPTIONS   = [
-  { key: '3R', label: '3 Red',   payout: '0.81:1' },
-  { key: '4R', label: '4 Red',   payout: '5.25:1' },
-  { key: '5R', label: '5 Red',   payout: '20.56:1' },
+  { key: '3R', label: '3 Red',   payout: `${COLOR_BOARD_PAYOUTS['3R']}:1` },
+  { key: '4R', label: '4 Red',   payout: `${COLOR_BOARD_PAYOUTS['4R']}:1` },
+  { key: '5R', label: '5 Red',   payout: `${COLOR_BOARD_PAYOUTS['5R']}:1` },
 ];
 const BLACK_OPTIONS = [
-  { key: '3B', label: '3 Black', payout: '0.81:1' },
-  { key: '4B', label: '4 Black', payout: '5.25:1' },
-  { key: '5B', label: '5 Black', payout: '20.56:1' },
+  { key: '3B', label: '3 Black', payout: `${COLOR_BOARD_PAYOUTS['3B']}:1` },
+  { key: '4B', label: '4 Black', payout: `${COLOR_BOARD_PAYOUTS['4B']}:1` },
+  { key: '5B', label: '5 Black', payout: `${COLOR_BOARD_PAYOUTS['5B']}:1` },
 ];
 
 // Per-player chip colors
@@ -186,7 +187,7 @@ export default function SideBets({
               >
                 <div className="flex flex-col items-center">
                   <span className="font-black text-sm leading-tight">{type}</span>
-                  <span className="text-yellow-400/80 text-xs leading-tight">{isLow ? '2–7' : '8–A'} · 0.95:1</span>
+                  <span className="text-yellow-400/80 text-xs leading-tight">{isLow ? '2–7' : '8–A'} · {LOW_HIGH_PAYOUT}:1</span>
                 </div>
                 {chipsHere.length > 0 && (
                   <div className="absolute -top-1.5 -right-1.5 flex flex-row-reverse gap-0.5">
