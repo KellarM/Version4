@@ -302,7 +302,7 @@ export default function GameStats() {
   // Build display matrices with percentages
   const rankCountMatrix  = state ? state.handRankMatrix  : null;
   const colorCountMatrix = state ? state.handColorMatrix : null;
-  const totalWins = state ? state.handWinCount.reduce((s,v)=>s+v,0) : 1;
+  const totalWins = state ? state.handWinCount.reduce((s,v)=>s+v,0) : 0;
   const rankPctMatrix    = state ? state.handRankMatrix.map((m) =>
   Object.fromEntries(RANK_COLS.map(k=>[k, (m[k]/totalWins*100)]))
   ) : null;
@@ -412,7 +412,7 @@ export default function GameStats() {
         {state && (
           <div className="space-y-4">
             <MatrixTable
-              title="Hand Rank Matrix — Counts (Winning Hand vs Hand Rank)"
+              title={`Hand Rank Matrix — Counts (Winning Hand vs Hand Rank)    ${TOTAL_DEALS.toLocaleString()} Total Deals = ${totalWins.toLocaleString()} Total Wins`}
               rowLabels={HAND_LABELS}
               colLabels={RANK_COLS}
               data={rankCountMatrix}

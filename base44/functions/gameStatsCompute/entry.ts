@@ -32,37 +32,52 @@ const RV = {'2':0,'3':1,'4':2,'5':3,'6':4,'7':5,'8':6,'9':7,'10':8,'J':9,'Q':10,
 const SV = {C:0,D:1,H:2,S:3};
 function enc(r,s){ return RV[r]*4+SV[s]; }
 
-function eval5(cards) {
+// Returns [rankCategory (0-8), ...tiebreak ranks] as an array for full comparison
+function eval5full(cards) {
   const rs = cards.map(c=>c>>2).sort((a,b)=>b-a);
   const ss = cards.map(c=>c&3);
   const flush = ss.every(s=>s===ss[0]);
   const uniq = new Set(rs);
-  const straight = (rs[0]-rs[4]===4 && uniq.size===5) ||
-                   (rs[0]===12&&rs[1]===3&&rs[2]===2&&rs[3]===1&&rs[4]===0);
-  if(flush&&straight) return rs[0]===12&&rs[1]===11?8:7;
+  const isWheel = rs[0]===12&&rs[1]===3&&rs[2]===2&&rs[3]===1&&rs[4]===0;
+  const straight = (rs[0]-rs[4]===4 && uniq.size===5) || isWheel;
+  const straightTop = isWheel ? 3 : rs[0];
+  if(flush&&straight) return [rs[0]===12&&rs[1]===11?8:7, straightTop];
   const cnt={};
   rs.forEach(r=>{cnt[r]=(cnt[r]||0)+1;});
   const g=Object.values(cnt).sort((a,b)=>b-a);
-  if(g[0]===4) return 6;
-  if(g[0]===3&&g[1]===2) return 5;
-  if(flush) return 4;
-  if(straight) return 3;
-  if(g[0]===3) return 2;
-  if(g[0]===2&&g[1]===2) return 1;
-  if(g[0]===2) return 0;
-  return -1;
+  // Sort ranks by group size desc, then rank desc for tiebreaking
+  const sorted = Object.entries(cnt).map(([r,c])=>[parseInt(r),c]).sort((a,b)=>b[1]-a[1]||b[0]-a[0]);
+  const tb = sorted.map(x=>x[0]); // tiebreak sequence
+  if(g[0]===4) return [6,...tb];
+  if(g[0]===3&&g[1]===2) return [5,...tb];
+  if(flush) return [4,...rs];
+  if(straight) return [3, straightTop];
+  if(g[0]===3) return [2,...tb];
+  if(g[0]===2&&g[1]===2) return [1,...tb];
+  if(g[0]===2) return [0,...tb];
+  return [-1,...rs];
+}
+
+// Compare two hand value arrays lexicographically
+function cmpHandVal(a,b){
+  for(let i=0;i<Math.max(a.length,b.length);i++){
+    const av=a[i]??-1, bv=b[i]??-1;
+    if(av>bv) return 1;
+    if(av<bv) return -1;
+  }
+  return 0;
 }
 
 const SKIP21=[];
 for(let i=0;i<7;i++) for(let j=i+1;j<7;j++) SKIP21.push([i,j]);
 
-function best7enc(h0,h1,comm) {
+function best7full(h0,h1,comm) {
   const all=[h0,h1,...comm];
-  let best=-2;
+  let best=null;
   for(const [si,sj] of SKIP21){
     const five=all.filter((_,i)=>i!==si&&i!==sj);
-    const r=eval5(five);
-    if(r>best) best=r;
+    const v=eval5full(five);
+    if(best===null||cmpHandVal(v,best)>0) best=v;
   }
   return best;
 }
@@ -131,14 +146,16 @@ Deno.serve(async (req) => {
       const commEnc = ci.map(i=>ENC_COMM[i]);
       const commCards = ci.map(i=>COMMUNITY_DECK[i]);
 
-      // Evaluate all 10 hands
-      const scores = ENC_HANDS.map(([h0,h1])=>best7enc(h0,h1,commEnc));
-      const maxScore = Math.max(...scores);
-
-      // ALL tied winners share the win — find every hand matching maxScore
-      const winnerIdxs = scores.map((s,i)=>s===maxScore?i:-1).filter(i=>i>=0);
-      const rankKey   = maxScore>=0 ? RANK_KEY_MAP[maxScore] : '1 Pair';
-      const rankLabel = maxScore>=0 ? RANK_IDX_MAP[maxScore] : 'I(1 Pair)';
+      // Evaluate all 10 hands with full tiebreaker values
+      const handVals = ENC_HANDS.map(([h0,h1])=>best7full(h0,h1,commEnc));
+      // Find the best hand value across all hands
+      let bestVal = handVals[0];
+      for(let i=1;i<handVals.length;i++) if(cmpHandVal(handVals[i],bestVal)>0) bestVal=handVals[i];
+      // ALL hands that exactly match the best value are co-winners
+      const winnerIdxs = handVals.map((v,i)=>cmpHandVal(v,bestVal)===0?i:-1).filter(i=>i>=0);
+      const rankCat = bestVal[0];
+      const rankKey   = rankCat>=0 ? RANK_KEY_MAP[rankCat] : '1 Pair';
+      const rankLabel = rankCat>=0 ? RANK_IDX_MAP[rankCat] : 'I(1 Pair)';
       const winnerLabels = winnerIdxs.map(i=>`${FIXED_HANDS[i].id}(${FIXED_HANDS[i].label})`).join(' / ');
 
       // Color board
