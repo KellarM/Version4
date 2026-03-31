@@ -114,18 +114,17 @@ export default function IndividualBetAudit() {
     localStorage.removeItem(PROGRESS_KEY);
     abortRef.current = false;
 
-    for (let bi = 0; bi < BET_DEFINITIONS.length; bi++) {
-      if (abortRef.current) { setAborted(true); break; }
+    outer: for (let bi = 0; bi < BET_DEFINITIONS.length; bi++) {
+      if (abortRef.current) break;
       const def = BET_DEFINITIONS[bi];
       setCurrentBet(def.label);
 
-      // Accumulate 20 batches of 100K = 2M total
       let totalWins = 0;
       let totalPaid = 0;
       const totalGames = BATCHES_PER_BET * 50_000;
 
       for (let b = 0; b < BATCHES_PER_BET; b++) {
-        if (abortRef.current) break;
+        if (abortRef.current) break outer;
         try {
           const res = await base44.functions.invoke('individualBetAudit', {
             batchSize: 50_000,
@@ -134,7 +133,6 @@ export default function IndividualBetAudit() {
           });
           if (res.data.success) {
             totalWins += res.data.wins;
-            // reconstruct totalPaid from rtp
             const batchBet = 50_000 * 100;
             totalPaid += (parseFloat(res.data.rtp) / 100) * batchBet;
           }
@@ -142,6 +140,8 @@ export default function IndividualBetAudit() {
           // skip batch on error
         }
       }
+
+      if (abortRef.current) break;
 
       const winFreq = totalWins / totalGames;
       const totalBetAmt = totalGames * 100;
@@ -164,7 +164,6 @@ export default function IndividualBetAudit() {
       };
       setResults(prev => {
         const updated = { ...prev, [key]: newResult };
-        // Also persist immediately in case of crash
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch {}
         return updated;
       });
