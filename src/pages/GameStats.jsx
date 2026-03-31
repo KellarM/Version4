@@ -92,39 +92,34 @@ function buildMatrixDoc(state) {
   const th = (v, bg='#2c3e6b', color='#fff') =>
     `<th style="border:1px solid #888;padding:4px 7px;background:${bg};color:${color};font-size:8.5pt;">${v}</th>`;
 
+  const totalWins = handWinCount.reduce((s,v)=>s+v, 0);
+
   const buildRankTable = (data, title, isPct) => {
     const rows = HAND_LABELS.map((h,i) => {
       const m = data[i];
-      const total = isPct ? (handWinCount[i]/TOTAL_DEALS*100).toFixed(4) : handWinCount[i];
       return `<tr>
         ${td(`${h.id}(${h.label})`)}
         ${RANK_COLS.map(k=>{
-          const v = isPct ? (m[k]/TOTAL_DEALS*100).toFixed(4)+'%' : m[k];
+          const v = isPct ? (m[k]/totalWins*100).toFixed(4)+'%' : m[k];
           return td(v, false);
         }).join('')}
-        ${td(isPct ? (handWinCount[i]/TOTAL_DEALS*100).toFixed(4)+'%' : handWinCount[i], true, '#004080')}
+        ${td(isPct ? (handWinCount[i]/totalWins*100).toFixed(4)+'%' : handWinCount[i].toLocaleString(), true, '#004080')}
       </tr>`;
     }).join('');
-    const allRow = `<tr style="background:#f0f4ff;">
-      ${td('All Hands', true, '#000', '#f0f4ff')}
-      ${RANK_COLS.map(k=>{
-        const v = isPct ? (rankTotals[k]/TOTAL_DEALS*100).toFixed(4)+'%' : rankTotals[k];
-        return td(v, false, '#333', '#f0f4ff');
-      }).join('')}
-      ${td(isPct ? '100.0000%' : TOTAL_DEALS, true, '#004080', '#f0f4ff')}
-    </tr>`;
+    // Total Wins footer — each col = sum across all hands (tie-inclusive)
     const totRow = `<tr style="background:#e8edff;">
-      ${td('Totals', true, '#000', '#e8edff')}
+      ${td('Total Wins', true, '#000', '#e8edff')}
       ${RANK_COLS.map(k=>{
-        const v = isPct ? (rankTotals[k]/TOTAL_DEALS*100).toFixed(4)+'%' : rankTotals[k];
+        const colWins = HAND_LABELS.reduce((s,_,i)=>s+(data[i][k]||0),0);
+        const v = isPct ? (colWins/totalWins*100).toFixed(4)+'%' : colWins.toLocaleString();
         return td(v, true, '#004080', '#e8edff');
       }).join('')}
-      ${td(isPct ? '100.0000%' : TOTAL_DEALS, true, '#004080', '#e8edff')}
+      ${td(isPct ? '100.0000%' : totalWins.toLocaleString(), true, '#004080', '#e8edff')}
     </tr>`;
     return `<h3 style="color:#1a3a7c;margin-top:20px;">${title}</h3>
     <table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;">
-      <thead><tr>${th('Hand')}${RANK_COLS.map(k=>th(k)).join('')}${th('Totals')}</tr></thead>
-      <tbody>${rows}${allRow}${totRow}</tbody>
+      <thead><tr>${th('Hand')}${RANK_COLS.map(k=>th(k)).join('')}${th('Total Wins')}</tr></thead>
+      <tbody>${rows}${totRow}</tbody>
     </table>`;
   };
 
