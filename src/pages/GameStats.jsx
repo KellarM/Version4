@@ -229,16 +229,19 @@ function CardedHandWinnersTable({ title, handRankMatrix, handWinCount, rankTotal
                   </tr>
                 );
               })}
-              {/* All Hands row — col totals are per-deal rankTotals, grand total = TOTAL_DEALS */}
+              {/* Total Wins row — each rank col = sum of that rank across all hands (ties included), grand = totalWins */}
               <tr className="border-b border-slate-600 bg-slate-700/30">
-                <td className="px-3 py-1.5 font-bold text-yellow-300">All Hands</td>
-                {RANK_COLS.map(k=>(
-                  <td key={k} className="px-3 py-1.5 text-right text-gray-200">
-                    {isPct ? ((rankTotals[k]||0)/TOTAL_DEALS*100).toFixed(4)+'%' : (rankTotals[k]||0)}
-                  </td>
-                ))}
+                <td className="px-3 py-1.5 font-bold text-yellow-300">Total Wins</td>
+                {RANK_COLS.map(k=>{
+                  const colWins = HAND_LABELS.reduce((s,_,i)=>s+(handRankMatrix[i][k]||0),0);
+                  return (
+                    <td key={k} className="px-3 py-1.5 text-right text-gray-200">
+                      {isPct ? (colWins/totalWins*100).toFixed(4)+'%' : colWins}
+                    </td>
+                  );
+                })}
                 <td className="px-3 py-1.5 text-right font-bold text-yellow-300">
-                  {isPct ? '100.0000%' : rankColTotal.toLocaleString()}
+                  {isPct ? '100.0000%' : totalWins.toLocaleString()}
                 </td>
               </tr>
             </tbody>
