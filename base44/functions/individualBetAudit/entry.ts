@@ -53,10 +53,11 @@ Deno.serve(async (req) => {
     ];
 
     const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
+    // Progressive odds use jackpot multipliers (seed / min_bet) for simulation/RTP calculation
     const RANK_PAYOUTS_MAP = {
-      'Royal Flush':null,'Straight Flush':null,'Four of a Kind':12.43,
+      'Royal Flush':7222.93,'Straight Flush':255.42,'Four of a Kind':12.43,
       'Full House':2.53,'Flush':3.10,'Straight':5.02,
-      'Three of a Kind':3.95,'Two Pair':16.76,'One Pair':null,
+      'Three of a Kind':3.95,'Two Pair':16.76,'One Pair':158.34,
     };
     const COLOR_PAYOUTS = {'3R':0.93,'3B':0.93,'4R':4.81,'4B':4.81,'5R':43.36,'5B':43.46};
     const LH_PAYOUT = 0.93;
@@ -183,7 +184,7 @@ Deno.serve(async (req) => {
         if (bestRank === targetRankIdx) {
           wins++;
           const payout = RANK_PAYOUTS_MAP[betKey];
-          if (payout !== null) totalPaid += BET * (1 + payout);
+          totalPaid += BET * (1 + payout);
         }
 
       } else if (betType === 'color') {
@@ -233,9 +234,9 @@ Deno.serve(async (req) => {
       rtp: (rtp*100).toFixed(4),
       fairOdds, for95, for965, for98,
       currentPayout,
-      currentRTP: currentPayout!==null && winFrequency>0
+      currentRTP: winFrequency>0
         ? (winFrequency*(1+currentPayout)*100).toFixed(2) : null,
-      progressive: betType==='rank' && RANK_PAYOUTS_MAP[betKey]===null,
+      progressive: false,
     });
 
   } catch (error) {
