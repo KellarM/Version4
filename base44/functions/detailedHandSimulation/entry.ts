@@ -10,16 +10,16 @@ Deno.serve(async (req) => {
 
     const SUITS_MAP = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
     const FIXED_HANDS = [
-      { id: 1,  payout: 8.10,  label: 'A♦/10♥', cards: [{ rank: 'A',  suit: 'diamonds' }, { rank: '10', suit: 'hearts'   }] },
-      { id: 2,  payout: 6.75,  label: 'K♣/K♠',  cards: [{ rank: 'K',  suit: 'clubs'    }, { rank: 'K',  suit: 'spades'   }] },
-      { id: 3,  payout: 8.52,  label: 'Q♣/J♠',  cards: [{ rank: 'Q',  suit: 'clubs'    }, { rank: 'J',  suit: 'spades'   }] },
-      { id: 4,  payout: 7.90,  label: 'Q♠/10♠', cards: [{ rank: 'Q',  suit: 'spades'   }, { rank: '10', suit: 'spades'   }] },
-      { id: 5,  payout: 8.31,  label: 'J♣/9♣',  cards: [{ rank: 'J',  suit: 'clubs'    }, { rank: '9',  suit: 'clubs'    }] },
-      { id: 6,  payout: 10.18, label: '8♦/6♦',  cards: [{ rank: '8',  suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }] },
-      { id: 7,  payout: 7.48,  label: '7♦/7♠',  cards: [{ rank: '7',  suit: 'diamonds' }, { rank: '7',  suit: 'spades'   }] },
-      { id: 8,  payout: 11.95, label: '4♥/2♥',  cards: [{ rank: '4',  suit: 'hearts'   }, { rank: '2',  suit: 'hearts'   }] },
-      { id: 9,  payout: 7.27,  label: '3♣/3♥',  cards: [{ rank: '3',  suit: 'clubs'    }, { rank: '3',  suit: 'hearts'   }] },
-      { id: 10, payout: 9.77,  label: 'A♥/5♦',  cards: [{ rank: 'A',  suit: 'hearts'   }, { rank: '5',  suit: 'diamonds' }] },
+      { id: 1,  payout: 14.51, label: 'A♦/10♥', cards: [{ rank: 'A',  suit: 'diamonds' }, { rank: '10', suit: 'hearts'   }] },
+      { id: 2,  payout: 4.21,  label: 'K♣/K♠',  cards: [{ rank: 'K',  suit: 'clubs'    }, { rank: 'K',  suit: 'spades'   }] },
+      { id: 3,  payout: 10.98, label: 'Q♣/J♠',  cards: [{ rank: 'Q',  suit: 'clubs'    }, { rank: 'J',  suit: 'spades'   }] },
+      { id: 4,  payout: 6.75,  label: 'Q♠/10♠', cards: [{ rank: 'Q',  suit: 'spades'   }, { rank: '10', suit: 'spades'   }] },
+      { id: 5,  payout: 5.63,  label: 'J♣/9♣',  cards: [{ rank: 'J',  suit: 'clubs'    }, { rank: '9',  suit: 'clubs'    }] },
+      { id: 6,  payout: 4.48,  label: '8♦/6♦',  cards: [{ rank: '8',  suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }] },
+      { id: 7,  payout: 4.04,  label: '7♦/7♠',  cards: [{ rank: '7',  suit: 'diamonds' }, { rank: '7',  suit: 'spades'   }] },
+      { id: 8,  payout: 4.69,  label: '4♥/2♥',  cards: [{ rank: '4',  suit: 'hearts'   }, { rank: '2',  suit: 'hearts'   }] },
+      { id: 9,  payout: 4.11,  label: '3♣/3♥',  cards: [{ rank: '3',  suit: 'clubs'    }, { rank: '3',  suit: 'hearts'   }] },
+      { id: 10, payout: 9.30,  label: 'A♥/5♦',  cards: [{ rank: 'A',  suit: 'hearts'   }, { rank: '5',  suit: 'diamonds' }] },
     ];
 
     // Hand label -> id mapping
@@ -28,16 +28,16 @@ Deno.serve(async (req) => {
 
     const RANK_PAYOUT_MAP = {
       'Royal Flush': null, 'Straight Flush': null,
-      'Four of a Kind': 12.77, 'Full House': 2.53, 'Flush': 3.21,
-      'Straight': 4.93, 'Three of a Kind': 3.81, 'Two Pair': 15.98, 'One Pair': null,
+      'Four of a Kind': 12.43, 'Full House': 2.53, 'Flush': 3.10,
+      'Straight': 4.58, 'Three of a Kind': 3.95, 'Two Pair': 16.76, 'One Pair': null,
     };
     const RANK_FREQS = {
       'Royal Flush': 0.000154, 'Straight Flush': 0.00139, 'Four of a Kind': 0.00168,
       'Full House': 0.02596, 'Flush': 0.00327, 'Straight': 0.04619,
       'Three of a Kind': 0.02113, 'Two Pair': 0.04754, 'One Pair': 0.42257,
     };
-    const COLOR_PAYOUTS = { '3R': 0.81, '3B': 0.81, '4R': 5.25, '4B': 5.25, '5R': 20.56, '5B': 20.56 };
-    const LH_PAYOUT = 0.95;
+    const COLOR_PAYOUTS = { '3R': 0.93, '3B': 0.93, '4R': 4.81, '4B': 4.81, '5R': 43.36, '5B': 43.46 };
+    const LH_PAYOUT = 0.93;
 
     const RANK_KEYS = Object.keys(RANK_FREQS);
     const RANK_CUM = [];

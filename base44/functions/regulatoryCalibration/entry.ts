@@ -10,16 +10,16 @@ Deno.serve(async (req) => {
     const GAMES_PER_STRATEGY = Math.min(body.gamesPerStrategy || 500_000, 1_000_000);
 
     // Payout tables
-    const HAND_PAYOUTS = [8.10, 6.75, 8.52, 7.90, 8.31, 10.18, 7.48, 11.95, 7.27, 9.77];
+    const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
     const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush','Royal Flush'];
     const RANK_FREQS = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139, 0.000154];
-    const RANK_PAYOUTS_ARR = [null, 15.98, 3.81, 4.93, 3.21, 2.53, 12.77, null, null]; // null = progressive
+    const RANK_PAYOUTS_ARR = [null, 16.76, 3.95, 4.58, 3.10, 2.53, 12.43, null, null]; // null = progressive
     const RANK_CUM = [];
     let _rc = 0;
     for (const f of RANK_FREQS) { _rc += f; RANK_CUM.push(_rc); }
     const RED_CUM = [0.03125, 0.18750, 0.50000, 0.81250, 0.96875, 1.00000];
-    const COLOR_PAYOUTS_MAP = { '3R': 0.81, '3B': 0.81, '4R': 5.25, '4B': 5.25, '5R': 20.56, '5B': 20.56 };
-    const LH_PAYOUT = 0.95;
+    const COLOR_PAYOUTS_MAP = { '3R': 0.93, '3B': 0.93, '4R': 4.81, '4B': 4.81, '5R': 43.36, '5B': 43.46 };
+    const LH_PAYOUT = 0.93;
 
     function rollRank() {
       const r = Math.random();

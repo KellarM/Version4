@@ -129,16 +129,16 @@ Deno.serve(async (req) => {
     }
 
     const FIXED_HANDS = [
-      { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: 18  },
-      { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: 4   },
-      { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },    { rank: 'J',  suit: 'spades' }],   payout: 15  },
-      { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },   { rank: '10', suit: 'spades' }],   payout: 8   },
-      { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },    { rank: '9',  suit: 'clubs'  }],   payout: 6   },
-      { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }], payout: 5   },
-      { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7',  suit: 'spades' }],   payout: 6   },
-      { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: 7   },
-      { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: 8   },
-      { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: 15  },
+      { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: 14.51 },
+      { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: 4.21  },
+      { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },    { rank: 'J',  suit: 'spades' }],   payout: 10.98 },
+      { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },   { rank: '10', suit: 'spades' }],   payout: 6.75  },
+      { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },    { rank: '9',  suit: 'clubs'  }],   payout: 5.63  },
+      { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }], payout: 4.48  },
+      { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7',  suit: 'spades' }],   payout: 4.04  },
+      { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: 4.69  },
+      { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: 4.11  },
+      { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: 9.30  },
     ];
 
     const DEALER_DECK = [
@@ -177,21 +177,21 @@ Deno.serve(async (req) => {
 
     // Rank payouts — calibrated from 10M real engine run (32-card deck empirical frequencies)
     const RANK_PAYOUTS = {
-      'One Pair':        1.28,  // 42.26% freq → fair 1.28x
-      'Two Pair':        19.0,  // 4.75% freq  → fair 19.32x
-      'Three of a Kind': 44.0,  // 2.11% freq  → fair 44.74x
-      'Straight':        19.5,  // 4.62% freq  → fair 19.90x
-      'Flush':           null,  // Progressive (0.33% → ~291x, jackpot territory)
-      'Full House':      35.0,  // 2.60% freq  → fair 36.12x
-      'Four of a Kind':  null,  // Progressive (0.17% → ~567x, jackpot territory)
-      'Straight Flush':  null,  // Progressive jackpot
-      'Royal Flush':     null,  // Progressive jackpot
+      'One Pair':        null,   // Progressive jackpot
+      'Two Pair':        16.76,
+      'Three of a Kind': 3.95,
+      'Straight':        4.58,
+      'Flush':           3.10,
+      'Full House':      2.53,
+      'Four of a Kind':  12.43,
+      'Straight Flush':  null,   // Progressive jackpot
+      'Royal Flush':     null,   // Progressive jackpot
     };
 
     const COLOR_PAYOUTS = {
-      '3R': 0.90, '3B': 0.90,
-      '4R': 4.75, '4B': 4.75,
-      '5R': 45.0, '5B': 45.0,
+      '3R': 0.93, '3B': 0.93,
+      '4R': 4.81, '4B': 4.81,
+      '5R': 43.36, '5B': 43.46,
     };
 
     const RED_COUNT_PROBS = [0.03125, 0.15625, 0.3125, 0.3125, 0.15625, 0.03125];
@@ -705,7 +705,7 @@ Deno.serve(async (req) => {
       // River Hedge bet — resolves as LOW/HIGH on river card
       const winningLowHigh = riverIsLow ? 'LOW' : 'HIGH';
 
-      const LOW_HIGH_PAYOUT_RATE = 0.95; // calibrated from 10M run
+      const LOW_HIGH_PAYOUT_RATE = 0.93;
       if (bets.riverHedge > 0) {
         const hedgeWon = riverIsLow; // hedge bets LOW by convention
         const hedgeAmount = bets.riverHedge;

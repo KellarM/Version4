@@ -41,13 +41,13 @@ Deno.serve(async (req) => {
       [{r:'A',s:'hearts'},  {r:'5', s:'diamonds'}],
     ].map(h => h.map(c => encodeCard(RANK_NAMES_ARR.indexOf(c.r), ['spades','hearts','diamonds','clubs'].indexOf(c.s))));
 
-    const CURRENT_HAND_PAYOUTS = [8.10,6.75,8.52,7.90,8.31,10.18,7.48,11.95,7.27,9.77];
+    const CURRENT_HAND_PAYOUTS = [14.51,4.21,10.98,6.75,5.63,4.48,4.04,4.69,4.11,9.30];
     const CURRENT_RANK_PAYOUTS_MAP = {
-      'One Pair':5.87,'Two Pair':4.83,'Three of a Kind':0.98,
-      'Straight':1.90,'Flush':1.30,'Full House':0.98,
-      'Four of a Kind':3.79,'Straight Flush':null,'Royal Flush':null
+      'One Pair':null,'Two Pair':16.76,'Three of a Kind':3.95,
+      'Straight':4.58,'Flush':3.10,'Full House':2.53,
+      'Four of a Kind':12.43,'Straight Flush':null,'Royal Flush':null
     };
-    const COLOR_PAYOUTS_MAP = {'3R':0.78,'4R':5.04,'5R':19.74,'3B':0.78,'4B':5.04,'5B':19.74};
+    const COLOR_PAYOUTS_MAP = {'3R':0.93,'4R':4.81,'5R':43.36,'3B':0.93,'4B':4.81,'5B':43.46};
 
     const RANK_LABEL = ['High Card','One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush','Royal Flush'];
 
@@ -200,8 +200,8 @@ Deno.serve(async (req) => {
       rankFrequencies: rankResults,
       colorFrequencies: colorResults,
       riverFrequencies: {
-        LOW:  { frequency:(rLow*100).toFixed(4)+'%',  currentPayout:0.83, impliedRTP:((rLow*1.83)*100).toFixed(2)+'%',  fairPayoutAt965:((TARGET/rLow)-1).toFixed(4) },
-        HIGH: { frequency:(rHigh*100).toFixed(4)+'%', currentPayout:0.83, impliedRTP:((rHigh*1.83)*100).toFixed(2)+'%', fairPayoutAt965:((TARGET/rHigh)-1).toFixed(4) },
+        LOW:  { frequency:(rLow*100).toFixed(4)+'%',  currentPayout:0.93, impliedRTP:((rLow*1.93)*100).toFixed(2)+'%',  fairPayoutAt965:((TARGET/rLow)-1).toFixed(4) },
+        HIGH: { frequency:(rHigh*100).toFixed(4)+'%', currentPayout:0.93, impliedRTP:((rHigh*1.93)*100).toFixed(2)+'%', fairPayoutAt965:((TARGET/rHigh)-1).toFixed(4) },
       },
     });
 
