@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { Play, RefreshCw, Trash2 } from 'lucide-react';
+import { Play, RefreshCw, Trash2, FileDown } from 'lucide-react';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
+import { jsPDF } from 'jspdf';
 
 const STORAGE_KEY = 'individualBetAudit_results';
 const PROGRESS_KEY = 'individualBetAudit_progress';
@@ -106,6 +107,109 @@ export default function IndividualBetAudit() {
     localStorage.removeItem(PROGRESS_KEY);
   };
 
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const now = new Date().toLocaleString();
+
+    // Header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageW, 20, 'F');
+    doc.setTextColor(250, 204, 21);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Rapid Fire Texas 10 — Individual Bet Audit Report', 10, 13);
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Generated: ${now}  |  ${progress * 2_000_000 >= 2_000_000 ? progress + ' bets × 2,000,000 games each' : progress + ' bets completed'}`, pageW - 10, 13, { align: 'right' });
+
+    let y = 28;
+    const colX =  [10, 72, 102, 122, 145, 165, 185, 210, 235];
+    const headers = ['Bet', 'Win %', 'Actual RTP', 'Current Odds', 'Fair (1:1)', 'For 95%', 'For 96.5%', 'For 98%', 'Status'];
+
+    GROUPS.forEach(group => {
+      const defs = BET_DEFINITIONS.filter(d => d.group === group);
+      const hasAny = defs.some(d => results[`${d.betType}:${d.betKey}`]);
+      if (!hasAny) return;
+
+      // Check page space
+      if (y > 175) { doc.addPage(); y = 15; }
+
+      // Group header
+      doc.setFillColor(30, 41, 59);
+      doc.rect(10, y - 4, pageW - 20, 7, 'F');
+      doc.setTextColor(150, 200, 255);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(group, 12, y);
+      y += 6;
+
+      // Column headers
+      doc.setFillColor(51, 65, 85);
+      doc.rect(10, y - 4, pageW - 20, 6, 'F');
+      doc.setTextColor(200, 200, 200);
+      doc.setFontSize(7);
+      headers.forEach((h, i) => doc.text(h, colX[i], y));
+      y += 5;
+
+      // Rows
+      defs.forEach((def, idx) => {
+        const key = `${def.betType}:${def.betKey}`;
+        const r = results[key];
+        if (!r) return;
+
+        if (y > 185) { doc.addPage(); y = 15; }
+
+        // Alternating row bg
+        if (idx % 2 === 0) {
+          doc.setFillColor(20, 30, 48);
+          doc.rect(10, y - 4, pageW - 20, 6, 'F');
+        }
+
+        const rtp = parseFloat(r.rtp);
+        const rtpOk = rtp >= 95 && rtp <= 98;
+
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(220, 220, 220);
+        doc.text(def.label, colX[0], y);
+        doc.text(r.winFrequency + '%', colX[1], y);
+
+        // RTP coloured
+        doc.setTextColor(rtpOk ? 74 : rtp > 98 ? 251 : 248, rtpOk ? 222 : rtp > 98 ? 146 : 113, rtpOk ? 128 : rtp > 98 ? 60 : 113);
+        doc.text(r.rtp + '%', colX[2], y);
+
+        doc.setTextColor(200, 200, 200);
+        doc.text(r.progressive ? 'Progressive' : r.currentPayout + ':1', colX[3], y);
+        doc.text(r.fairOdds !== null ? r.fairOdds + ':1' : '—', colX[4], y);
+
+        doc.setTextColor(r.progressive ? 200 : 150, r.progressive ? 180 : 220, r.progressive ? 100 : 150);
+        doc.text(r.progressive ? 'Jackpot' : (r.for95 + ':1'), colX[5], y);
+        doc.setTextColor(250, 204, 21);
+        doc.text(r.progressive ? 'Jackpot' : (r.for965 + ':1'), colX[6], y);
+        doc.setTextColor(100, 180, 250);
+        doc.text(r.progressive ? 'Jackpot' : (r.for98 + ':1'), colX[7], y);
+
+        doc.setTextColor(rtpOk ? 74 : 248, rtpOk ? 222 : 113, rtpOk ? 128 : 113);
+        doc.text(rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW', colX[8], y);
+
+        y += 6;
+      });
+      y += 4;
+    });
+
+    // Footer
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Rapid Fire Texas 10 — Confidential Gaming Audit  |  Page ${i} of ${totalPages}`, pageW / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
+    }
+
+    doc.save(`RapidFire_BetAudit_${new Date().toISOString().slice(0,10)}.pdf`);
+  };
+
   const runAudit = async () => {
     setRunning(true);
     setResults({});
@@ -205,12 +309,20 @@ export default function IndividualBetAudit() {
             </button>
           )}
           {!running && Object.keys(results).length > 0 && (
-            <button
-              onClick={clearResults}
-              className="flex items-center gap-1.5 text-gray-500 border border-slate-600 px-3 py-2 rounded-lg text-sm hover:text-red-400 hover:border-red-700 transition-all"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Clear Results
-            </button>
+            <>
+              <button
+                onClick={exportPDF}
+                className="flex items-center gap-1.5 text-blue-300 border border-blue-700 px-4 py-2 rounded-lg text-sm hover:bg-blue-900/30 transition-all font-semibold"
+              >
+                <FileDown className="w-3.5 h-3.5" /> Export PDF
+              </button>
+              <button
+                onClick={clearResults}
+                className="flex items-center gap-1.5 text-gray-500 border border-slate-600 px-3 py-2 rounded-lg text-sm hover:text-red-400 hover:border-red-700 transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Clear Results
+              </button>
+            </>
           )}
         </div>
 
