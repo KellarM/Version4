@@ -1,17 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { Play, RefreshCw, Trash2, FileDown } from 'lucide-react';
+import { Play, RefreshCw, Trash2, FileDown, SkipForward } from 'lucide-react';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 import { jsPDF } from 'jspdf';
 
 const STORAGE_KEY = 'individualBetAudit_results';
 const PROGRESS_KEY = 'individualBetAudit_progress';
+const BATCHES_PER_BET_DEFAULT = 40; // 40 × 50K = 2M per bet
 
-const BATCHES_PER_BET = 40; // 40 × 50K = 2M per bet
+// Sample size options: label, total games per bet, batches of 50K each
+const SAMPLE_SIZES = [
+  { label: '2M (Full)', gamesPerBet: 2_000_000, batches: 40 },
+  { label: '1M',        gamesPerBet: 1_000_000, batches: 20 },
+  { label: '500K',      gamesPerBet:   500_000, batches: 10 },
+  { label: '100K',      gamesPerBet:   100_000, batches:  2 },
+];
 
 const BET_DEFINITIONS = [
-  // Carded Hands — sourced from payoutConstants (single source of truth)
   { betType: 'hand', betKey: '1',  label: 'Hand 1 — A♦/10♥',  group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[0] },
   { betType: 'hand', betKey: '2',  label: 'Hand 2 — K♣/K♠',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[1] },
   { betType: 'hand', betKey: '3',  label: 'Hand 3 — Q♣/J♠',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[2] },
@@ -22,7 +28,6 @@ const BET_DEFINITIONS = [
   { betType: 'hand', betKey: '8',  label: 'Hand 8 — 4♥/2♥',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[7] },
   { betType: 'hand', betKey: '9',  label: 'Hand 9 — 3♣/3♥',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[8] },
   { betType: 'hand', betKey: '10', label: 'Hand 10 — A♥/5♦',  group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[9] },
-  // Hand Ranks
   { betType: 'rank', betKey: 'One Pair',        label: 'One Pair',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['One Pair'],        progressive: true },
   { betType: 'rank', betKey: 'Two Pair',         label: 'Two Pair',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Two Pair'] },
   { betType: 'rank', betKey: 'Three of a Kind',  label: 'Three of a Kind', group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Three of a Kind'] },
@@ -32,14 +37,12 @@ const BET_DEFINITIONS = [
   { betType: 'rank', betKey: 'Four of a Kind',   label: 'Four of a Kind',  group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Four of a Kind'] },
   { betType: 'rank', betKey: 'Straight Flush',   label: 'Straight Flush',  group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Straight Flush'],  progressive: true },
   { betType: 'rank', betKey: 'Royal Flush',      label: 'Royal Flush',     group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Royal Flush'],      progressive: true },
-  // Color Board
-  { betType: 'color', betKey: '3R', label: '3 Red',   group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3R'] },
+  { betType: 'color', betKey: '3R', label: '3 Red',    group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3R'] },
   { betType: 'color', betKey: '3B', label: '3 Black',  group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3B'] },
-  { betType: 'color', betKey: '4R', label: '4 Red',   group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['4R'] },
+  { betType: 'color', betKey: '4R', label: '4 Red',    group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['4R'] },
   { betType: 'color', betKey: '4B', label: '4 Black',  group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['4B'] },
-  { betType: 'color', betKey: '5R', label: '5 Red',   group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['5R'] },
+  { betType: 'color', betKey: '5R', label: '5 Red',    group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['5R'] },
   { betType: 'color', betKey: '5B', label: '5 Black',  group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['5B'] },
-  // Low / High
   { betType: 'lh', betKey: 'LOW',  label: 'River — LOW',  group: 'Low / High', currentPayout: LOW_HIGH_PAYOUT },
   { betType: 'lh', betKey: 'HIGH', label: 'River — HIGH', group: 'Low / High', currentPayout: LOW_HIGH_PAYOUT },
 ];
@@ -81,6 +84,7 @@ function OddsCell({ odds, current }) {
 
 export default function IndividualBetAudit() {
   const [running, setRunning] = useState(false);
+  const [selectedSize, setSelectedSize] = useState(SAMPLE_SIZES[0]);
   const [results, setResults] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
   });
@@ -90,7 +94,6 @@ export default function IndividualBetAudit() {
   const [currentBet, setCurrentBet] = useState('');
   const abortRef = useRef(false);
 
-  // Persist results & progress whenever they change
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(results)); } catch {}
   }, [results]);
@@ -107,127 +110,23 @@ export default function IndividualBetAudit() {
     localStorage.removeItem(PROGRESS_KEY);
   };
 
-  const exportPDF = () => {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const pageW = doc.internal.pageSize.getWidth();
-    const now = new Date().toLocaleString();
-
-    // Header
-    doc.setFillColor(15, 23, 42);
-    doc.rect(0, 0, pageW, 20, 'F');
-    doc.setTextColor(250, 204, 21);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Rapid Fire Texas 10 — Individual Bet Audit Report', 10, 13);
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text(`Generated: ${now}  |  ${progress * 2_000_000 >= 2_000_000 ? progress + ' bets × 2,000,000 games each' : progress + ' bets completed'}`, pageW - 10, 13, { align: 'right' });
-
-    let y = 28;
-    const colX =  [10, 72, 102, 122, 145, 165, 185, 210, 235];
-    const headers = ['Bet', 'Win %', 'Actual RTP', 'Current Odds', 'Fair (1:1)', 'For 95%', 'For 96.5%', 'For 98%', 'Status'];
-
-    GROUPS.forEach(group => {
-      const defs = BET_DEFINITIONS.filter(d => d.group === group);
-      const hasAny = defs.some(d => results[`${d.betType}:${d.betKey}`]);
-      if (!hasAny) return;
-
-      // Check page space
-      if (y > 175) { doc.addPage(); y = 15; }
-
-      // Group header
-      doc.setFillColor(30, 41, 59);
-      doc.rect(10, y - 4, pageW - 20, 7, 'F');
-      doc.setTextColor(150, 200, 255);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text(group, 12, y);
-      y += 6;
-
-      // Column headers
-      doc.setFillColor(51, 65, 85);
-      doc.rect(10, y - 4, pageW - 20, 6, 'F');
-      doc.setTextColor(200, 200, 200);
-      doc.setFontSize(7);
-      headers.forEach((h, i) => doc.text(h, colX[i], y));
-      y += 5;
-
-      // Rows
-      defs.forEach((def, idx) => {
-        const key = `${def.betType}:${def.betKey}`;
-        const r = results[key];
-        if (!r) return;
-
-        if (y > 185) { doc.addPage(); y = 15; }
-
-        // Alternating row bg
-        if (idx % 2 === 0) {
-          doc.setFillColor(20, 30, 48);
-          doc.rect(10, y - 4, pageW - 20, 6, 'F');
-        }
-
-        const rtp = parseFloat(r.rtp);
-        const rtpOk = rtp >= 95 && rtp <= 98;
-
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(220, 220, 220);
-        doc.text(def.label, colX[0], y);
-        doc.text(r.winFrequency + '%', colX[1], y);
-
-        // RTP coloured
-        doc.setTextColor(rtpOk ? 74 : rtp > 98 ? 251 : 248, rtpOk ? 222 : rtp > 98 ? 146 : 113, rtpOk ? 128 : rtp > 98 ? 60 : 113);
-        doc.text(r.rtp + '%', colX[2], y);
-
-        doc.setTextColor(200, 200, 200);
-        doc.text(r.progressive ? 'Progressive' : r.currentPayout + ':1', colX[3], y);
-        doc.text(r.fairOdds !== null ? r.fairOdds + ':1' : '—', colX[4], y);
-
-        doc.setTextColor(r.progressive ? 200 : 150, r.progressive ? 180 : 220, r.progressive ? 100 : 150);
-        doc.text(r.progressive ? 'Jackpot' : (r.for95 + ':1'), colX[5], y);
-        doc.setTextColor(250, 204, 21);
-        doc.text(r.progressive ? 'Jackpot' : (r.for965 + ':1'), colX[6], y);
-        doc.setTextColor(100, 180, 250);
-        doc.text(r.progressive ? 'Jackpot' : (r.for98 + ':1'), colX[7], y);
-
-        doc.setTextColor(rtpOk ? 74 : 248, rtpOk ? 222 : 113, rtpOk ? 128 : 113);
-        doc.text(rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW', colX[8], y);
-
-        y += 6;
-      });
-      y += 4;
-    });
-
-    // Footer
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(7);
-      doc.setTextColor(100, 116, 139);
-      doc.text(`Rapid Fire Texas 10 — Confidential Gaming Audit  |  Page ${i} of ${totalPages}`, pageW / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
-    }
-
-    doc.save(`RapidFire_BetAudit_${new Date().toISOString().slice(0,10)}.pdf`);
-  };
-
-  const runAudit = async () => {
+  // Core loop — starts from startIndex, uses batchesPerBet batches of 50K each
+  const runAuditFrom = async (startIndex, batchesPerBet, existingResults) => {
     setRunning(true);
-    setResults({});
-    setProgress(0);
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(PROGRESS_KEY);
     abortRef.current = false;
 
-    outer: for (let bi = 0; bi < BET_DEFINITIONS.length; bi++) {
+    let currentResults = { ...existingResults };
+
+    outer: for (let bi = startIndex; bi < BET_DEFINITIONS.length; bi++) {
       if (abortRef.current) break;
       const def = BET_DEFINITIONS[bi];
       setCurrentBet(def.label);
 
       let totalWins = 0;
       let totalPaid = 0;
-      const totalGames = BATCHES_PER_BET * 50_000;
+      const totalGames = batchesPerBet * 50_000;
 
-      for (let b = 0; b < BATCHES_PER_BET; b++) {
+      for (let b = 0; b < batchesPerBet; b++) {
         if (abortRef.current) break outer;
         try {
           const res = await base44.functions.invoke('individualBetAudit', {
@@ -266,6 +165,7 @@ export default function IndividualBetAudit() {
         currentPayout: def.currentPayout,
         progressive: def.progressive,
       };
+      currentResults = { ...currentResults, [key]: newResult };
       setResults(prev => {
         const updated = { ...prev, [key]: newResult };
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch {}
@@ -279,6 +179,117 @@ export default function IndividualBetAudit() {
     setCurrentBet('');
   };
 
+  // Full fresh run
+  const runAudit = (size) => {
+    setResults({});
+    setProgress(0);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PROGRESS_KEY);
+    runAuditFrom(0, size.batches, {});
+  };
+
+  // Continue from where we left off (uses same batch count as selected size)
+  const continueAudit = () => {
+    runAuditFrom(progress, selectedSize.batches, results);
+  };
+
+  const canContinue = !running && progress > 0 && progress < totalBets;
+
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const now = new Date().toLocaleString();
+
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageW, 20, 'F');
+    doc.setTextColor(250, 204, 21);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Rapid Fire Texas 10 — Individual Bet Audit Report', 10, 13);
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Generated: ${now}  |  ${progress} bets completed  |  ${selectedSize.gamesPerBet.toLocaleString()} games/bet`, pageW - 10, 13, { align: 'right' });
+
+    let y = 28;
+    const colX = [10, 72, 102, 122, 145, 165, 185, 210, 235];
+    const headers = ['Bet', 'Win %', 'Actual RTP', 'Current Odds', 'Fair (1:1)', 'For 95%', 'For 96.5%', 'For 98%', 'Status'];
+
+    GROUPS.forEach(group => {
+      const defs = BET_DEFINITIONS.filter(d => d.group === group);
+      const hasAny = defs.some(d => results[`${d.betType}:${d.betKey}`]);
+      if (!hasAny) return;
+
+      if (y > 175) { doc.addPage(); y = 15; }
+
+      doc.setFillColor(30, 41, 59);
+      doc.rect(10, y - 4, pageW - 20, 7, 'F');
+      doc.setTextColor(150, 200, 255);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(group, 12, y);
+      y += 6;
+
+      doc.setFillColor(51, 65, 85);
+      doc.rect(10, y - 4, pageW - 20, 6, 'F');
+      doc.setTextColor(200, 200, 200);
+      doc.setFontSize(7);
+      headers.forEach((h, i) => doc.text(h, colX[i], y));
+      y += 5;
+
+      defs.forEach((def, idx) => {
+        const key = `${def.betType}:${def.betKey}`;
+        const r = results[key];
+        if (!r) return;
+
+        if (y > 185) { doc.addPage(); y = 15; }
+
+        if (idx % 2 === 0) {
+          doc.setFillColor(20, 30, 48);
+          doc.rect(10, y - 4, pageW - 20, 6, 'F');
+        }
+
+        const rtp = parseFloat(r.rtp);
+        const rtpOk = rtp >= 95 && rtp <= 98;
+
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(220, 220, 220);
+        doc.text(def.label, colX[0], y);
+        doc.text(r.winFrequency + '%', colX[1], y);
+
+        doc.setTextColor(rtpOk ? 74 : rtp > 98 ? 251 : 248, rtpOk ? 222 : rtp > 98 ? 146 : 113, rtpOk ? 128 : rtp > 98 ? 60 : 113);
+        doc.text(r.rtp + '%', colX[2], y);
+
+        doc.setTextColor(200, 200, 200);
+        doc.text(r.progressive ? 'Progressive' : r.currentPayout + ':1', colX[3], y);
+        doc.text(r.fairOdds !== null ? r.fairOdds + ':1' : '—', colX[4], y);
+
+        doc.setTextColor(r.progressive ? 200 : 150, r.progressive ? 180 : 220, r.progressive ? 100 : 150);
+        doc.text(r.progressive ? 'Jackpot' : (r.for95 + ':1'), colX[5], y);
+        doc.setTextColor(250, 204, 21);
+        doc.text(r.progressive ? 'Jackpot' : (r.for965 + ':1'), colX[6], y);
+        doc.setTextColor(100, 180, 250);
+        doc.text(r.progressive ? 'Jackpot' : (r.for98 + ':1'), colX[7], y);
+
+        doc.setTextColor(rtpOk ? 74 : 248, rtpOk ? 222 : 113, rtpOk ? 128 : 113);
+        doc.text(rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW', colX[8], y);
+
+        y += 6;
+      });
+      y += 4;
+    });
+
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Rapid Fire Texas 10 — Confidential Gaming Audit  |  Page ${i} of ${totalPages}`, pageW / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
+    }
+
+    doc.save(`RapidFire_BetAudit_${new Date().toISOString().slice(0,10)}.pdf`);
+  };
+
   const pct = Math.round((progress / totalBets) * 100);
   const anyResults = Object.keys(results).length > 0;
 
@@ -286,20 +297,54 @@ export default function IndividualBetAudit() {
     <div className="space-y-5">
       {/* Controls */}
       <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
-        <h3 className="font-bold text-lg mb-1">Individual Bet Audit — 2M Games Per Bet</h3>
+        <h3 className="font-bold text-lg mb-1">Individual Bet Audit</h3>
         <p className="text-gray-400 text-sm mb-4">
-          Tests every betting option in complete isolation. Each bet runs 2,000,000 simulated games to measure true win frequency, 
-          then shows the mathematically correct odds needed to hit 95%, 96.5%, and 98% RTP.
+          Tests every betting option in isolation. Choose a sample size, then run a fresh audit or continue a paused one.
+          Results show win frequency, actual RTP, and the correct odds needed to hit 95%, 96.5%, and 98% RTP.
         </p>
-        <div className="flex gap-3 items-center">
+
+        {/* Sample size selector */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Games per bet:</span>
+          {SAMPLE_SIZES.map(s => (
+            <button
+              key={s.label}
+              onClick={() => setSelectedSize(s)}
+              disabled={running}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all
+                ${selectedSize.label === s.label
+                  ? 'border-yellow-400 bg-yellow-600 text-black'
+                  : 'border-slate-600 bg-slate-700/50 text-gray-300 hover:border-yellow-600 hover:text-yellow-300'}`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Run fresh */}
           <button
-            onClick={runAudit}
+            onClick={() => runAudit(selectedSize)}
             disabled={running}
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-gray-500 font-bold text-sm transition-all"
           >
             {running ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            {running ? 'Running...' : 'Run Full Audit (2M × 27 bets)'}
+            {running ? `Running... (${selectedSize.gamesPerBet.toLocaleString()}/bet)` : `Run Full Audit — ${selectedSize.label} per bet`}
           </button>
+
+          {/* Continue */}
+          {canContinue && (
+            <button
+              onClick={continueAudit}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-yellow-600 hover:bg-yellow-500 font-bold text-sm transition-all"
+            >
+              <SkipForward className="w-4 h-4" />
+              Continue ({progress}/{totalBets} done)
+            </button>
+          )}
+
+          {/* Abort */}
           {running && (
             <button
               onClick={() => { abortRef.current = true; }}
@@ -308,7 +353,9 @@ export default function IndividualBetAudit() {
               Abort
             </button>
           )}
-          {!running && Object.keys(results).length > 0 && (
+
+          {/* Export + Clear */}
+          {!running && anyResults && (
             <>
               <button
                 onClick={exportPDF}
@@ -326,12 +373,18 @@ export default function IndividualBetAudit() {
           )}
         </div>
 
-        {/* Progress */}
+        {/* Progress bar */}
         {(running || anyResults) && (
           <div className="mt-4">
             <div className="flex justify-between text-xs text-gray-400 mb-1">
-              <span>{running ? `Testing: ${currentBet}` : progress === totalBets ? '✓ Complete' : `⚡ Restored — ${progress}/${totalBets} bets recovered`}</span>
-              <span>{progress}/{totalBets} bets — {(progress * 2_000_000).toLocaleString()} total games</span>
+              <span>
+                {running
+                  ? `Testing: ${currentBet}`
+                  : progress === totalBets
+                    ? `✓ Complete — ${selectedSize.gamesPerBet.toLocaleString()} games/bet`
+                    : `⚡ Paused — ${progress}/${totalBets} bets done`}
+              </span>
+              <span>{progress}/{totalBets} bets — {(progress * selectedSize.gamesPerBet).toLocaleString()} total games</span>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
               <motion.div
@@ -359,7 +412,7 @@ export default function IndividualBetAudit() {
                     <thead>
                       <tr className="border-b border-slate-700 text-xs text-gray-400 uppercase bg-slate-900/40">
                         <th className="px-4 py-2 text-left">Bet</th>
-                        <th className="px-4 py-2 text-right">Wins (of 2M)</th>
+                        <th className="px-4 py-2 text-right">Wins</th>
                         <th className="px-4 py-2 text-right">Win %</th>
                         <th className="px-4 py-2 text-right">Actual RTP</th>
                         <th className="px-4 py-2 text-right">Current Odds</th>
@@ -389,7 +442,7 @@ export default function IndividualBetAudit() {
                             <td className="px-4 py-2 font-semibold text-white">{def.label}</td>
                             <td className="px-4 py-2 text-right text-white font-mono">
                               {r.wins.toLocaleString()}
-                              <span className="text-gray-500 text-xs ml-1">/ {(r.totalGames / 1_000_000).toFixed(0)}M</span>
+                              <span className="text-gray-500 text-xs ml-1">/ {(r.totalGames / 1_000).toFixed(0)}K</span>
                             </td>
                             <td className="px-4 py-2 text-right text-gray-300">{r.winFrequency}%</td>
                             <td className="px-4 py-2 text-right"><RTPCell rtp={r.rtp} /></td>
@@ -402,13 +455,13 @@ export default function IndividualBetAudit() {
                               {r.fairOdds !== null ? `${r.fairOdds}:1` : '—'}
                             </td>
                             <td className="px-4 py-2 text-right bg-green-900/10">
-                              {r.progressive ? <span className="text-yellow-400 text-xs">Jackpot</span> : <OddsCell odds={r.for95}  current={r.currentPayout} />}
+                              {r.progressive ? <span className="text-yellow-400 text-xs">Jackpot</span> : <OddsCell odds={r.for95} current={r.currentPayout} />}
                             </td>
                             <td className="px-4 py-2 text-right bg-yellow-900/10">
                               {r.progressive ? <span className="text-yellow-400 text-xs">Jackpot</span> : <OddsCell odds={r.for965} current={r.currentPayout} />}
                             </td>
                             <td className="px-4 py-2 text-right bg-blue-900/10">
-                              {r.progressive ? <span className="text-yellow-400 text-xs">Jackpot</span> : <OddsCell odds={r.for98}  current={r.currentPayout} />}
+                              {r.progressive ? <span className="text-yellow-400 text-xs">Jackpot</span> : <OddsCell odds={r.for98} current={r.currentPayout} />}
                             </td>
                           </motion.tr>
                         );
