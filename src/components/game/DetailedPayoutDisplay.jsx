@@ -49,10 +49,42 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
     if (nextIdx !== -1) {
       setCurrentPlayerIndex(nextIdx);
     } else {
-      // All winners shown, reset to allow closing
       setCurrentPlayerIndex(-1);
     }
   };
+
+  // No wins at all — show a "no win" dismissal card so the game can proceed
+  if (!hasAnyWins || (hasAnyWins && nextWinnerIdx === -1 && currentPlayerIndex !== -1)) {
+    if (!hasAnyWins) {
+      return (
+        <AnimatePresence>
+          {currentPlayerIndex !== -1 && (
+            <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center p-4">
+              <motion.div
+                key="no-win"
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="border-2 border-slate-500 rounded-2xl p-8 shadow-2xl min-w-[400px] backdrop-blur-sm pointer-events-auto relative bg-slate-900/90 text-center"
+              >
+                <motion.button
+                  onClick={() => setCurrentPlayerIndex(-1)}
+                  animate={{ scale: [1, 1.15, 1], opacity: [1, 0.6, 1] }}
+                  transition={{ duration: 0.6, repeat: Infinity }}
+                  className="absolute top-4 right-4 p-2 rounded-lg bg-yellow-400 border-2 border-yellow-300 shadow-lg shadow-yellow-400/60"
+                >
+                  <X className="w-7 h-7 text-black font-black" strokeWidth={3} />
+                </motion.button>
+                <div className="text-5xl mb-3">😔</div>
+                <div className="text-3xl font-black text-gray-300 mb-2">NO WIN</div>
+                <div className="text-gray-500 text-sm">Better luck next round!</div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      );
+    }
+  }
 
   return (
     <AnimatePresence>
