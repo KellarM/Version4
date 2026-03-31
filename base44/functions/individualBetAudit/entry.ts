@@ -88,17 +88,18 @@ Deno.serve(async (req) => {
 
       if (flush && straight) return (a===12&&e===8) ? 8 : 7;
 
-      // count ranks
-      let cnt=[0,0,0,0]; // count of pairs/trips/quads
+      // count rank groups
       let p=0,t=0,q=0,cur=a,run=1;
-      for (let i=1;i<=4;i++){
-        const v = i<4 ? tmp5r[i] : -99;
-        if (v===cur){run++;}
-        else{
+      for (let i=1;i<5;i++){
+        if (tmp5r[i]===cur){ run++; }
+        else {
           if(run===4)q++;else if(run===3)t++;else if(run===2)p++;
-          cur=v;run=1;
+          cur=tmp5r[i]; run=1;
         }
       }
+      // flush the last run
+      if(run===4)q++;else if(run===3)t++;else if(run===2)p++;
+
       if (q) return 6;
       if (t&&p) return 5;
       if (flush) return 4;

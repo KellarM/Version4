@@ -82,9 +82,34 @@ function OddsCell({ odds, current }) {
   );
 }
 
+// Selection options for the dropdown
+const SELECTION_OPTIONS = [
+  { value: 'all',          label: '— All 27 Bets —' },
+  { value: 'group:Carded Hands', label: 'Group: Carded Hands' },
+  { value: 'group:Hand Ranks',   label: 'Group: Hand Ranks' },
+  { value: 'group:Color Board',  label: 'Group: Color Board' },
+  { value: 'group:Low / High',   label: 'Group: Low / High' },
+  ...BET_DEFINITIONS.map(d => ({ value: `single:${d.betType}:${d.betKey}`, label: `  ${d.label}` })),
+];
+
+function getSelectedDefs(selectionValue) {
+  if (selectionValue === 'all') return BET_DEFINITIONS;
+  if (selectionValue.startsWith('group:')) {
+    const grp = selectionValue.replace('group:', '');
+    return BET_DEFINITIONS.filter(d => d.group === grp);
+  }
+  if (selectionValue.startsWith('single:')) {
+    const [, betType, ...rest] = selectionValue.split(':');
+    const betKey = rest.join(':');
+    return BET_DEFINITIONS.filter(d => d.betType === betType && d.betKey === betKey);
+  }
+  return BET_DEFINITIONS;
+}
+
 export default function IndividualBetAudit() {
   const [running, setRunning] = useState(false);
   const [selectedSize, setSelectedSize] = useState(SAMPLE_SIZES[0]);
+  const [selection, setSelection] = useState('all');
   const [results, setResults] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
   });
@@ -101,7 +126,8 @@ export default function IndividualBetAudit() {
     try { localStorage.setItem(PROGRESS_KEY, String(progress)); } catch {}
   }, [progress]);
 
-  const totalBets = BET_DEFINITIONS.length;
+  const activeDefs = getSelectedDefs(selection);
+  const totalBets = activeDefs.length;
 
   const clearResults = () => {
     setResults({});
@@ -111,15 +137,15 @@ export default function IndividualBetAudit() {
   };
 
   // Core loop — starts from startIndex, uses batchesPerBet batches of 50K each
-  const runAuditFrom = async (startIndex, batchesPerBet, existingResults) => {
+  const runAuditFrom = async (startIndex, batchesPerBet, existingResults, defs) => {
     setRunning(true);
     abortRef.current = false;
 
     let currentResults = { ...existingResults };
 
-    outer: for (let bi = startIndex; bi < BET_DEFINITIONS.length; bi++) {
+    outer: for (let bi = startIndex; bi < defs.length; bi++) {
       if (abortRef.current) break;
-      const def = BET_DEFINITIONS[bi];
+      const def = defs[bi];
       setCurrentBet(def.label);
 
       let totalWins = 0;
@@ -181,16 +207,17 @@ export default function IndividualBetAudit() {
 
   // Full fresh run
   const runAudit = (size) => {
+    const defs = getSelectedDefs(selection);
     setResults({});
     setProgress(0);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROGRESS_KEY);
-    runAuditFrom(0, size.batches, {});
+    runAuditFrom(0, size.batches, {}, defs);
   };
 
   // Continue from where we left off (uses same batch count as selected size)
   const continueAudit = () => {
-    runAuditFrom(progress, selectedSize.batches, results);
+    runAuditFrom(progress, selectedSize.batches, results, activeDefs);
   };
 
   const canContinue = !running && progress > 0 && progress < totalBets;
@@ -303,6 +330,26 @@ export default function IndividualBetAudit() {
           Results show win frequency, actual RTP, and the correct odds needed to hit 95%, 96.5%, and 98% RTP.
         </p>
 
+        {/* Bet selector */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider whitespace-nowrap">Test scope:</span>
+          <select
+            value={selection}
+            onChange={e => { setSelection(e.target.value); setProgress(0); setResults({}); localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(PROGRESS_KEY); }}
+            disabled={running}
+            className="bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 py-1.5 focus:border-yellow-500 outline-none min-w-[220px]"
+          >
+            {SELECTION_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          {selection !== 'all' && (
+            <span className="text-xs text-yellow-400 font-semibold">
+              {activeDefs.length} bet{activeDefs.length !== 1 ? 's' : ''} selected
+            </span>
+          )}
+        </div>
+
         {/* Sample size selector */}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Games per bet:</span>
@@ -384,7 +431,7 @@ export default function IndividualBetAudit() {
                     ? `✓ Complete — ${selectedSize.gamesPerBet.toLocaleString()} games/bet`
                     : `⚡ Paused — ${progress}/${totalBets} bets done`}
               </span>
-              <span>{progress}/{totalBets} bets — {(progress * selectedSize.gamesPerBet).toLocaleString()} total games</span>
+              <span>{progress}/{totalBets} bet{totalBets !== 1 ? 's' : ''} — {(progress * selectedSize.gamesPerBet).toLocaleString()} total games</span>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
               <motion.div
