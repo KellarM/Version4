@@ -226,7 +226,9 @@ export default function IndividualBetAudit() {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageW = doc.internal.pageSize.getWidth();
     const now = new Date().toLocaleString();
+    const ROW_H = 7;
 
+    // ── Header banner ────────────────────────────────────────────────
     doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, pageW, 20, 'F');
     doc.setTextColor(250, 204, 21);
@@ -234,12 +236,19 @@ export default function IndividualBetAudit() {
     doc.setFont('helvetica', 'bold');
     doc.text('Rapid Fire Texas 10 — Individual Bet Audit Report', 10, 13);
     doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
+    doc.setTextColor(200, 200, 200);
     doc.text(`Generated: ${now}  |  ${progress} bets completed  |  ${selectedSize.gamesPerBet.toLocaleString()} games/bet`, pageW - 10, 13, { align: 'right' });
 
     let y = 28;
-    const colX = [10, 72, 102, 122, 145, 165, 185, 210, 235];
-    const headers = ['Bet', 'Win %', 'Actual RTP', 'Current Odds', 'Fair (1:1)', 'For 95%', 'For 96.5%', 'For 98%', 'Status'];
+    // cols: Bet, Wins, Win%, RTP, Current, Fair, For95%, For96.5%, For98%, Status
+    const colX =    [10,  72,  98,  118,  138,  160,  180,  203,  226,  249];
+    const headers = ['Bet','Wins','Win %','Actual RTP','Curr Odds','Fair (1:1)','For 95%','For 96.5%','For 98%','Status'];
+
+    const drawBorder = (rowY) => {
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.2);
+      doc.rect(10, rowY - ROW_H + 1, pageW - 20, ROW_H, 'S');
+    };
 
     GROUPS.forEach(group => {
       const defs = BET_DEFINITIONS.filter(d => d.group === group);
@@ -248,69 +257,99 @@ export default function IndividualBetAudit() {
 
       if (y > 175) { doc.addPage(); y = 15; }
 
-      doc.setFillColor(30, 41, 59);
-      doc.rect(10, y - 4, pageW - 20, 7, 'F');
-      doc.setTextColor(150, 200, 255);
+      // Group heading row
+      doc.setFillColor(220, 230, 255);
+      doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'F');
+      doc.setDrawColor(100, 130, 200);
+      doc.setLineWidth(0.3);
+      doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'S');
+      doc.setTextColor(0, 0, 0);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.text(group, 12, y);
-      y += 6;
+      y += ROW_H;
 
-      doc.setFillColor(51, 65, 85);
-      doc.rect(10, y - 4, pageW - 20, 6, 'F');
-      doc.setTextColor(200, 200, 200);
+      // Column header row
+      doc.setFillColor(240, 240, 240);
+      doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'F');
+      doc.setDrawColor(150, 150, 150);
+      doc.setLineWidth(0.2);
+      doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'S');
+      doc.setTextColor(0, 0, 0);
       doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
       headers.forEach((h, i) => doc.text(h, colX[i], y));
-      y += 5;
+      y += ROW_H;
 
-      defs.forEach((def, idx) => {
+      defs.forEach((def) => {
         const key = `${def.betType}:${def.betKey}`;
         const r = results[key];
         if (!r) return;
 
         if (y > 185) { doc.addPage(); y = 15; }
 
-        if (idx % 2 === 0) {
-          doc.setFillColor(20, 30, 48);
-          doc.rect(10, y - 4, pageW - 20, 6, 'F');
-        }
-
         const rtp = parseFloat(r.rtp);
         const rtpOk = rtp >= 95 && rtp <= 98;
 
+        // White row background with border
+        doc.setFillColor(255, 255, 255);
+        doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'F');
+        drawBorder(y);
+
         doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(220, 220, 220);
+        doc.setFont('helvetica', 'bold');
+
+        // Bet label
+        doc.setTextColor(0, 0, 0);
         doc.text(def.label, colX[0], y);
-        doc.text(r.winFrequency + '%', colX[1], y);
 
-        doc.setTextColor(rtpOk ? 74 : rtp > 98 ? 251 : 248, rtpOk ? 222 : rtp > 98 ? 146 : 113, rtpOk ? 128 : rtp > 98 ? 60 : 113);
-        doc.text(r.rtp + '%', colX[2], y);
+        // Wins — bold black
+        doc.text(r.wins.toLocaleString(), colX[1], y);
 
-        doc.setTextColor(200, 200, 200);
-        doc.text(r.progressive ? 'Progressive' : r.currentPayout + ':1', colX[3], y);
-        doc.text(r.fairOdds !== null ? r.fairOdds + ':1' : '—', colX[4], y);
+        // Win %
+        doc.text(r.winFrequency + '%', colX[2], y);
 
-        doc.setTextColor(r.progressive ? 200 : 150, r.progressive ? 180 : 220, r.progressive ? 100 : 150);
-        doc.text(r.progressive ? 'Jackpot' : (r.for95 + ':1'), colX[5], y);
-        doc.setTextColor(250, 204, 21);
-        doc.text(r.progressive ? 'Jackpot' : (r.for965 + ':1'), colX[6], y);
-        doc.setTextColor(100, 180, 250);
-        doc.text(r.progressive ? 'Jackpot' : (r.for98 + ':1'), colX[7], y);
+        // Actual RTP — colour coded but bold
+        if (rtpOk) doc.setTextColor(0, 140, 60);
+        else if (rtp > 98) doc.setTextColor(200, 100, 0);
+        else doc.setTextColor(200, 0, 0);
+        doc.text(r.rtp + '%', colX[3], y);
 
-        doc.setTextColor(rtpOk ? 74 : 248, rtpOk ? 222 : 113, rtpOk ? 128 : 113);
-        doc.text(rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW', colX[8], y);
+        // Current Odds
+        doc.setTextColor(0, 0, 0);
+        doc.text(r.progressive ? 'Progressive' : r.currentPayout + ':1', colX[4], y);
 
-        y += 6;
+        // Fair odds
+        doc.text(r.fairOdds !== null ? r.fairOdds + ':1' : '—', colX[5], y);
+
+        // For 95%
+        doc.setTextColor(0, 120, 0);
+        doc.text(r.progressive ? 'Jackpot' : (r.for95 + ':1'), colX[6], y);
+
+        // For 96.5%
+        doc.setTextColor(160, 100, 0);
+        doc.text(r.progressive ? 'Jackpot' : (r.for965 + ':1'), colX[7], y);
+
+        // For 98%
+        doc.setTextColor(0, 80, 180);
+        doc.text(r.progressive ? 'Jackpot' : (r.for98 + ':1'), colX[8], y);
+
+        // Status
+        doc.setTextColor(rtpOk ? 0 : 180, rtpOk ? 140 : 0, rtpOk ? 60 : 0);
+        doc.text(rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW', colX[9], y);
+
+        y += ROW_H;
       });
       y += 4;
     });
 
+    // ── Page footers ─────────────────────────────────────────────────
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(7);
-      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
       doc.text(`Rapid Fire Texas 10 — Confidential Gaming Audit  |  Page ${i} of ${totalPages}`, pageW / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
     }
 
