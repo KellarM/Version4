@@ -16,6 +16,7 @@ import PayoutTable from '@/components/game/PayoutTable';
 import NewPlayerButton from '@/components/game/NewPlayerButton';
 import PlayerStatsPanel from '@/components/game/PlayerStatsPanel';
 import ToolsMenu from '@/components/game/ToolsMenu';
+import GameRulesModal from '@/components/game/GameRulesModal';
 import DetailedPayoutDisplay from '@/components/game/DetailedPayoutDisplay';
 import HandBetLimitAlert from '@/components/game/HandBetLimitAlert';
 import RankBetLimitAlert from '@/components/game/RankBetLimitAlert';
@@ -903,6 +904,7 @@ export default function RapidFireGame() {
               <div className="text-yellow-400/40 text-xs">{roundsPlayed} rounds</div>
             </div>
           )}
+          <GameRulesModal />
           <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} />
           <button
             onClick={handleResetGame}
