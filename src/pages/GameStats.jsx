@@ -189,15 +189,15 @@ function buildMatrixDoc(state) {
   URL.revokeObjectURL(url);
 }
 
-// ── Summary table component ───────────────────────────────────────────────
-function MatrixTable({ title, rowLabels, colLabels, data, totals, grandTotal, isPct, accent }) {
+// ── Table 1: Carded Hand Winners — rows=Hands, cols=Ranks, row totals=handWinCount (sums to totalWins) ──
+function CardedHandWinnersTable({ title, handRankMatrix, handWinCount, rankTotals, isPct, accent, totalWins }) {
   const [open, setOpen] = useState(true);
+  // col totals (All Hands row) = rankTotals (per-deal, sums to TOTAL_DEALS)
+  // row totals = handWinCount[i] (includes ties, sums to totalWins)
+  const rankColTotal = RANK_COLS.reduce((s,k)=>s+(rankTotals[k]||0),0); // = TOTAL_DEALS
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-xl overflow-hidden">
-      <button
-        onClick={()=>setOpen(o=>!o)}
-        className="w-full flex items-center justify-between px-5 py-3 border-b border-slate-700"
-      >
+      <button onClick={()=>setOpen(o=>!o)} className="w-full flex items-center justify-between px-5 py-3 border-b border-slate-700">
         <span className={`font-bold text-sm ${accent}`}>{title}</span>
         {open ? <ChevronUp className="w-4 h-4 text-gray-400"/> : <ChevronDown className="w-4 h-4 text-gray-400"/>}
       </button>
@@ -207,41 +207,155 @@ function MatrixTable({ title, rowLabels, colLabels, data, totals, grandTotal, is
             <thead>
               <tr className="bg-slate-900/60 text-gray-300 border-b border-slate-600">
                 <th className="px-3 py-2 text-left font-bold">Hand</th>
-                {colLabels.map(c=><th key={c} className="px-3 py-2 text-right font-bold">{c}</th>)}
+                {RANK_COLS.map(c=><th key={c} className="px-3 py-2 text-right font-bold">{c}</th>)}
+                <th className="px-3 py-2 text-right font-bold text-blue-300">Total Wins</th>
+              </tr>
+            </thead>
+            <tbody>
+              {HAND_LABELS.map((hand, i) => {
+                const m = handRankMatrix[i];
+                const rowWins = handWinCount[i];
+                return (
+                  <tr key={hand.id} className="border-b border-slate-700/40 hover:bg-slate-700/20">
+                    <td className="px-3 py-1.5 font-semibold text-white whitespace-nowrap">{hand.id}({hand.label})</td>
+                    {RANK_COLS.map(k=>(
+                      <td key={k} className="px-3 py-1.5 text-right text-gray-300">
+                        {isPct ? ((m[k]||0)/totalWins*100).toFixed(4)+'%' : (m[k]||0)}
+                      </td>
+                    ))}
+                    <td className="px-3 py-1.5 text-right font-bold text-blue-300">
+                      {isPct ? (rowWins/totalWins*100).toFixed(4)+'%' : rowWins.toLocaleString()}
+                    </td>
+                  </tr>
+                );
+              })}
+              {/* All Hands row — col totals are per-deal rankTotals, grand total = TOTAL_DEALS */}
+              <tr className="border-b border-slate-600 bg-slate-700/30">
+                <td className="px-3 py-1.5 font-bold text-yellow-300">All Hands</td>
+                {RANK_COLS.map(k=>(
+                  <td key={k} className="px-3 py-1.5 text-right text-gray-200">
+                    {isPct ? ((rankTotals[k]||0)/TOTAL_DEALS*100).toFixed(4)+'%' : (rankTotals[k]||0)}
+                  </td>
+                ))}
+                <td className="px-3 py-1.5 text-right font-bold text-yellow-300">
+                  {isPct ? '100.0000%' : rankColTotal.toLocaleString()}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Table 2: Hand Rank — rows=Ranks (vertical), cols=Hands (horizontal), totals sum to totalWins ──
+function HandRankTransposedTable({ title, handRankMatrix, handWinCount, rankTotals, isPct, accent, totalWins }) {
+  const [open, setOpen] = useState(true);
+  // Each cell [rank][hand] = handRankMatrix[handIdx][rank]
+  // Row total for a rank = sum across all hands of that rank cell (= rankTotals[rank] when no ties... but with ties it's the sum of per-hand wins for that rank)
+  // Col total for a hand = handWinCount[i]
+  // Grand total = totalWins
+  return (
+    <div className="bg-slate-800/60 border border-slate-700 rounded-xl overflow-hidden">
+      <button onClick={()=>setOpen(o=>!o)} className="w-full flex items-center justify-between px-5 py-3 border-b border-slate-700">
+        <span className={`font-bold text-sm ${accent}`}>{title}</span>
+        {open ? <ChevronUp className="w-4 h-4 text-gray-400"/> : <ChevronDown className="w-4 h-4 text-gray-400"/>}
+      </button>
+      {open && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-slate-900/60 text-gray-300 border-b border-slate-600">
+                <th className="px-3 py-2 text-left font-bold">Hand Rank</th>
+                {HAND_LABELS.map(h=><th key={h.id} className="px-3 py-2 text-right font-bold">{h.id}({h.label})</th>)}
                 <th className="px-3 py-2 text-right font-bold text-blue-300">Total</th>
               </tr>
             </thead>
             <tbody>
-              {rowLabels.map((hand, i) => {
-                const m = data[i];
-                const rowTotal = isPct
-                  ? (Object.values(m).filter(v=>typeof v==='number').length > 0 ? null : 0)
-                  : colLabels.reduce((s,k)=>s+(m[k]||0),0);
-                const rowTotalDisp = isPct
-                  ? colLabels.reduce((s,k)=>s+(m[k]||0),0).toFixed(2)+'%'
-                  : colLabels.reduce((s,k)=>s+(m[k]||0),0);
+              {RANK_COLS.map(rank => {
+                const rowTotal = HAND_LABELS.reduce((s,_,i)=>s+(handRankMatrix[i][rank]||0), 0);
                 return (
-                  <tr key={hand.id} className="border-b border-slate-700/40 hover:bg-slate-700/20">
-                    <td className="px-3 py-1.5 font-semibold text-white whitespace-nowrap">{hand.id}({hand.label})</td>
-                    {colLabels.map(k=>(
-                      <td key={k} className="px-3 py-1.5 text-right text-gray-300">
-                        {isPct ? (m[k]||0).toFixed(2)+'%' : (m[k]||0)}
+                  <tr key={rank} className="border-b border-slate-700/40 hover:bg-slate-700/20">
+                    <td className="px-3 py-1.5 font-semibold text-white whitespace-nowrap">{rank}</td>
+                    {HAND_LABELS.map((_,i)=>(
+                      <td key={i} className="px-3 py-1.5 text-right text-gray-300">
+                        {isPct ? ((handRankMatrix[i][rank]||0)/totalWins*100).toFixed(4)+'%' : (handRankMatrix[i][rank]||0)}
                       </td>
                     ))}
-                    <td className="px-3 py-1.5 text-right font-bold text-blue-300">{rowTotalDisp}</td>
+                    <td className="px-3 py-1.5 text-right font-bold text-blue-300">
+                      {isPct ? (rowTotal/totalWins*100).toFixed(4)+'%' : rowTotal.toLocaleString()}
+                    </td>
                   </tr>
                 );
               })}
-              {/* All Hands */}
+              {/* Totals row — col totals = handWinCount[i], grand = totalWins */}
               <tr className="border-b border-slate-600 bg-slate-700/30">
-                <td className="px-3 py-1.5 font-bold text-yellow-300">All Hands</td>
-                {colLabels.map(k=>(
-                  <td key={k} className="px-3 py-1.5 text-right text-gray-200">
-                    {isPct ? (totals[k]||0).toFixed(2)+'%' : (totals[k]||0)}
+                <td className="px-3 py-1.5 font-bold text-yellow-300">Total Wins</td>
+                {HAND_LABELS.map((_,i)=>(
+                  <td key={i} className="px-3 py-1.5 text-right text-gray-200">
+                    {isPct ? (handWinCount[i]/totalWins*100).toFixed(4)+'%' : handWinCount[i].toLocaleString()}
                   </td>
                 ))}
                 <td className="px-3 py-1.5 text-right font-bold text-yellow-300">
-                  {isPct ? colLabels.reduce((s,k)=>s+(totals[k]||0),0).toFixed(2)+'%' : grandTotal}
+                  {isPct ? '100.0000%' : totalWins.toLocaleString()}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Color matrix (unchanged structure) ───────────────────────────────────────
+function ColorMatrixTable({ title, handColorMatrix, colorTotals, isPct, accent }) {
+  const [open, setOpen] = useState(true);
+  const grandTotal = COLOR_COLS.reduce((s,k)=>s+(colorTotals[k]||0),0);
+  return (
+    <div className="bg-slate-800/60 border border-slate-700 rounded-xl overflow-hidden">
+      <button onClick={()=>setOpen(o=>!o)} className="w-full flex items-center justify-between px-5 py-3 border-b border-slate-700">
+        <span className={`font-bold text-sm ${accent}`}>{title}</span>
+        {open ? <ChevronUp className="w-4 h-4 text-gray-400"/> : <ChevronDown className="w-4 h-4 text-gray-400"/>}
+      </button>
+      {open && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-slate-900/60 text-gray-300 border-b border-slate-600">
+                <th className="px-3 py-2 text-left font-bold">Hand</th>
+                {COLOR_COLS.map(c=><th key={c} className={`px-3 py-2 text-right font-bold ${c.includes('R')?'text-red-300':'text-blue-300'}`}>{c}</th>)}
+                <th className="px-3 py-2 text-right font-bold text-blue-300">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {HAND_LABELS.map((hand,i) => {
+                const m = handColorMatrix[i];
+                const rowTotal = COLOR_COLS.reduce((s,k)=>s+(m[k]||0),0);
+                return (
+                  <tr key={hand.id} className="border-b border-slate-700/40 hover:bg-slate-700/20">
+                    <td className="px-3 py-1.5 font-semibold text-white whitespace-nowrap">{hand.id}({hand.label})</td>
+                    {COLOR_COLS.map(k=>(
+                      <td key={k} className="px-3 py-1.5 text-right text-gray-300">
+                        {isPct ? ((m[k]||0)/TOTAL_DEALS*100).toFixed(4)+'%' : (m[k]||0)}
+                      </td>
+                    ))}
+                    <td className="px-3 py-1.5 text-right font-bold text-blue-300">
+                      {isPct ? (rowTotal/TOTAL_DEALS*100).toFixed(4)+'%' : rowTotal}
+                    </td>
+                  </tr>
+                );
+              })}
+              <tr className="border-b border-slate-600 bg-slate-700/30">
+                <td className="px-3 py-1.5 font-bold text-yellow-300">All Hands</td>
+                {COLOR_COLS.map(k=>(
+                  <td key={k} className="px-3 py-1.5 text-right text-gray-200">
+                    {isPct ? ((colorTotals[k]||0)/TOTAL_DEALS*100).toFixed(4)+'%' : (colorTotals[k]||0)}
+                  </td>
+                ))}
+                <td className="px-3 py-1.5 text-right font-bold text-yellow-300">
+                  {isPct ? (grandTotal/TOTAL_DEALS*100).toFixed(4)+'%' : grandTotal}
                 </td>
               </tr>
             </tbody>
@@ -360,16 +474,7 @@ export default function GameStats() {
     buildMatrixDoc(state);
   };
 
-  // Build display matrices with percentages
-  const rankCountMatrix  = state ? state.handRankMatrix  : null;
-  const colorCountMatrix = state ? state.handColorMatrix : null;
   const totalWins = state ? state.handWinCount.reduce((s,v)=>s+v,0) : 0;
-  const rankPctMatrix    = state ? state.handRankMatrix.map((m) =>
-  Object.fromEntries(RANK_COLS.map(k=>[k, (m[k]/totalWins*100)]))
-  ) : null;
-  const colorPctMatrix   = state ? state.handColorMatrix.map((m) =>
-  Object.fromEntries(COLOR_COLS.map(k=>[k, (m[k]/TOTAL_DEALS*100)]))
-  ) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white p-4 pb-16">
@@ -499,43 +604,56 @@ export default function GameStats() {
         {/* Rank Matrices */}
         {state && (
           <div className="space-y-4">
-            <MatrixTable
-              title={`Hand Rank Matrix — Counts (Winning Hand vs Hand Rank)    ${TOTAL_DEALS.toLocaleString()} Total Deals = ${totalWins.toLocaleString()} Total Wins`}
-              rowLabels={HAND_LABELS}
-              colLabels={RANK_COLS}
-              data={rankCountMatrix}
-              totals={state.rankTotals}
-              grandTotal={TOTAL_DEALS}
+            {/* Table 1A: Carded Hand Winners — rows=Hands, cols=Ranks, row totals = handWinCount (206,514) */}
+            <CardedHandWinnersTable
+              title={`Carded Hand Winners — Counts  |  ${TOTAL_DEALS.toLocaleString()} Total Deals = ${totalWins.toLocaleString()} Total Wins`}
+              handRankMatrix={state.handRankMatrix}
+              handWinCount={state.handWinCount}
+              rankTotals={state.rankTotals}
               isPct={false}
               accent="text-purple-400"
+              totalWins={totalWins}
             />
-            <MatrixTable
-              title="Hand Rank Matrix — Percentages (% of total deals)"
-              rowLabels={HAND_LABELS}
-              colLabels={RANK_COLS}
-              data={rankPctMatrix}
-              totals={Object.fromEntries(RANK_COLS.map(k=>[k,(state.rankTotals[k]/TOTAL_DEALS*100)]))}
-              grandTotal="100%"
+            <CardedHandWinnersTable
+              title="Carded Hand Winners — Percentages (% of Total Wins)"
+              handRankMatrix={state.handRankMatrix}
+              handWinCount={state.handWinCount}
+              rankTotals={state.rankTotals}
               isPct={true}
               accent="text-purple-300"
+              totalWins={totalWins}
             />
-            <MatrixTable
+            {/* Table 2A: Hand Rank transposed — rows=Ranks, cols=Hands, col totals = handWinCount (206,514) */}
+            <HandRankTransposedTable
+              title={`Hand Rank Matrix — Counts  |  Ranks (vertical) × Hands (horizontal)  |  Total Wins: ${totalWins.toLocaleString()}`}
+              handRankMatrix={state.handRankMatrix}
+              handWinCount={state.handWinCount}
+              rankTotals={state.rankTotals}
+              isPct={false}
+              accent="text-yellow-400"
+              totalWins={totalWins}
+            />
+            <HandRankTransposedTable
+              title="Hand Rank Matrix — Percentages (% of Total Wins)"
+              handRankMatrix={state.handRankMatrix}
+              handWinCount={state.handWinCount}
+              rankTotals={state.rankTotals}
+              isPct={true}
+              accent="text-yellow-300"
+              totalWins={totalWins}
+            />
+            {/* Color Board */}
+            <ColorMatrixTable
               title="Color Board Matrix — Counts (Winning Hand vs Color Result)"
-              rowLabels={HAND_LABELS}
-              colLabels={COLOR_COLS}
-              data={colorCountMatrix}
-              totals={state.colorTotals}
-              grandTotal={COLOR_COLS.reduce((s,k)=>s+state.colorTotals[k],0)}
+              handColorMatrix={state.handColorMatrix}
+              colorTotals={state.colorTotals}
               isPct={false}
               accent="text-red-400"
             />
-            <MatrixTable
+            <ColorMatrixTable
               title="Color Board Matrix — Percentages (% of total deals)"
-              rowLabels={HAND_LABELS}
-              colLabels={COLOR_COLS}
-              data={colorPctMatrix}
-              totals={Object.fromEntries(COLOR_COLS.map(k=>[k,(state.colorTotals[k]/TOTAL_DEALS*100)]))}
-              grandTotal={((COLOR_COLS.reduce((s,k)=>s+state.colorTotals[k],0))/TOTAL_DEALS*100).toFixed(2)+'%'}
+              handColorMatrix={state.handColorMatrix}
+              colorTotals={state.colorTotals}
               isPct={true}
               accent="text-red-300"
             />
