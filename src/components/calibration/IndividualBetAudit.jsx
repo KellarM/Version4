@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { Play, RefreshCw, Trash2, FileDown, SkipForward } from 'lucide-react';
+import { Play, RefreshCw, Trash2, FileDown, FileText, SkipForward } from 'lucide-react';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 import { jsPDF } from 'jspdf';
 
@@ -48,6 +48,23 @@ const BET_DEFINITIONS = [
 ];
 
 const GROUPS = ['Carded Hands', 'Hand Ranks', 'Color Board', 'Low / High'];
+
+// Plain-text labels for PDF/Word export (no suit symbols)
+const PLAIN_LABELS = {
+  'hand:1':  'Hand 1 - A(Dia)/10(Hrt)',
+  'hand:2':  'Hand 2 - K(Clu)/K(Spa)',
+  'hand:3':  'Hand 3 - Q(Clu)/J(Spa)',
+  'hand:4':  'Hand 4 - Q(Spa)/10(Spa)',
+  'hand:5':  'Hand 5 - J(Clu)/9(Clu)',
+  'hand:6':  'Hand 6 - 8(Dia)/6(Dia)',
+  'hand:7':  'Hand 7 - 7(Dia)/7(Spa)',
+  'hand:8':  'Hand 8 - 4(Hrt)/2(Hrt)',
+  'hand:9':  'Hand 9 - 3(Clu)/3(Hrt)',
+  'hand:10': 'Hand 10 - A(Hrt)/5(Dia)',
+};
+function plainLabel(def) {
+  return PLAIN_LABELS[`${def.betType}:${def.betKey}`] || def.label;
+}
 
 const GROUP_COLORS = {
   'Carded Hands': 'text-blue-400',
@@ -299,9 +316,9 @@ export default function IndividualBetAudit() {
         doc.setFontSize(7.5);
         doc.setFont('helvetica', 'bold');
 
-        // Bet label
+        // Bet label — plain text (no suit symbols)
         doc.setTextColor(0, 0, 0);
-        doc.text(def.label, colX[0], y);
+        doc.text(plainLabel(def), colX[0], y);
 
         // Wins — bold black
         doc.text(r.wins.toLocaleString(), colX[1], y);
@@ -354,6 +371,64 @@ export default function IndividualBetAudit() {
     }
 
     doc.save(`RapidFire_BetAudit_${new Date().toISOString().slice(0,10)}.pdf`);
+  };
+
+  const exportWord = () => {
+    const now = new Date().toLocaleString();
+    const headers = ['Bet', 'Wins', 'Win %', 'Actual RTP', 'Curr Odds', 'Fair (1:1)', 'For 95%', 'For 96.5%', 'For 98%', 'Status'];
+
+    let tableRows = '';
+    GROUPS.forEach(group => {
+      const defs = BET_DEFINITIONS.filter(d => d.group === group);
+      const hasAny = defs.some(d => results[`${d.betType}:${d.betKey}`]);
+      if (!hasAny) return;
+
+      tableRows += `<tr><td colspan="10" style="background:#dce6ff;font-weight:bold;font-size:10pt;padding:4px 6px;border:1px solid #6480c8;">${group}</td></tr>`;
+      tableRows += `<tr>${headers.map(h => `<td style="background:#f0f0f0;font-weight:bold;border:1px solid #aaa;padding:3px 6px;">${h}</td>`).join('')}</tr>`;
+
+      defs.forEach(def => {
+        const key = `${def.betType}:${def.betKey}`;
+        const r = results[key];
+        if (!r) return;
+        const rtp = parseFloat(r.rtp);
+        const rtpOk = rtp >= 95 && rtp <= 98;
+        const rtpColor = rtpOk ? '#008000' : rtp > 98 ? '#c86400' : '#cc0000';
+        const statusColor = rtpOk ? '#008000' : '#cc0000';
+        const status = rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW';
+        const td = (val, color = '#000') => `<td style="border:1px solid #ccc;padding:3px 6px;color:${color};font-weight:bold;">${val}</td>`;
+        tableRows += `<tr>
+          ${td(plainLabel(def))}
+          ${td(r.wins.toLocaleString())}
+          ${td(r.winFrequency + '%')}
+          ${td(r.rtp + '%', rtpColor)}
+          ${td(r.progressive ? 'Progressive' : r.currentPayout + ':1')}
+          ${td(r.fairOdds !== null ? r.fairOdds + ':1' : '-')}
+          ${td(r.progressive ? 'Jackpot' : r.for95 + ':1', '#007800')}
+          ${td(r.progressive ? 'Jackpot' : r.for965 + ':1', '#a06400')}
+          ${td(r.progressive ? 'Jackpot' : r.for98 + ':1', '#0050b4')}
+          ${td(status, statusColor)}
+        </tr>`;
+      });
+    });
+
+    const html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+      <head><meta charset="utf-8"><title>Bet Audit Report</title></head>
+      <body style="font-family:Arial,sans-serif;font-size:9pt;">
+        <h2 style="color:#000;">Rapid Fire Texas 10 &mdash; Individual Bet Audit Report</h2>
+        <p style="color:#444;">Generated: ${now} &nbsp;|&nbsp; ${progress} bets completed &nbsp;|&nbsp; ${selectedSize.gamesPerBet.toLocaleString()} games/bet</p>
+        <table style="border-collapse:collapse;width:100%;font-size:8.5pt;">
+          ${tableRows}
+        </table>
+      </body></html>`;
+
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RapidFire_BetAudit_${new Date().toISOString().slice(0,10)}.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const pct = Math.round((progress / totalBets) * 100);
@@ -448,6 +523,12 @@ export default function IndividualBetAudit() {
                 className="flex items-center gap-1.5 text-blue-300 border border-blue-700 px-4 py-2 rounded-lg text-sm hover:bg-blue-900/30 transition-all font-semibold"
               >
                 <FileDown className="w-3.5 h-3.5" /> Export PDF
+              </button>
+              <button
+                onClick={exportWord}
+                className="flex items-center gap-1.5 text-emerald-300 border border-emerald-700 px-4 py-2 rounded-lg text-sm hover:bg-emerald-900/30 transition-all font-semibold"
+              >
+                <FileText className="w-3.5 h-3.5" /> Export Word
               </button>
               <button
                 onClick={clearResults}
