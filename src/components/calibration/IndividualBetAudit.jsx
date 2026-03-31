@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 
-const BATCHES_PER_BET = 20; // 20 × 100K = 2M per bet
+const BATCHES_PER_BET = 40; // 40 × 50K = 2M per bet
 
 const BET_DEFINITIONS = [
   // Carded Hands
@@ -99,20 +99,20 @@ export default function IndividualBetAudit() {
       // Accumulate 20 batches of 100K = 2M total
       let totalWins = 0;
       let totalPaid = 0;
-      const totalGames = BATCHES_PER_BET * 100_000;
+      const totalGames = BATCHES_PER_BET * 50_000;
 
       for (let b = 0; b < BATCHES_PER_BET; b++) {
         if (abortRef.current) break;
         try {
           const res = await base44.functions.invoke('individualBetAudit', {
-            batchSize: 100_000,
+            batchSize: 50_000,
             betType: def.betType,
             betKey: def.betKey,
           });
           if (res.data.success) {
             totalWins += res.data.wins;
             // reconstruct totalPaid from rtp
-            const batchBet = 100_000 * 100;
+            const batchBet = 50_000 * 100;
             totalPaid += (parseFloat(res.data.rtp) / 100) * batchBet;
           }
         } catch (e) {
