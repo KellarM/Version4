@@ -3,16 +3,15 @@
  * =============================
  * All payouts stored as RATIOS (e.g., 16.5 means 16.5:1, total return = bet × (1 + ratio))
  *
- * CALIBRATION — 10M game Monte Carlo, real 32-card engine
- * Target RTP: 96.5% per bet category (single-hand fair price)
- * Formula: payout = 0.965 / empirical_win_frequency - 1
+ * CALIBRATION — 594M game audit (22M per bet × 27 betting positions)
+ * Target RTP: 96.5% — using "For 96.5%" column from individual bet audit
  *
- * Empirical win frequencies (10M game real engine):
- *   H1  A♦10♥    5.52%    H2  K♣K♠   29.84%
- *   H3  Q♣J♠     5.08%    H4  Q♠10♠   5.04%
- *   H5  J♣9♣     7.89%    H6  8♦6♦    8.30%
- *   H7  7♦7♠    17.91%    H8  4♥2♥    4.52%
- *   H9  3♣3♥    10.53%   H10  A♥5♦    5.37%
+ * Empirical win frequencies (22M games per bet):
+ *   H1  A♦10♥  1,368,978 wins   H2  K♣K♠   4,071,891 wins
+ *   H3  Q♣J♠   1,772,338 wins   H4  Q♠10♠  2,737,359 wins
+ *   H5  J♣9♣   3,200,758 wins   H6  8♦6♦   3,874,653 wins
+ *   H7  7♦7♠   4,212,085 wins   H8  4♥2♥   3,733,547 wins
+ *   H9  3♣3♥   4,156,093 wins  H10  A♥5♦   2,061,754 wins
  *
  * BETTING CONSTRAINTS (Updated 2026-03-29):
  * - Max 4 simultaneous Card Hand bets (no restriction)
@@ -21,50 +20,58 @@
  * - Progressive pots (Royal Flush, Straight Flush, One Pair) always available before deal
  * - All other Hand Rank bets require ≤2 Hand bets to be active
  *
- * Note: Multi-hand bet exploitation is neutralized by the 2-hand maximum
- * rule enforced for rank betting. With max 2 hands + 1 rank: best-case
- * combined freq ≈ 9.6%, ensuring house edge remains positive overall.
+ * JACKPOT SEEDS — formula: For96.5% odds × min_bet (rounded to nearest dollar)
+ *   One Pair:      158.34 × $10  = $1,584
+ *   Straight Flush: 255.42 × $15 = $3,831
+ *   Royal Flush:   7222.93 × $25 = $180,573
  */
 
-// CARDED HANDS — updated payouts
+// CARDED HANDS — "For 96.5%" column from 22M game audit
 export const CARDED_HAND_PAYOUTS = [
-  18,    // Hand 1:  A♦10♥
-  4,     // Hand 2:  K♣K♠
-  15,    // Hand 3:  Q♣J♠
-  8,     // Hand 4:  Q♠10♠
-  6,     // Hand 5:  J♣9♣
-  5,     // Hand 6:  8♦6♦
-  6,     // Hand 7:  7♦7♠
-  7,     // Hand 8:  4♥2♥
-  8,     // Hand 9:  3♣3♥
-  15,    // Hand 10: A♥5♦
+  14.51,  // Hand 1:  A♦10♥   (was 18.00)
+  4.21,   // Hand 2:  K♣K♠    (was 4.00)
+  10.98,  // Hand 3:  Q♣J♠    (was 15.00)
+  6.75,   // Hand 4:  Q♠10♠   (was 8.00)
+  5.63,   // Hand 5:  J♣9♣    (was 6.00)
+  4.48,   // Hand 6:  8♦6♦    (was 5.00)
+  4.04,   // Hand 7:  7♦7♠    (was 6.00)
+  4.69,   // Hand 8:  4♥2♥    (was 7.00)
+  4.11,   // Hand 9:  3♣3♥    (was 8.00)
+  9.30,   // Hand 10: A♥5♦    (was 15.00)
 ];
 
-// HAND RANK PAYOUTS — calibrated to 96.5% RTP
+// HAND RANK PAYOUTS — "For 96.5%" column from 22M game audit
 export const HAND_RANK_PAYOUTS = {
-  'Royal Flush':     null,    // Progressive jackpot
-  'Straight Flush':  null,    // Progressive jackpot
-  'Four of a Kind':  12.77,
-  'Full House':      2.53,
-  'Flush':           3.21,
-  'Straight':        4.93,
-  'Three of a Kind': 3.81,
-  'Two Pair':        15.98,
-  'One Pair':        null,    // Progressive jackpot
+  'Royal Flush':     null,    // Progressive jackpot — seed $180,573
+  'Straight Flush':  null,    // Progressive jackpot — seed $3,831
+  'Four of a Kind':  12.43,   // (was 12.77)
+  'Full House':      2.53,    // unchanged
+  'Flush':           3.10,    // (was 3.21)
+  'Straight':        4.58,    // (was 4.93)
+  'Three of a Kind': 3.95,    // (was 3.81)
+  'Two Pair':        16.76,   // (was 15.98)
+  'One Pair':        null,    // Progressive jackpot — seed $1,584
 };
 
-// COLOR BOARD PAYOUTS — empirical 32-card frequencies
+// COLOR BOARD PAYOUTS — "For 96.5%" column from 22M game audit
 export const COLOR_BOARD_PAYOUTS = {
-  '3R': 0.81,
-  '3B': 0.81,
-  '4R': 5.25,
-  '4B': 5.25,
-  '5R': 20.56,
-  '5B': 20.56,
+  '3R': 0.93,   // (was 0.81)
+  '3B': 0.93,   // (was 0.81)
+  '4R': 4.81,   // (was 5.25)
+  '4B': 4.81,   // (was 5.25)
+  '5R': 43.36,  // (was 20.56)
+  '5B': 43.46,  // (was 20.56)
 };
 
-// LOW/HIGH PAYOUT — empirical ~50/50 river split
-export const LOW_HIGH_PAYOUT = 0.95;
+// LOW/HIGH PAYOUT — "For 96.5%" column from 22M game audit
+export const LOW_HIGH_PAYOUT = 0.93;  // (was 0.95)
+
+// JACKPOT SEEDS — For96.5% odds × min_bet (rounded to nearest dollar)
+export const JACKPOT_SEEDS = {
+  royalFlush:     180573,  // 7222.93 × $25
+  straightFlush:    3831,  // 255.42  × $15
+  onePair:          1584,  // 158.34  × $10
+};
 
 /**
  * Calculate total payout from bet and ratio
