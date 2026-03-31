@@ -107,9 +107,9 @@ export default function RapidFireGame() {
         setRoundId(state.roundId);
         setCasinoProfit(state.casinoProfit);
         setRoundsPlayed(state.roundsPlayed);
-        setRoyalFlushJackpot(state.royalFlushJackpot || JACKPOT_SEEDS.royalFlush);
-        setStraightFlushJackpot(state.straightFlushJackpot || JACKPOT_SEEDS.straightFlush);
-        setOnePairJackpot(state.onePairJackpot || JACKPOT_SEEDS.onePair);
+        setRoyalFlushJackpot(Math.max(state.royalFlushJackpot || 0, JACKPOT_SEEDS.royalFlush));
+        setStraightFlushJackpot(Math.max(state.straightFlushJackpot || 0, JACKPOT_SEEDS.straightFlush));
+        setOnePairJackpot(Math.max(state.onePairJackpot || 0, JACKPOT_SEEDS.onePair));
       } catch (e) {
         console.log('Could not restore game state');
       }
