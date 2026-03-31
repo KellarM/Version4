@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import { Play, RefreshCw, Trash2 } from 'lucide-react';
+import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 
 const STORAGE_KEY = 'individualBetAudit_results';
 const PROGRESS_KEY = 'individualBetAudit_progress';
@@ -9,37 +10,37 @@ const PROGRESS_KEY = 'individualBetAudit_progress';
 const BATCHES_PER_BET = 40; // 40 × 50K = 2M per bet
 
 const BET_DEFINITIONS = [
-  // Carded Hands
-  { betType: 'hand', betKey: '1',  label: 'Hand 1 — A♦/10♥',  group: 'Carded Hands', currentPayout: 8.10 },
-  { betType: 'hand', betKey: '2',  label: 'Hand 2 — K♣/K♠',   group: 'Carded Hands', currentPayout: 6.75 },
-  { betType: 'hand', betKey: '3',  label: 'Hand 3 — Q♣/J♠',   group: 'Carded Hands', currentPayout: 8.52 },
-  { betType: 'hand', betKey: '4',  label: 'Hand 4 — Q♠/10♠',  group: 'Carded Hands', currentPayout: 7.90 },
-  { betType: 'hand', betKey: '5',  label: 'Hand 5 — J♣/9♣',   group: 'Carded Hands', currentPayout: 8.31 },
-  { betType: 'hand', betKey: '6',  label: 'Hand 6 — 8♦/6♦',   group: 'Carded Hands', currentPayout: 10.18 },
-  { betType: 'hand', betKey: '7',  label: 'Hand 7 — 7♦/7♠',   group: 'Carded Hands', currentPayout: 7.48 },
-  { betType: 'hand', betKey: '8',  label: 'Hand 8 — 4♥/2♥',   group: 'Carded Hands', currentPayout: 11.95 },
-  { betType: 'hand', betKey: '9',  label: 'Hand 9 — 3♣/3♥',   group: 'Carded Hands', currentPayout: 7.27 },
-  { betType: 'hand', betKey: '10', label: 'Hand 10 — A♥/5♦',  group: 'Carded Hands', currentPayout: 9.77 },
+  // Carded Hands — sourced from payoutConstants (single source of truth)
+  { betType: 'hand', betKey: '1',  label: 'Hand 1 — A♦/10♥',  group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[0] },
+  { betType: 'hand', betKey: '2',  label: 'Hand 2 — K♣/K♠',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[1] },
+  { betType: 'hand', betKey: '3',  label: 'Hand 3 — Q♣/J♠',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[2] },
+  { betType: 'hand', betKey: '4',  label: 'Hand 4 — Q♠/10♠',  group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[3] },
+  { betType: 'hand', betKey: '5',  label: 'Hand 5 — J♣/9♣',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[4] },
+  { betType: 'hand', betKey: '6',  label: 'Hand 6 — 8♦/6♦',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[5] },
+  { betType: 'hand', betKey: '7',  label: 'Hand 7 — 7♦/7♠',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[6] },
+  { betType: 'hand', betKey: '8',  label: 'Hand 8 — 4♥/2♥',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[7] },
+  { betType: 'hand', betKey: '9',  label: 'Hand 9 — 3♣/3♥',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[8] },
+  { betType: 'hand', betKey: '10', label: 'Hand 10 — A♥/5♦',  group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[9] },
   // Hand Ranks
-  { betType: 'rank', betKey: 'One Pair',        label: 'One Pair',        group: 'Hand Ranks', currentPayout: null, progressive: true },
-  { betType: 'rank', betKey: 'Two Pair',         label: 'Two Pair',        group: 'Hand Ranks', currentPayout: 15.98 },
-  { betType: 'rank', betKey: 'Three of a Kind',  label: 'Three of a Kind', group: 'Hand Ranks', currentPayout: 3.81 },
-  { betType: 'rank', betKey: 'Straight',         label: 'Straight',        group: 'Hand Ranks', currentPayout: 4.93 },
-  { betType: 'rank', betKey: 'Flush',            label: 'Flush',           group: 'Hand Ranks', currentPayout: 3.21 },
-  { betType: 'rank', betKey: 'Full House',       label: 'Full House',      group: 'Hand Ranks', currentPayout: 2.53 },
-  { betType: 'rank', betKey: 'Four of a Kind',   label: 'Four of a Kind',  group: 'Hand Ranks', currentPayout: 12.77 },
-  { betType: 'rank', betKey: 'Straight Flush',   label: 'Straight Flush',  group: 'Hand Ranks', currentPayout: null, progressive: true },
-  { betType: 'rank', betKey: 'Royal Flush',      label: 'Royal Flush',     group: 'Hand Ranks', currentPayout: null, progressive: true },
+  { betType: 'rank', betKey: 'One Pair',        label: 'One Pair',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['One Pair'],        progressive: true },
+  { betType: 'rank', betKey: 'Two Pair',         label: 'Two Pair',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Two Pair'] },
+  { betType: 'rank', betKey: 'Three of a Kind',  label: 'Three of a Kind', group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Three of a Kind'] },
+  { betType: 'rank', betKey: 'Straight',         label: 'Straight',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Straight'] },
+  { betType: 'rank', betKey: 'Flush',            label: 'Flush',           group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Flush'] },
+  { betType: 'rank', betKey: 'Full House',       label: 'Full House',      group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Full House'] },
+  { betType: 'rank', betKey: 'Four of a Kind',   label: 'Four of a Kind',  group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Four of a Kind'] },
+  { betType: 'rank', betKey: 'Straight Flush',   label: 'Straight Flush',  group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Straight Flush'],  progressive: true },
+  { betType: 'rank', betKey: 'Royal Flush',      label: 'Royal Flush',     group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Royal Flush'],      progressive: true },
   // Color Board
-  { betType: 'color', betKey: '3R', label: '3 Red',   group: 'Color Board', currentPayout: 0.81 },
-  { betType: 'color', betKey: '3B', label: '3 Black',  group: 'Color Board', currentPayout: 0.81 },
-  { betType: 'color', betKey: '4R', label: '4 Red',   group: 'Color Board', currentPayout: 5.25 },
-  { betType: 'color', betKey: '4B', label: '4 Black',  group: 'Color Board', currentPayout: 5.25 },
-  { betType: 'color', betKey: '5R', label: '5 Red',   group: 'Color Board', currentPayout: 20.56 },
-  { betType: 'color', betKey: '5B', label: '5 Black',  group: 'Color Board', currentPayout: 20.56 },
+  { betType: 'color', betKey: '3R', label: '3 Red',   group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3R'] },
+  { betType: 'color', betKey: '3B', label: '3 Black',  group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3B'] },
+  { betType: 'color', betKey: '4R', label: '4 Red',   group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['4R'] },
+  { betType: 'color', betKey: '4B', label: '4 Black',  group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['4B'] },
+  { betType: 'color', betKey: '5R', label: '5 Red',   group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['5R'] },
+  { betType: 'color', betKey: '5B', label: '5 Black',  group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['5B'] },
   // Low / High
-  { betType: 'lh', betKey: 'LOW',  label: 'River — LOW',  group: 'Low / High', currentPayout: 0.95 },
-  { betType: 'lh', betKey: 'HIGH', label: 'River — HIGH', group: 'Low / High', currentPayout: 0.95 },
+  { betType: 'lh', betKey: 'LOW',  label: 'River — LOW',  group: 'Low / High', currentPayout: LOW_HIGH_PAYOUT },
+  { betType: 'lh', betKey: 'HIGH', label: 'River — HIGH', group: 'Low / High', currentPayout: LOW_HIGH_PAYOUT },
 ];
 
 const GROUPS = ['Carded Hands', 'Hand Ranks', 'Color Board', 'Low / High'];
