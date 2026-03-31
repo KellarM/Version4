@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Play, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Play, RefreshCw, Trash2 } from 'lucide-react';
+
+const STORAGE_KEY = 'individualBetAudit_results';
+const PROGRESS_KEY = 'individualBetAudit_progress';
 
 const BATCHES_PER_BET = 40; // 40 × 50K = 2M per bet
 
@@ -76,19 +79,38 @@ function OddsCell({ odds, current }) {
 
 export default function IndividualBetAudit() {
   const [running, setRunning] = useState(false);
-  const [results, setResults] = useState({}); // keyed by `${betType}:${betKey}`
-  const [progress, setProgress] = useState(0); // bets completed
+  const [results, setResults] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
+  });
+  const [progress, setProgress] = useState(() => {
+    try { return parseInt(localStorage.getItem(PROGRESS_KEY) || '0'); } catch { return 0; }
+  });
   const [currentBet, setCurrentBet] = useState('');
-  const [aborted, setAborted] = useState(false);
-  const abortRef = { current: false };
+  const abortRef = useRef(false);
+
+  // Persist results & progress whenever they change
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(results)); } catch {}
+  }, [results]);
+  useEffect(() => {
+    try { localStorage.setItem(PROGRESS_KEY, String(progress)); } catch {}
+  }, [progress]);
 
   const totalBets = BET_DEFINITIONS.length;
+
+  const clearResults = () => {
+    setResults({});
+    setProgress(0);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PROGRESS_KEY);
+  };
 
   const runAudit = async () => {
     setRunning(true);
     setResults({});
     setProgress(0);
-    setAborted(false);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PROGRESS_KEY);
     abortRef.current = false;
 
     for (let bi = 0; bi < BET_DEFINITIONS.length; bi++) {
@@ -129,20 +151,25 @@ export default function IndividualBetAudit() {
       const for98    = winFreq > 0 ? Math.round(((0.98  / winFreq) - 1) * 100) / 100 : null;
 
       const key = `${def.betType}:${def.betKey}`;
-      setResults(prev => ({
-        ...prev,
-        [key]: {
-          wins: totalWins,
-          totalGames,
-          winFrequency: (winFreq * 100).toFixed(4),
-          rtp: rtp.toFixed(2),
-          fairOdds,
-          for95, for965, for98,
-          currentPayout: def.currentPayout,
-          progressive: def.progressive,
-        }
-      }));
-      setProgress(bi + 1);
+      const newResult = {
+        wins: totalWins,
+        totalGames,
+        winFrequency: (winFreq * 100).toFixed(4),
+        rtp: rtp.toFixed(2),
+        fairOdds,
+        for95, for965, for98,
+        currentPayout: def.currentPayout,
+        progressive: def.progressive,
+      };
+      setResults(prev => {
+        const updated = { ...prev, [key]: newResult };
+        // Also persist immediately in case of crash
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch {}
+        return updated;
+      });
+      const newProgress = bi + 1;
+      setProgress(newProgress);
+      try { localStorage.setItem(PROGRESS_KEY, String(newProgress)); } catch {}
     }
     setRunning(false);
     setCurrentBet('');
@@ -177,13 +204,21 @@ export default function IndividualBetAudit() {
               Abort
             </button>
           )}
+          {!running && Object.keys(results).length > 0 && (
+            <button
+              onClick={clearResults}
+              className="flex items-center gap-1.5 text-gray-500 border border-slate-600 px-3 py-2 rounded-lg text-sm hover:text-red-400 hover:border-red-700 transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Clear Results
+            </button>
+          )}
         </div>
 
         {/* Progress */}
         {(running || anyResults) && (
           <div className="mt-4">
             <div className="flex justify-between text-xs text-gray-400 mb-1">
-              <span>{running ? `Testing: ${currentBet}` : 'Complete'}</span>
+              <span>{running ? `Testing: ${currentBet}` : progress === totalBets ? '✓ Complete' : `⚡ Restored — ${progress}/${totalBets} bets recovered`}</span>
               <span>{progress}/{totalBets} bets — {(progress * 2_000_000).toLocaleString()} total games</span>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
