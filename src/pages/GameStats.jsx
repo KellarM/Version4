@@ -1,8 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { Play, RefreshCw, FileDown, Presentation, BarChart2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, RefreshCw, FileDown, Presentation, BarChart2, ChevronDown, ChevronUp, SkipForward, Trash2 } from 'lucide-react';
+
+const STORAGE_KEY_STATE    = 'gameStats_state';
+const STORAGE_KEY_PROGRESS = 'gameStats_progress';
 
 const RANK_COLS  = ['Royal Flush','Straight Flush','4 Of A Kind','Full House','Flush','Straight','3 Of A Kind','2 Pair','1 Pair'];
 const COLOR_COLS = ['3R','4R','5R','3B','4B','5B'];
@@ -249,24 +252,60 @@ function MatrixTable({ title, rowLabels, colLabels, data, totals, grandTotal, is
   );
 }
 
+// ── Helpers to save/load state from localStorage ──────────────────────────
+function saveToStorage(s, prog) {
+  try {
+    // Don't save allRows — too large; they'll be re-fetched on continue
+    const toSave = { handRankMatrix: s.handRankMatrix, handColorMatrix: s.handColorMatrix, handWinCount: s.handWinCount, rankTotals: s.rankTotals, colorTotals: s.colorTotals };
+    localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify(toSave));
+    localStorage.setItem(STORAGE_KEY_PROGRESS, String(prog));
+  } catch {}
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_STATE);
+    const prog = parseInt(localStorage.getItem(STORAGE_KEY_PROGRESS) || '0');
+    if (!raw || !prog) return null;
+    const parsed = JSON.parse(raw);
+    return { state: { ...parsed, allRows: [] }, progress: prog };
+  } catch { return null; }
+}
+
+function clearStorage() {
+  localStorage.removeItem(STORAGE_KEY_STATE);
+  localStorage.removeItem(STORAGE_KEY_PROGRESS);
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────
 export default function GameStats() {
   const [running, setRunning]     = useState(false);
   const [progress, setProgress]   = useState(0);
   const [state, setState]         = useState(null);
   const [error, setError]         = useState(null);
+  const [savedProgress, setSavedProgress] = useState(0);
   const abortRef                  = useRef(false);
+
+  // On mount, check if there's a saved partial run
+  useEffect(() => {
+    const saved = loadFromStorage();
+    if (saved) {
+      setState(saved.state);
+      setProgress(saved.progress);
+      setSavedProgress(saved.progress);
+    }
+  }, []);
 
   const pct = Math.round((progress / TOTAL_DEALS) * 100);
   const done = state && progress >= TOTAL_DEALS;
+  const canContinue = !running && savedProgress > 0 && savedProgress < TOTAL_DEALS;
 
-  const run = async () => {
+  const runFrom = async (startBatch, existingState) => {
     setRunning(true);
     setError(null);
-    setProgress(0);
     abortRef.current = false;
-    const s = initState();
-    let batchStart = 0;
+    const s = existingState ? { ...existingState, allRows: existingState.allRows || [] } : initState();
+    let batchStart = startBatch;
 
     while (batchStart < TOTAL_DEALS) {
       if (abortRef.current) break;
@@ -278,14 +317,36 @@ export default function GameStats() {
         s.allRows.push(...d.rows);
         batchStart = d.batchEnd;
         setProgress(batchStart);
-        // Update UI incrementally
+        setSavedProgress(batchStart);
+        saveToStorage(s, batchStart);
         setState({ ...s, handRankMatrix: s.handRankMatrix.map(m=>({...m})), handColorMatrix: s.handColorMatrix.map(m=>({...m})), handWinCount: [...s.handWinCount], rankTotals: {...s.rankTotals}, colorTotals: {...s.colorTotals}, allRows: [...s.allRows] });
       } catch(e) {
-        setError(e.message);
+        setError(`Paused at deal ${batchStart.toLocaleString()} — ${e.message}. Use "Continue" to resume.`);
         break;
       }
     }
     setRunning(false);
+  };
+
+  const run = () => {
+    clearStorage();
+    setSavedProgress(0);
+    setProgress(0);
+    setState(null);
+    runFrom(0, null);
+  };
+
+  const continueRun = () => {
+    const saved = loadFromStorage();
+    if (saved) runFrom(saved.progress, saved.state);
+  };
+
+  const clearAll = () => {
+    clearStorage();
+    setSavedProgress(0);
+    setProgress(0);
+    setState(null);
+    setError(null);
   };
 
   const exportExcel = () => {
@@ -336,8 +397,17 @@ export default function GameStats() {
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-gray-500 font-bold text-sm transition-all"
             >
               {running ? <RefreshCw className="w-4 h-4 animate-spin"/> : <Play className="w-4 h-4"/>}
-              {running ? 'Computing...' : done ? 'Re-Run Computation' : 'Run Full Computation'}
+              {running ? 'Computing...' : done ? 'Re-Run (Fresh)' : 'Run Full Computation'}
             </button>
+
+            {canContinue && (
+              <button
+                onClick={continueRun}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-yellow-600 hover:bg-yellow-500 font-bold text-sm transition-all"
+              >
+                <SkipForward className="w-4 h-4"/> Continue ({savedProgress.toLocaleString()} / {TOTAL_DEALS.toLocaleString()} saved)
+              </button>
+            )}
 
             {running && (
               <button
@@ -345,6 +415,15 @@ export default function GameStats() {
                 className="text-red-400 border border-red-700 px-4 py-2 rounded-lg text-sm hover:bg-red-900/20"
               >
                 Abort
+              </button>
+            )}
+
+            {!running && state && !done && (
+              <button
+                onClick={clearAll}
+                className="flex items-center gap-1.5 text-gray-500 border border-slate-600 px-3 py-2 rounded-lg text-sm hover:text-red-400 hover:border-red-700 transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5"/> Clear
               </button>
             )}
 
@@ -367,10 +446,14 @@ export default function GameStats() {
           </div>
 
           {/* Progress */}
-          {(running || done) && (
+          {(running || progress > 0) && (
             <div className="mt-4">
               <div className="flex justify-between text-xs text-gray-400 mb-1">
-                <span>{done ? `✓ Complete — ${TOTAL_DEALS.toLocaleString()} deals computed` : `Computing batch... ${progress.toLocaleString()} / ${TOTAL_DEALS.toLocaleString()} deals`}</span>
+                <span>
+                  {done ? `✓ Complete — ${TOTAL_DEALS.toLocaleString()} deals computed` 
+                    : running ? `Computing... ${progress.toLocaleString()} / ${TOTAL_DEALS.toLocaleString()} deals`
+                    : `⚡ Paused — ${progress.toLocaleString()} / ${TOTAL_DEALS.toLocaleString()} deals saved`}
+                </span>
                 <span>{pct}%</span>
               </div>
               <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
@@ -383,7 +466,12 @@ export default function GameStats() {
             </div>
           )}
 
-          {error && <p className="mt-3 text-red-400 text-sm">Error: {error}</p>}
+          {error && (
+            <div className="mt-3 bg-orange-900/20 border border-orange-700 rounded-lg px-4 py-2">
+              <p className="text-orange-300 text-sm">{error}</p>
+              {canContinue && <p className="text-yellow-400 text-xs mt-1 font-semibold">↑ Click "Continue" above to resume from where it stopped.</p>}
+            </div>
+          )}
         </div>
 
         {/* Summary stats */}
