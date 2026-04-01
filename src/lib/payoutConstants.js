@@ -13,17 +13,16 @@
  *   H7  7♦7♠   4,212,085 wins   H8  4♥2♥   3,733,547 wins
  *   H9  3♣3♥   4,156,093 wins  H10  A♥5♦   2,061,754 wins
  *
- * BETTING CONSTRAINTS (Updated 2026-03-29):
+ * BETTING CONSTRAINTS (Updated 2026-04-01):
  * - Max 4 simultaneous Card Hand bets (no restriction)
  * - Max 2 Card Hand bets allowed IF betting on Hand Rank board
  * - Only 1 Hand Rank bet allowed at a time
- * - Progressive pots (Royal Flush, Straight Flush, One Pair) always available before deal
+ * - Progressive pots (Straight Flush, One Pair) always available before deal
  * - All other Hand Rank bets require ≤2 Hand bets to be active
  *
  * JACKPOT SEEDS — formula: For96.5% odds × min_bet (rounded to nearest dollar)
  *   One Pair:      158.34 × $10  = $1,584
  *   Straight Flush: 255.42 × $15 = $3,831
- *   Royal Flush:   7222.93 × $25 = $180,573
  */
 
 // CARDED HANDS — "For 96.5%" column from 22M game audit
@@ -41,8 +40,8 @@ export const CARDED_HAND_PAYOUTS = [
 ];
 
 // HAND RANK PAYOUTS — "For 96.5%" column from 22M game audit
+// Royal Flush removed as a betting position (RTP non-compliant)
 export const HAND_RANK_PAYOUTS = {
-  'Royal Flush':     null,    // Progressive jackpot — seed $180,573
   'Straight Flush':  null,    // Progressive jackpot — seed $3,831
   'Four of a Kind':  12.43,   // (was 12.77)
   'Full House':      2.53,    // unchanged
@@ -68,7 +67,6 @@ export const LOW_HIGH_PAYOUT = 0.93;  // (was 0.95)
 
 // JACKPOT SEEDS — For96.5% odds × min_bet (rounded to nearest dollar)
 export const JACKPOT_SEEDS = {
-  royalFlush:     180573,  // 7222.93 × $25
   straightFlush:    3831,  // 255.42  × $15
   onePair:          1584,  // 158.34  × $10
 };

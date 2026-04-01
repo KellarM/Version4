@@ -10,8 +10,8 @@ const PLAYER_CHIP_COLORS = [
 ];
 
 // High Card removed - always at least 1 pair minimum (K/K)
+// Royal Flush removed as a betting position (RTP non-compliant)
 export const RANK_BET_OPTIONS = [
-  { key: 'Royal Flush',     label: 'Royal Flush',     payout: 'Progressive',                                      color: 'purple', minBet: 25 },
   { key: 'Straight Flush',  label: 'Straight Flush',  payout: 'Progressive',                                      color: 'orange', minBet: 15 },
   { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: `${HAND_RANK_PAYOUTS['Four of a Kind']}:1`,         color: 'yellow' },
   { key: 'Full House',      label: 'Full House',       payout: `${HAND_RANK_PAYOUTS['Full House']}:1`,             color: 'green'  },
@@ -53,7 +53,7 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const qualifies = !opt.minBet || bet >= opt.minBet;
           
           // Count only non-progressive bets for this player
-          const nonProgBetCount = Object.keys(rankBets).filter(k => !['Royal Flush', 'Straight Flush', 'One Pair'].includes(k)).length;
+          const nonProgBetCount = Object.keys(rankBets).filter(k => !['Straight Flush', 'One Pair'].includes(k)).length;
           
           // Rule per-player: progressives always available; non-progressive: 0 hands = all allowed, 1-2 hands = limit to 2, 3+ hands = closed
           const canBetThisRank = isProgressive || (handBetCount === 0) || (handBetCount >= 1 && handBetCount <= 2 && nonProgBetCount < 2);

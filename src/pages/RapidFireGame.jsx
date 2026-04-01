@@ -72,7 +72,6 @@ export default function RapidFireGame() {
   const [playerStats, setPlayerStats] = useState({});
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [roundId, setRoundId] = useState(1);
-  const [royalFlushJackpot, setRoyalFlushJackpot] = useState(JACKPOT_SEEDS.royalFlush);
   const [straightFlushJackpot, setStraightFlushJackpot] = useState(JACKPOT_SEEDS.straightFlush);
   const [onePairJackpot, setOnePairJackpot] = useState(JACKPOT_SEEDS.onePair);
   const [lastWinInfo, setLastWinInfo] = useState(null);
@@ -108,7 +107,6 @@ export default function RapidFireGame() {
         setRoundId(state.roundId);
         setCasinoProfit(state.casinoProfit);
         setRoundsPlayed(state.roundsPlayed);
-        setRoyalFlushJackpot(Math.max(state.royalFlushJackpot || 0, JACKPOT_SEEDS.royalFlush));
         setStraightFlushJackpot(Math.max(state.straightFlushJackpot || 0, JACKPOT_SEEDS.straightFlush));
         setOnePairJackpot(Math.max(state.onePairJackpot || 0, JACKPOT_SEEDS.onePair));
       } catch (e) {
@@ -124,12 +122,11 @@ export default function RapidFireGame() {
       roundId,
       casinoProfit,
       roundsPlayed,
-      royalFlushJackpot,
       straightFlushJackpot,
       onePairJackpot,
     };
     localStorage.setItem('rapidFireGameState', JSON.stringify(gameState));
-  }, [balances, roundId, casinoProfit, roundsPlayed, royalFlushJackpot, straightFlushJackpot]);
+  }, [balances, roundId, casinoProfit, roundsPlayed, straightFlushJackpot]);
 
   // Active player helpers
   const pid = activePlayer;
@@ -452,7 +449,6 @@ export default function RapidFireGame() {
     let totalWinningsAllPlayers = 0;
     const playerWinnings = [];
 
-    let newRF = royalFlushJackpot;
     let newSF = straightFlushJackpot;
     const playerPayouts = [];
 
@@ -530,13 +526,6 @@ export default function RapidFireGame() {
           }
         }
         // Jackpots — require minimum qualifying bet
-        if (handResult.name === 'Royal Flush') {
-          const rfBet = prk['Royal Flush'] || 0;
-          if (rfBet >= 25) {
-            w += royalFlushJackpot + rfBet + rfBet * 100;
-          }
-          newRF = JACKPOT_SEEDS.royalFlush;
-        }
         if (handResult.name === 'Straight Flush') {
           const sfBet = prk['Straight Flush'] || 0;
           if (sfBet >= 15) {
@@ -582,7 +571,6 @@ export default function RapidFireGame() {
     });
 
     // Increment jackpots for next round
-    setRoyalFlushJackpot(p => p + 12.5);
     setStraightFlushJackpot(p => p + 5);
     setOnePairJackpot(p => p + 0.5);
 
@@ -673,7 +661,6 @@ export default function RapidFireGame() {
     setCasinoProfit(0);
     setHistory([]);
     setPlayerStats({});
-    setRoyalFlushJackpot(JACKPOT_SEEDS.royalFlush);
     setStraightFlushJackpot(JACKPOT_SEEDS.straightFlush);
     setOnePairJackpot(JACKPOT_SEEDS.onePair);
     setActivePlayer(0);
@@ -923,7 +910,6 @@ export default function RapidFireGame() {
         <div className="w-40 flex-shrink-0 flex flex-col gap-1.5 overflow-hidden">
           <HistoryRail
             history={history}
-            royalFlushJackpot={royalFlushJackpot}
             straightFlushJackpot={straightFlushJackpot}
             onePairJackpot={onePairJackpot}
           />

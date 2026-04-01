@@ -18,17 +18,13 @@ function shortRank(rank) {
   return map[rank] || rank;
 }
 
-export default function HistoryRail({ history, royalFlushJackpot, straightFlushJackpot, onePairJackpot }) {
+export default function HistoryRail({ history, straightFlushJackpot, onePairJackpot }) {
   return (
     <div className="flex flex-col gap-1.5 h-full overflow-hidden">
       {/* Jackpots */}
       <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-shrink-0">
         <div className="text-yellow-400 text-xs font-bold tracking-wider uppercase mb-1.5 text-center">Jackpots</div>
         <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between items-center">
-            <span className="text-purple-400 text-xs font-semibold">Royal Flush</span>
-            <span className="text-yellow-300 font-bold text-xs">${royalFlushJackpot.toFixed(0)}</span>
-          </div>
           <div className="flex justify-between items-center">
             <span className="text-orange-400 text-xs font-semibold">Str. Flush</span>
             <span className="text-yellow-300 font-bold text-xs">${straightFlushJackpot.toFixed(0)}</span>
