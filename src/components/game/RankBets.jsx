@@ -11,15 +11,16 @@ const PLAYER_CHIP_COLORS = [
 
 // High Card removed - always at least 1 pair minimum (K/K)
 // Royal Flush removed as a betting position (RTP non-compliant)
+// All ranks are fixed-odds — no progressives
 export const RANK_BET_OPTIONS = [
-  { key: 'Straight Flush',  label: 'Straight Flush',  payout: 'Progressive',                                      color: 'orange', minBet: 15 },
-  { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: `${HAND_RANK_PAYOUTS['Four of a Kind']}:1`,         color: 'yellow' },
-  { key: 'Full House',      label: 'Full House',       payout: `${HAND_RANK_PAYOUTS['Full House']}:1`,             color: 'green'  },
-  { key: 'Flush',           label: 'Flush',            payout: `${HAND_RANK_PAYOUTS['Flush']}:1`,                 color: 'blue'   },
-  { key: 'Straight',        label: 'Straight',         payout: `${HAND_RANK_PAYOUTS['Straight']}:1`,              color: 'teal'   },
-  { key: 'Three of a Kind', label: 'Three of a Kind',  payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1`,       color: 'green'  },
-  { key: 'Two Pair',        label: 'Two Pair',         payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,              color: 'green'  },
-  { key: 'One Pair',        label: 'One Pair',         payout: 'Progressive',                                      color: 'green',  minBet: 10 },
+  { key: 'Straight Flush',  label: 'Straight Flush',  payout: `${HAND_RANK_PAYOUTS['Straight Flush']}:1`,        color: 'orange' },
+  { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: `${HAND_RANK_PAYOUTS['Four of a Kind']}:1`,        color: 'yellow' },
+  { key: 'Full House',      label: 'Full House',       payout: `${HAND_RANK_PAYOUTS['Full House']}:1`,            color: 'green'  },
+  { key: 'Flush',           label: 'Flush',            payout: `${HAND_RANK_PAYOUTS['Flush']}:1`,                color: 'blue'   },
+  { key: 'Straight',        label: 'Straight',         payout: `${HAND_RANK_PAYOUTS['Straight']}:1`,             color: 'teal'   },
+  { key: 'Three of a Kind', label: 'Three of a Kind',  payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1`,      color: 'green'  },
+  { key: 'Two Pair',        label: 'Two Pair',         payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,             color: 'green'  },
+  { key: 'One Pair',        label: 'One Pair',         payout: `${HAND_RANK_PAYOUTS['One Pair']}:1`,             color: 'green'  },
 ];
 
 // Winner always highlights in gold/yellow with flash animation
@@ -36,12 +37,10 @@ const COLOR_STYLES = {
 
 export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled, disabledByConstraint, handBetCount, rankBetCount, onAttemptLockedRank }) {
   const canBet = gamePhase === 'betting' && !disabled;
-  const isLocked = false;
-
   return (
     <div>
-      <div className={`text-xs font-bold tracking-wider uppercase mb-1 text-center ${isLocked ? 'text-orange-400' : 'text-yellow-400'}`}>
-        Hand Rank Board {isLocked && '🔒'}
+      <div className="text-xs font-bold tracking-wider uppercase mb-1 text-center text-yellow-400">
+        Hand Rank Board
       </div>
       <div className="flex flex-col gap-0.5">
         {RANK_BET_OPTIONS.map(opt => {
@@ -50,13 +49,9 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const isLeading = leadingRank === opt.key && !isWinner;
           const isProgressive = opt.minBet !== undefined; // Royal Flush, Straight Flush, One Pair
           const styles = COLOR_STYLES[opt.color];
-          const qualifies = !opt.minBet || bet >= opt.minBet;
-          
-          // Count only non-progressive bets for this player
-          const nonProgBetCount = Object.keys(rankBets).filter(k => !['Straight Flush', 'One Pair'].includes(k)).length;
-          
-          // Rule per-player: progressives always available; non-progressive: 0 hands = all allowed, 1-2 hands = limit to 2, 3+ hands = closed
-          const canBetThisRank = isProgressive || (handBetCount === 0) || (handBetCount >= 1 && handBetCount <= 2 && nonProgBetCount < 2);
+          // All ranks follow same rule: 0 hands = all allowed, 1-2 hands = limit to 2, 3+ hands = closed
+          const allRankBetCount = Object.keys(rankBets).length;
+          const canBetThisRank = (handBetCount === 0) || (handBetCount >= 1 && handBetCount <= 2 && allRankBetCount < 2);
 
           let cls = styles.inactive;
           if (!canBetThisRank && bet === 0) cls = 'border-red-700/60 bg-red-950/60 text-red-500 opacity-40 cursor-not-allowed';
@@ -111,11 +106,6 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
             >
               <div className="flex flex-col items-start leading-tight min-w-0 flex-1">
                 <span className="truncate">{opt.label}</span>
-                {opt.minBet && (
-                  <span className={`text-xs font-normal leading-none mt-0.5 ${bet > 0 && !qualifies ? 'text-red-400' : bet >= opt.minBet ? 'text-green-400' : 'text-yellow-400/50'}`}>
-                    {bet >= opt.minBet ? '✓ qualifies' : `min $${opt.minBet}`}
-                  </span>
-                )}
               </div>
               {!canBetThisRank && bet === 0 && (
                 <span className="text-red-400 font-black text-xs ml-1 flex-shrink-0">🔒</span>

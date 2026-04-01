@@ -17,59 +17,54 @@
  * - Max 4 simultaneous Card Hand bets (no restriction)
  * - Max 2 Card Hand bets allowed IF betting on Hand Rank board
  * - Only 1 Hand Rank bet allowed at a time
- * - Progressive pots (Straight Flush, One Pair) always available before deal
- * - All other Hand Rank bets require ≤2 Hand bets to be active
+ * - All Hand Rank bets (including One Pair and Straight Flush) are fixed-odds — no progressives
+ * - All Hand Rank bets require ≤2 Hand bets to be active
  *
- * JACKPOT SEEDS — formula: For96.5% odds × min_bet (rounded to nearest dollar)
- *   One Pair:      158.34 × $10  = $1,584
- *   Straight Flush: 255.42 × $15 = $3,831
+ * NOTE: Progressive jackpots removed as of 2026-04-01.
+ * One Pair and Straight Flush are now fixed-odds bets calibrated to 96.5% RTP,
+ * identical in structure to all other Hand Rank positions.
  */
 
 // CARDED HANDS — "For 96.5%" column from 22M game audit
 export const CARDED_HAND_PAYOUTS = [
-  14.51,  // Hand 1:  A♦10♥   (was 18.00)
-  4.21,   // Hand 2:  K♣K♠    (was 4.00)
-  10.98,  // Hand 3:  Q♣J♠    (was 15.00)
-  6.75,   // Hand 4:  Q♠10♠   (was 8.00)
-  5.63,   // Hand 5:  J♣9♣    (was 6.00)
-  4.48,   // Hand 6:  8♦6♦    (was 5.00)
-  4.04,   // Hand 7:  7♦7♠    (was 6.00)
-  4.69,   // Hand 8:  4♥2♥    (was 7.00)
-  4.11,   // Hand 9:  3♣3♥    (was 8.00)
-  9.30,   // Hand 10: A♥5♦    (was 15.00)
+  14.51,  // Hand 1:  A♦10♥
+  4.21,   // Hand 2:  K♣K♠
+  10.98,  // Hand 3:  Q♣J♠
+  6.75,   // Hand 4:  Q♠10♠
+  5.63,   // Hand 5:  J♣9♣
+  4.48,   // Hand 6:  8♦6♦
+  4.04,   // Hand 7:  7♦7♠
+  4.69,   // Hand 8:  4♥2♥
+  4.11,   // Hand 9:  3♣3♥
+  9.30,   // Hand 10: A♥5♦
 ];
 
 // HAND RANK PAYOUTS — "For 96.5%" column from 22M game audit
-// Royal Flush removed as a betting position (RTP non-compliant)
+// All positions are fixed-odds — no progressives. One Pair and Straight Flush
+// calibrated from real 22M-game simulation of the 32-card deck with 10 fixed hands.
 export const HAND_RANK_PAYOUTS = {
-  'Straight Flush':  null,    // Progressive jackpot — seed $3,831
-  'Four of a Kind':  12.43,   // (was 12.77)
-  'Full House':      2.53,    // unchanged
-  'Flush':           3.10,    // (was 3.21)
-  'Straight':        5.02,    // (was 4.58)
-  'Three of a Kind': 3.95,    // (was 3.81)
-  'Two Pair':        16.76,   // (was 15.98)
-  'One Pair':        null,    // Progressive jackpot — seed $1,584
+  'Straight Flush':  255.42,  // Fixed odds — 0.382% win frequency
+  'Four of a Kind':  12.43,
+  'Full House':      2.53,
+  'Flush':           3.10,
+  'Straight':        5.02,
+  'Three of a Kind': 3.95,
+  'Two Pair':        16.76,
+  'One Pair':        158.34,  // Fixed odds — 0.605% win frequency
 };
 
 // COLOR BOARD PAYOUTS — "For 96.5%" column from 22M game audit
 export const COLOR_BOARD_PAYOUTS = {
-  '3R': 0.93,   // (was 0.81)
-  '3B': 0.93,   // (was 0.81)
-  '4R': 4.81,   // (was 5.25)
-  '4B': 4.81,   // (was 5.25)
-  '5R': 43.36,  // (was 20.56)
-  '5B': 43.46,  // (was 20.56)
+  '3R': 0.93,
+  '3B': 0.93,
+  '4R': 4.81,
+  '4B': 4.81,
+  '5R': 43.36,
+  '5B': 43.46,
 };
 
 // LOW/HIGH PAYOUT — "For 96.5%" column from 22M game audit
-export const LOW_HIGH_PAYOUT = 0.93;  // (was 0.95)
-
-// JACKPOT SEEDS — For96.5% odds × min_bet (rounded to nearest dollar)
-export const JACKPOT_SEEDS = {
-  straightFlush:    3831,  // 255.42  × $15
-  onePair:          1584,  // 158.34  × $10
-};
+export const LOW_HIGH_PAYOUT = 0.93;
 
 /**
  * Calculate total payout from bet and ratio
@@ -93,7 +88,7 @@ export function validateAllPayouts() {
   });
 
   Object.entries(HAND_RANK_PAYOUTS).forEach(([rank, payout]) => {
-    if (payout !== null && (typeof payout !== 'number' || payout < 0)) {
+    if (typeof payout !== 'number' || payout < 0) {
       errors.push(`Rank "${rank}" has invalid payout: ${payout}`);
     }
   });

@@ -28,14 +28,14 @@ const BET_DEFINITIONS = [
   { betType: 'hand', betKey: '8',  label: 'Hand 8 — 4♥/2♥',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[7] },
   { betType: 'hand', betKey: '9',  label: 'Hand 9 — 3♣/3♥',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[8] },
   { betType: 'hand', betKey: '10', label: 'Hand 10 — A♥/5♦',  group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[9] },
-  { betType: 'rank', betKey: 'One Pair',         label: 'One Pair',        group: 'Hand Ranks', currentPayout: 158.34 },
+  { betType: 'rank', betKey: 'One Pair',         label: 'One Pair',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['One Pair'] },
   { betType: 'rank', betKey: 'Two Pair',         label: 'Two Pair',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Two Pair'] },
   { betType: 'rank', betKey: 'Three of a Kind',  label: 'Three of a Kind', group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Three of a Kind'] },
   { betType: 'rank', betKey: 'Straight',         label: 'Straight',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Straight'] },
   { betType: 'rank', betKey: 'Flush',            label: 'Flush',           group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Flush'] },
   { betType: 'rank', betKey: 'Full House',       label: 'Full House',      group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Full House'] },
   { betType: 'rank', betKey: 'Four of a Kind',   label: 'Four of a Kind',  group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Four of a Kind'] },
-  { betType: 'rank', betKey: 'Straight Flush',   label: 'Straight Flush',  group: 'Hand Ranks', currentPayout: 255.42 },
+  { betType: 'rank', betKey: 'Straight Flush',   label: 'Straight Flush',  group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Straight Flush'] },
   { betType: 'color', betKey: '3R', label: '3 Red',    group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3R'] },
   { betType: 'color', betKey: '3B', label: '3 Black',  group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3B'] },
   { betType: 'color', betKey: '4R', label: '4 Red',    group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['4R'] },
@@ -643,7 +643,7 @@ export default function IndividualBetAudit() {
             <p>• <span className="text-green-400">Green RTP</span> = within 95–98% target &nbsp;|&nbsp; <span className="text-orange-400">Orange</span> = too high &nbsp;|&nbsp; <span className="text-red-400">Red</span> = too low</p>
             <p>• <span className="text-yellow-300">For 96.5% column</span> = the exact payout multiplier needed to hit the 96.5% midpoint target</p>
             <p>• <span className="text-green-400">(+x.xx)</span> = suggested odds are higher than current &nbsp;|&nbsp; <span className="text-red-400">(-x.xx)</span> = lower than current</p>
-            <p>• One Pair (158.34:1), Straight Flush (255.42:1) use jackpot multiplier odds for RTP calculation</p>
+            <p>• One Pair (158.34:1), Straight Flush (255.42:1) are fixed-odds bets calibrated to 96.5% RTP</p>
           </div>
         </div>
       )}

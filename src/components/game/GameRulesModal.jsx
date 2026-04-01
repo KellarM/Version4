@@ -17,14 +17,14 @@ const FIXED_HANDS = [
 ];
 
 const RANK_BETS = [
-  { name: 'Straight Flush',  payout: '255.42:1',   note: 'Progressive Jackpot — min bet $15', color: 'text-orange-300' },
+  { name: 'Straight Flush',  payout: `${HAND_RANK_PAYOUTS['Straight Flush']}:1`,  note: '', color: 'text-orange-300' },
   { name: 'Four of a Kind',  payout: `${HAND_RANK_PAYOUTS['Four of a Kind']}:1`,  note: '', color: 'text-yellow-300' },
   { name: 'Full House',      payout: `${HAND_RANK_PAYOUTS['Full House']}:1`,      note: '', color: 'text-green-300' },
   { name: 'Flush',           payout: `${HAND_RANK_PAYOUTS['Flush']}:1`,           note: '', color: 'text-blue-300' },
   { name: 'Straight',        payout: `${HAND_RANK_PAYOUTS['Straight']}:1`,        note: '', color: 'text-teal-300' },
   { name: 'Three of a Kind', payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1`, note: '', color: 'text-green-300' },
   { name: 'Two Pair',        payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,        note: '', color: 'text-green-300' },
-  { name: 'One Pair',        payout: '158.34:1',   note: 'Progressive Jackpot — min bet $10', color: 'text-green-300' },
+  { name: 'One Pair',        payout: `${HAND_RANK_PAYOUTS['One Pair']}:1`,        note: '', color: 'text-green-300' },
 ];
 
 const COLOR_BETS = [
@@ -178,10 +178,9 @@ export default function GameRulesModal() {
                   <div className="mt-3 bg-purple-900/20 border border-purple-700/40 rounded-lg px-4 py-2 space-y-1">
                     <p className="text-purple-300 font-semibold text-xs">Hand Rank Betting Rules:</p>
                     <Rule label="Only 1 rank bet">allowed per round.</Rule>
-                    <Rule label="Progressives (Straight Flush, One Pair)">are always available regardless of how many card hand bets you have.</Rule>
-                    <Rule label="Non-progressive ranks">are locked if you have 3 or more card hand bets active.</Rule>
-                    <Rule label="Non-progressive ranks">limited to 1 bet if you have 1–2 card hand bets active.</Rule>
-                    <Rule label="Progressive jackpots">require a minimum qualifying bet ($15 Straight Flush / $10 One Pair) to win the jackpot.</Rule>
+                    <Rule label="All ranks locked">if you have 3 or more card hand bets active.</Rule>
+                    <Rule label="All ranks limited to 1">if you have 1–2 card hand bets active.</Rule>
+                    <Rule label="No minimum bet">required — all ranks including One Pair and Straight Flush are standard fixed-odds bets.</Rule>
                   </div>
                 </Section>
 
@@ -235,7 +234,7 @@ export default function GameRulesModal() {
                   <Rule label="Use chips wisely">Select your chip denomination ($5–$100) before clicking a betting spot. Right-click to remove a bet.</Rule>
                   <Rule label="Track the board">Watch the Color Board highlights — they update live as each community card is revealed.</Rule>
                   <Rule label="Low/High timing">Wait until 4 community cards are showing before deciding LOW or HIGH — you'll have better information.</Rule>
-                  <Rule label="Progressive jackpots">Small minimum bets (as low as $10) can win jackpots on One Pair or Straight Flush.</Rule>
+                  <Rule label="High-odds bets">One Pair (158.34:1) and Straight Flush (255.42:1) are rare but pay fixed odds — no minimum bet required.</Rule>
                   <Rule label="Repeat bets">After your first round, the Repeat button lets you instantly re-place the same bets for the next round.</Rule>
                 </Section>
 

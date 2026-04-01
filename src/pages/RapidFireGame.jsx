@@ -21,7 +21,7 @@ import DetailedPayoutDisplay from '@/components/game/DetailedPayoutDisplay';
 import HandBetLimitAlert from '@/components/game/HandBetLimitAlert';
 import RankBetLimitAlert from '@/components/game/RankBetLimitAlert';
 import InsufficientFundsAlert from '@/components/game/InsufficientFundsAlert';
-import { JACKPOT_SEEDS } from '@/lib/payoutConstants';
+
 
 const STARTING_BALANCE = 1000;
 const CHIP_VALUES = [5, 10, 25, 50, 100];
@@ -72,8 +72,7 @@ export default function RapidFireGame() {
   const [playerStats, setPlayerStats] = useState({});
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [roundId, setRoundId] = useState(1);
-  const [straightFlushJackpot, setStraightFlushJackpot] = useState(JACKPOT_SEEDS.straightFlush);
-  const [onePairJackpot, setOnePairJackpot] = useState(JACKPOT_SEEDS.onePair);
+
   const [lastWinInfo, setLastWinInfo] = useState(null);
   const [winningRank, setWinningRank] = useState(null);
   const [leadingRank, setLeadingRank] = useState(null);
@@ -107,8 +106,7 @@ export default function RapidFireGame() {
         setRoundId(state.roundId);
         setCasinoProfit(state.casinoProfit);
         setRoundsPlayed(state.roundsPlayed);
-        setStraightFlushJackpot(Math.max(state.straightFlushJackpot || 0, JACKPOT_SEEDS.straightFlush));
-        setOnePairJackpot(Math.max(state.onePairJackpot || 0, JACKPOT_SEEDS.onePair));
+
       } catch (e) {
         console.log('Could not restore game state');
       }
@@ -122,11 +120,9 @@ export default function RapidFireGame() {
       roundId,
       casinoProfit,
       roundsPlayed,
-      straightFlushJackpot,
-      onePairJackpot,
     };
     localStorage.setItem('rapidFireGameState', JSON.stringify(gameState));
-  }, [balances, roundId, casinoProfit, roundsPlayed, straightFlushJackpot]);
+  }, [balances, roundId, casinoProfit, roundsPlayed]);
 
   // Active player helpers
   const pid = activePlayer;
@@ -449,7 +445,6 @@ export default function RapidFireGame() {
     let totalWinningsAllPlayers = 0;
     const playerWinnings = [];
 
-    let newSF = straightFlushJackpot;
     const playerPayouts = [];
 
     for (let i = 0; i < playerCount; i++) {
@@ -509,12 +504,12 @@ export default function RapidFireGame() {
 
       // River hedge is not a real bet type — ignore any flag
 
-      // Rank bets — use numeric payout map from payoutConstants.js
+      // Rank bets — all ranks are fixed-odds
       if (handResult) {
         const rankBetAmt = prk[handResult.name] || 0;
         if (rankBetAmt > 0) {
           const ratio = RANK_PAYOUT_MAP[handResult.name];
-          if (ratio !== null && ratio !== undefined) {
+          if (ratio !== undefined && ratio !== null) {
             const payout = calculatePayout(rankBetAmt, ratio);
             w += payout;
             wins.push({
@@ -525,21 +520,7 @@ export default function RapidFireGame() {
             });
           }
         }
-        // Jackpots — require minimum qualifying bet
-        if (handResult.name === 'Straight Flush') {
-          const sfBet = prk['Straight Flush'] || 0;
-          if (sfBet >= 15) {
-            w += straightFlushJackpot + sfBet + sfBet * 50;
-          }
-          newSF = JACKPOT_SEEDS.straightFlush;
-        }
-        if (handResult.name === 'One Pair') {
-          const opBet = prk['One Pair'] || 0;
-          if (opBet >= 10) {
-            w += onePairJackpot + opBet + opBet * 100;
-          }
-          setOnePairJackpot(JACKPOT_SEEDS.onePair);
-        }
+
       }
 
       // Total bets for this player
@@ -570,9 +551,7 @@ export default function RapidFireGame() {
       totalBet: totalBetsAllPlayers,
     });
 
-    // Increment jackpots for next round
-    setStraightFlushJackpot(p => p + 5);
-    setOnePairJackpot(p => p + 0.5);
+
 
     // Update all player balances (add payouts received)
     setBalances(prev => {
@@ -661,8 +640,6 @@ export default function RapidFireGame() {
     setCasinoProfit(0);
     setHistory([]);
     setPlayerStats({});
-    setStraightFlushJackpot(JACKPOT_SEEDS.straightFlush);
-    setOnePairJackpot(JACKPOT_SEEDS.onePair);
     setActivePlayer(0);
     setDealerMessage("Texas Hold'em is open for play. Players, please place your bets.");
     setGamePhase('betting');
@@ -908,11 +885,7 @@ export default function RapidFireGame() {
 
         {/* LEFT: History + Jackpots */}
         <div className="w-40 flex-shrink-0 flex flex-col gap-1.5 overflow-hidden">
-          <HistoryRail
-            history={history}
-            straightFlushJackpot={straightFlushJackpot}
-            onePairJackpot={onePairJackpot}
-          />
+          <HistoryRail history={history} />
         </div>
 
         {/* CENTER: Main Game Board */}

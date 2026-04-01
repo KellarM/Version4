@@ -18,30 +18,15 @@ function shortRank(rank) {
   return map[rank] || rank;
 }
 
-export default function HistoryRail({ history, straightFlushJackpot, onePairJackpot }) {
+export default function HistoryRail({ history }) {
   return (
     <div className="flex flex-col gap-1.5 h-full overflow-hidden">
-      {/* Jackpots */}
-      <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-shrink-0">
-        <div className="text-yellow-400 text-xs font-bold tracking-wider uppercase mb-1.5 text-center">Jackpots</div>
-        <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between items-center">
-            <span className="text-orange-400 text-xs font-semibold">Str. Flush</span>
-            <span className="text-yellow-300 font-bold text-xs">${straightFlushJackpot.toFixed(0)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-green-400 text-xs font-semibold">One Pair</span>
-            <span className="text-yellow-300 font-bold text-xs">${onePairJackpot.toFixed(0)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* History Rail */}
+      {/* History Rail — full height, no jackpot section */}
       <div className="border border-yellow-700/40 rounded-xl bg-black/30 flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="text-yellow-400 text-xs font-bold tracking-wider uppercase py-1.5 text-center border-b border-yellow-700/30">
           Previous Hands
         </div>
-        {/* Column headers: HAND | TYPE (wider) | R/B | L/H */}
+        {/* Column headers */}
         <div className="grid px-1 py-0.5 border-b border-yellow-700/20" style={{gridTemplateColumns:'auto 1fr auto auto', gap:'0 2px'}}>
           <span className="text-yellow-400/60 text-xs font-semibold pr-1">HAND</span>
           <span className="text-yellow-400/60 text-xs font-semibold">TYPE</span>

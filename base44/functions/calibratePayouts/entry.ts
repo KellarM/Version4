@@ -12,12 +12,12 @@ Deno.serve(async (req) => {
     const TARGET_RTP_LOW = 0.95;
     const TARGET_RTP_HIGH = 0.98;
 
-    // Current payouts
+    // Current payouts — all ranks are fixed-odds, no progressives
     const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
-    // Royal Flush removed as a betting position. One Pair and Straight Flush use jackpot multiplier odds.
     const RANKS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush'];
     const RANK_PAYOUTS = [158.34, 16.76, 3.95, 5.02, 3.10, 2.53, 12.43, 255.42];
-    const RANK_FREQ = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139];
+    // TRUE frequencies from exhaustive 32-card / 10-hand combinatorial dataset (201,376 deals)
+    const RANK_FREQ = [0.006049, 0.054344, 0.195325, 0.177030, 0.235248, 0.281685, 0.071882, 0.003819];
     const RANK_CUM = [];
     let cum = 0;
     for (const f of RANK_FREQ) { cum += f; RANK_CUM.push(cum); }

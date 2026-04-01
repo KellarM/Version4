@@ -384,7 +384,7 @@ export default function GamingLicenseCalibration() {
                   { label: `Minimum rounds simulated (${(finalReport.totalGamesSimulated / 1_000_000).toFixed(1)}M)`, pass: finalReport.totalGamesSimulated >= 1_000_000 },
                   { label: `Carded Hands RTP: ${finalReport.categoryRTPs.hand}% (target 85–110%)`, pass: parseFloat(finalReport.categoryRTPs.hand) >= 85 && parseFloat(finalReport.categoryRTPs.hand) <= 110 },
                   { label: `Fixed Hand Rank RTP: ${finalReport.categoryRTPs.fixedRank}% (target 85–110%)`, pass: parseFloat(finalReport.categoryRTPs.fixedRank) >= 85 && parseFloat(finalReport.categoryRTPs.fixedRank) <= 110 },
-                  { label: `Progressive Rank RTP: ${finalReport.categoryRTPs.progRank}% (jackpot pool — informational only)`, pass: true },
+                  { label: `One Pair / Straight Flush RTP: ${finalReport.categoryRTPs.progRank}% (fixed-odds high-payout bets — informational)`, pass: true },
                   { label: `Color Board RTP: ${finalReport.categoryRTPs.color}% (target 85–125%)`, pass: parseFloat(finalReport.categoryRTPs.color) >= 85 && parseFloat(finalReport.categoryRTPs.color) <= 125 },
                   { label: `Low/High RTP: ${finalReport.categoryRTPs.lh}% (target 90–102%)`, pass: parseFloat(finalReport.categoryRTPs.lh) >= 90 && parseFloat(finalReport.categoryRTPs.lh) <= 102 },
                 ].map((item, i) => (
@@ -425,8 +425,8 @@ export default function GamingLicenseCalibration() {
               <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
                 <h3 className="font-bold mb-1">Per-Bet-Type RTP Breakdown</h3>
                 <p className="text-gray-500 text-xs mb-4">
-                  "Actual RTP" = total paid out ÷ total wagered on that bet type. "Theo RTP" = expected RTP based on known win frequency × payout. 
-                  Note: One Pair (158.34:1) and Straight Flush (255.42:1) have very high theoretical RTPs because they pay jackpot-scale odds on high-frequency outcomes — this is by design.
+                  "Actual RTP" = total paid out ÷ total wagered on that bet type. "Theo RTP" = expected RTP based on known win frequency × payout.
+                  One Pair (158.34:1) and Straight Flush (255.42:1) are fixed-odds bets with very low win frequency (~0.6% and ~0.4%) — their RTP is calibrated to 96.5% like all other ranks.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Carded Hands */}
@@ -475,22 +475,7 @@ export default function GamingLicenseCalibration() {
                         );
                       })}
                     </div>
-                    {/* Progressive jackpot ranks — separate section */}
-                    <p className="text-orange-400 font-semibold text-xs mt-3 mb-1 px-1">Progressive Jackpot Bets (funded by seed pool — not in 95–98% target)</p>
-                    <div className="grid grid-cols-3 gap-x-2 text-xs text-gray-500 font-semibold uppercase tracking-wider px-3 py-1 mb-1">
-                      <span>Rank (Win Freq)</span>
-                      <span className="text-right">Seed Odds</span>
-                      <span className="text-right">Observed RTP</span>
-                    </div>
-                    <div className="space-y-1">
-                      {finalReport.breakdown.ranks.filter(r => r.isProgressive).map(r => (
-                        <div key={r.name} className="grid grid-cols-3 gap-x-2 text-xs bg-orange-950/30 border border-orange-800/30 rounded px-3 py-1.5">
-                          <span className="text-orange-300 truncate">{r.name} <span className="text-orange-800">({r.freq}%)</span></span>
-                          <span className="text-right text-orange-500">{r.payout}:1</span>
-                          <span className="text-right text-orange-300 font-semibold">{r.rtp}%</span>
-                        </div>
-                      ))}
-                    </div>
+
                   </div>
                   {/* Color Board */}
                   <div>
