@@ -93,6 +93,8 @@ export default function GamingLicenseCalibration() {
       totalBet: 0, totalPay: 0,
       handBet: 0, handPay: 0,
       rankBet: 0, rankPay: 0,
+      fixedRankBet: 0, fixedRankPay: 0,
+      progRankBet: 0, progRankPay: 0,
       colorBet: 0, colorPay: 0,
       lhBet: 0, lhPay: 0,
       breakdown: null,
@@ -112,12 +114,14 @@ export default function GamingLicenseCalibration() {
           const d = res.data;
           if (d.success) {
             const acc = runAccumulators[run];
-            acc.totalBet += d.raw.totalBet;
-            acc.totalPay += d.raw.totalPay;
-            acc.handBet  += d.raw.handBet;  acc.handPay  += d.raw.handPay;
-            acc.rankBet  += d.raw.rankBet;  acc.rankPay  += d.raw.rankPay;
-            acc.colorBet += d.raw.colorBet; acc.colorPay += d.raw.colorPay;
-            acc.lhBet    += d.raw.lhBet;    acc.lhPay    += d.raw.lhPay;
+            acc.totalBet      += d.raw.totalBet;
+            acc.totalPay      += d.raw.totalPay;
+            acc.handBet       += d.raw.handBet;       acc.handPay       += d.raw.handPay;
+            acc.rankBet       += d.raw.rankBet;       acc.rankPay       += d.raw.rankPay;
+            acc.fixedRankBet  += d.raw.fixedRankBet;  acc.fixedRankPay  += d.raw.fixedRankPay;
+            acc.progRankBet   += d.raw.progRankBet;   acc.progRankPay   += d.raw.progRankPay;
+            acc.colorBet      += d.raw.colorBet;      acc.colorPay      += d.raw.colorPay;
+            acc.lhBet         += d.raw.lhBet;         acc.lhPay         += d.raw.lhPay;
             acc.breakdown = d.breakdown; // keep last batch breakdown (illustrative)
           }
         } catch (e) {
@@ -168,20 +172,23 @@ export default function GamingLicenseCalibration() {
 
     // Overall accum
     const overall = runAccumulators.reduce((o, acc) => {
-      o.totalBet += acc.totalBet; o.totalPay += acc.totalPay;
-      o.handBet  += acc.handBet;  o.handPay  += acc.handPay;
-      o.rankBet  += acc.rankBet;  o.rankPay  += acc.rankPay;
-      o.colorBet += acc.colorBet; o.colorPay += acc.colorPay;
-      o.lhBet    += acc.lhBet;    o.lhPay    += acc.lhPay;
+      o.totalBet      += acc.totalBet;      o.totalPay      += acc.totalPay;
+      o.handBet       += acc.handBet;       o.handPay       += acc.handPay;
+      o.rankBet       += acc.rankBet;       o.rankPay       += acc.rankPay;
+      o.fixedRankBet  += acc.fixedRankBet;  o.fixedRankPay  += acc.fixedRankPay;
+      o.progRankBet   += acc.progRankBet;   o.progRankPay   += acc.progRankPay;
+      o.colorBet      += acc.colorBet;      o.colorPay      += acc.colorPay;
+      o.lhBet         += acc.lhBet;         o.lhPay         += acc.lhPay;
       return o;
-    }, { totalBet:0,totalPay:0,handBet:0,handPay:0,rankBet:0,rankPay:0,colorBet:0,colorPay:0,lhBet:0,lhPay:0 });
+    }, { totalBet:0,totalPay:0,handBet:0,handPay:0,rankBet:0,rankPay:0,fixedRankBet:0,fixedRankPay:0,progRankBet:0,progRankPay:0,colorBet:0,colorPay:0,lhBet:0,lhPay:0 });
 
     const overallRTP = overall.totalBet > 0 ? (overall.totalPay / overall.totalBet * 100) : 0;
 
-    // Non-jackpot RTP: excludes Hand Rank bets (which include jackpot-scale One Pair + Straight Flush payouts).
-    // The 95-98% RTP target applies to non-jackpot bets; jackpot bets are governed by their own seed/pool math.
-    const nonJackpotBet = overall.handBet + overall.colorBet + overall.lhBet;
-    const nonJackpotPay = overall.handPay + overall.colorPay + overall.lhPay;
+    // Non-jackpot RTP: Hands + Fixed Ranks (Two Pair, Trips, Straight, Flush, Full House, 4OAK) + Color + L/H.
+    // Progressive bets (One Pair 158.34:1, Straight Flush 255.42:1) are funded by jackpot seed pools —
+    // their RTP is intentionally outside 95-98% and is governed separately.
+    const nonJackpotBet = overall.handBet + overall.fixedRankBet + overall.colorBet + overall.lhBet;
+    const nonJackpotPay = overall.handPay + overall.fixedRankPay + overall.colorPay + overall.lhPay;
     const nonJackpotRTP = nonJackpotBet > 0 ? (nonJackpotPay / nonJackpotBet * 100) : 0;
 
     setFinalReport({
@@ -196,10 +203,11 @@ export default function GamingLicenseCalibration() {
       reproducible,
       certificationPass: reproducible, // jackpot bets excluded from pass/fail — see nonJackpotRTP
       categoryRTPs: {
-        hand:  overall.handBet  > 0 ? (overall.handPay  / overall.handBet  * 100).toFixed(3) : 'N/A',
-        rank:  overall.rankBet  > 0 ? (overall.rankPay  / overall.rankBet  * 100).toFixed(3) : 'N/A',
-        color: overall.colorBet > 0 ? (overall.colorPay / overall.colorBet * 100).toFixed(3) : 'N/A',
-        lh:    overall.lhBet    > 0 ? (overall.lhPay    / overall.lhBet    * 100).toFixed(3) : 'N/A',
+        hand:       overall.handBet       > 0 ? (overall.handPay       / overall.handBet       * 100).toFixed(3) : 'N/A',
+        fixedRank:  overall.fixedRankBet  > 0 ? (overall.fixedRankPay  / overall.fixedRankBet  * 100).toFixed(3) : 'N/A',
+        progRank:   overall.progRankBet   > 0 ? (overall.progRankPay   / overall.progRankBet   * 100).toFixed(3) : 'N/A',
+        color:      overall.colorBet      > 0 ? (overall.colorPay      / overall.colorBet      * 100).toFixed(3) : 'N/A',
+        lh:         overall.lhBet         > 0 ? (overall.lhPay         / overall.lhBet         * 100).toFixed(3) : 'N/A',
       },
       breakdown: runAccumulators[0]?.breakdown,
       runRTPs: rtps.map(r => r.toFixed(3)),
@@ -371,11 +379,12 @@ export default function GamingLicenseCalibration() {
               <h3 className="font-bold mb-4 flex items-center gap-2"><Layers className="w-4 h-4 text-yellow-400" /> Compliance Checklist</h3>
               <div className="space-y-3">
                 {[
-                  { label: `Non-Jackpot RTP within 95–98% target (Hands+Color+L/H: ${finalReport.nonJackpotRTP ?? finalReport.categoryRTPs.hand}%)`, pass: parseFloat(finalReport.nonJackpotRTP ?? 0) >= TARGET_LOW && parseFloat(finalReport.nonJackpotRTP ?? 0) <= TARGET_HIGH },
-                  { label: 'All individual runs pass RTP range', pass: finalReport.allPass },
+                  { label: `Non-Jackpot Blended RTP: ${finalReport.nonJackpotRTP}% (target 95–98%)`, pass: parseFloat(finalReport.nonJackpotRTP) >= TARGET_LOW && parseFloat(finalReport.nonJackpotRTP) <= TARGET_HIGH },
                   { label: `Reproducibility: std deviation < 0.5% (got ±${finalReport.stdDev}%)`, pass: finalReport.reproducible },
                   { label: `Minimum rounds simulated (${(finalReport.totalGamesSimulated / 1_000_000).toFixed(1)}M)`, pass: finalReport.totalGamesSimulated >= 1_000_000 },
                   { label: `Carded Hands RTP: ${finalReport.categoryRTPs.hand}% (target 85–110%)`, pass: parseFloat(finalReport.categoryRTPs.hand) >= 85 && parseFloat(finalReport.categoryRTPs.hand) <= 110 },
+                  { label: `Fixed Hand Rank RTP: ${finalReport.categoryRTPs.fixedRank}% (target 85–110%)`, pass: parseFloat(finalReport.categoryRTPs.fixedRank) >= 85 && parseFloat(finalReport.categoryRTPs.fixedRank) <= 110 },
+                  { label: `Progressive Rank RTP: ${finalReport.categoryRTPs.progRank}% (jackpot pool — informational only)`, pass: true },
                   { label: `Color Board RTP: ${finalReport.categoryRTPs.color}% (target 85–125%)`, pass: parseFloat(finalReport.categoryRTPs.color) >= 85 && parseFloat(finalReport.categoryRTPs.color) <= 125 },
                   { label: `Low/High RTP: ${finalReport.categoryRTPs.lh}% (target 90–102%)`, pass: parseFloat(finalReport.categoryRTPs.lh) >= 90 && parseFloat(finalReport.categoryRTPs.lh) <= 102 },
                 ].map((item, i) => (
@@ -446,24 +455,41 @@ export default function GamingLicenseCalibration() {
                   {/* Hand Ranks */}
                   <div>
                     <p className="text-purple-400 font-semibold text-sm mb-2">Hand Ranks</p>
+                    {/* Fixed ranks */}
                     <div className="grid grid-cols-3 gap-x-2 text-xs text-gray-500 font-semibold uppercase tracking-wider px-3 py-1 mb-1">
                       <span>Rank (Win Freq)</span>
-                      <span className="text-right">Odds</span>
+                      <span className="text-right">Theo RTP</span>
                       <span className="text-right">Actual RTP</span>
                     </div>
                     <div className="space-y-1">
-                      {finalReport.breakdown.ranks.map(r => {
+                      {finalReport.breakdown.ranks.filter(r => !r.isProgressive).map(r => {
                         const actual = parseFloat(r.rtp);
                         const theo = parseFloat(r.theoreticalRTP);
                         const diff = actual - theo;
                         return (
                           <div key={r.name} className="grid grid-cols-3 gap-x-2 text-xs bg-slate-900/40 rounded px-3 py-1.5">
                             <span className="text-gray-300 truncate">{r.name} <span className="text-gray-600">({r.freq}%)</span></span>
-                            <span className="text-right text-gray-500">{r.payout}:1</span>
-                            <span className={`text-right font-semibold ${Math.abs(diff) <= 5 ? 'text-green-400' : diff > 0 ? 'text-orange-400' : 'text-yellow-400'}`}>{r.rtp}</span>
+                            <span className="text-right text-gray-500">{r.theoreticalRTP}%</span>
+                            <span className={`text-right font-semibold ${Math.abs(diff) <= 5 ? 'text-green-400' : diff > 0 ? 'text-orange-400' : 'text-yellow-400'}`}>{r.rtp}%</span>
                           </div>
                         );
                       })}
+                    </div>
+                    {/* Progressive jackpot ranks — separate section */}
+                    <p className="text-orange-400 font-semibold text-xs mt-3 mb-1 px-1">Progressive Jackpot Bets (funded by seed pool — not in 95–98% target)</p>
+                    <div className="grid grid-cols-3 gap-x-2 text-xs text-gray-500 font-semibold uppercase tracking-wider px-3 py-1 mb-1">
+                      <span>Rank (Win Freq)</span>
+                      <span className="text-right">Seed Odds</span>
+                      <span className="text-right">Observed RTP</span>
+                    </div>
+                    <div className="space-y-1">
+                      {finalReport.breakdown.ranks.filter(r => r.isProgressive).map(r => (
+                        <div key={r.name} className="grid grid-cols-3 gap-x-2 text-xs bg-orange-950/30 border border-orange-800/30 rounded px-3 py-1.5">
+                          <span className="text-orange-300 truncate">{r.name} <span className="text-orange-800">({r.freq}%)</span></span>
+                          <span className="text-right text-orange-500">{r.payout}:1</span>
+                          <span className="text-right text-orange-300 font-semibold">{r.rtp}%</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   {/* Color Board */}

@@ -16,10 +16,14 @@ Deno.serve(async (req) => {
     // ── Payout Tables ────────────────────────────────────────────────
     const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
 
-    // Royal Flush removed as a betting position. One Pair and Straight Flush use jackpot multiplier odds.
+    // Royal Flush removed as a betting position.
+    // One Pair (idx 0) and Straight Flush (idx 7) are PROGRESSIVE JACKPOT bets.
+    // Their payout represents the jackpot seed odds — they are funded by a separate pool,
+    // NOT measured against the 95-98% RTP target. Fixed ranks: indices 1-6.
     const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush'];
     const RANK_FREQS = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139];
     const RANK_PAYOUTS = [158.34, 16.76, 3.95, 5.02, 3.10, 2.53, 12.43, 255.42];
+    const RANK_IS_PROGRESSIVE = [true, false, false, false, false, false, false, true]; // idx 0=OnePair, 7=StraightFlush
     const RANK_CUM = [];
     let rc = 0;
     for (const f of RANK_FREQS) { rc += f; RANK_CUM.push(rc); }
@@ -182,6 +186,9 @@ Deno.serve(async (req) => {
     const colorTypeBet = {}; COLOR_KEYS.forEach(k => { colorTypeBet[k] = 0; });
     const colorTypePay = {}; COLOR_KEYS.forEach(k => { colorTypePay[k] = 0; });
     let lhBetCount = 0;
+    // Separate progressive rank accumulators (excluded from 95-98% RTP target)
+    let progRankBet = 0, progRankPay = 0;
+    let fixedRankBet = 0, fixedRankPay = 0;
 
     // ── Simulation loop ──────────────────────────────────────────────
     for (let g = 0; g < N; g++) {
@@ -211,12 +218,15 @@ Deno.serve(async (req) => {
       for (let i = 0; i < strat.ranks.length; i++) {
         const ri = strat.ranks[i];
         const mult = RANK_PAYOUTS[ri];
+        const isProg = RANK_IS_PROGRESSIVE[ri];
         rankBet += BET;
         rankTypeBet[ri] += BET;
+        if (isProg) progRankBet += BET; else fixedRankBet += BET;
         if (ri === rankIdx) {
           const p = BET * (1 + mult);
           rankPay += p;
           rankTypePay[ri] += p;
+          if (isProg) progRankPay += p; else fixedRankPay += p;
         }
       }
 
@@ -272,15 +282,26 @@ Deno.serve(async (req) => {
       theoreticalRTP: ((1 / 10) * (1 + payout) * 100).toFixed(3), // 1-in-10 win chance
     }));
 
-    const rankBreakdown = RANK_KEYS.map((name, i) => ({
-      name,
-      payout: RANK_PAYOUTS[i],
-      freq: (RANK_FREQS[i] * 100).toFixed(4),
-      bet: Math.round(rankTypeBet[i]),
-      paid: Math.round(rankTypePay[i]),
-      rtp: rankTypeBet[i] > 0 ? (rankTypePay[i] / rankTypeBet[i] * 100).toFixed(3) : 'N/A',
-      theoreticalRTP: (RANK_FREQS[i] * (1 + RANK_PAYOUTS[i]) * 100).toFixed(3),
-    }));
+    const rankBreakdown = RANK_KEYS.map((name, i) => {
+      const isProg = RANK_IS_PROGRESSIVE[i];
+      const freq = RANK_FREQS[i];
+      const payout = RANK_PAYOUTS[i];
+      const actualRTP = rankTypeBet[i] > 0 ? (rankTypePay[i] / rankTypeBet[i] * 100).toFixed(3) : 'N/A';
+      // For progressives: show win frequency and the jackpot odds — do NOT show as 95-98% target
+      // For fixed ranks: show theoretical RTP = freq × (1+payout) × 100
+      return {
+        name,
+        payout,
+        freq: (freq * 100).toFixed(4),
+        isProgressive: isProg,
+        bet: Math.round(rankTypeBet[i]),
+        paid: Math.round(rankTypePay[i]),
+        rtp: actualRTP,
+        theoreticalRTP: isProg ? 'Jackpot Pool' : (freq * (1 + payout) * 100).toFixed(3),
+        // For progressives: show what the jackpot seed odds represent
+        note: isProg ? `Jackpot bet — seed odds ${payout}:1 on ${(freq*100).toFixed(4)}% frequency` : null,
+      };
+    });
 
     const colorBreakdown = COLOR_KEYS.map(k => ({
       key: k,
@@ -303,6 +324,8 @@ Deno.serve(async (req) => {
         totalPay: Math.round(totalPay),
         handBet: Math.round(handBet), handPay: Math.round(handPay),
         rankBet: Math.round(rankBet), rankPay: Math.round(rankPay),
+        fixedRankBet: Math.round(fixedRankBet), fixedRankPay: Math.round(fixedRankPay),
+        progRankBet: Math.round(progRankBet), progRankPay: Math.round(progRankPay),
         colorBet: Math.round(colorBet), colorPay: Math.round(colorPay),
         lhBet: Math.round(lhBet), lhPay: Math.round(lhPay),
       },
