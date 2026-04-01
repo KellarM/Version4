@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function RankBetLimitAlert({ isOpen, onClose, currentHandBets, alertType = 'limit' }) {
+  // alertType: 'limit' | 'closed' | 'onepair'
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -24,9 +25,10 @@ export default function RankBetLimitAlert({ isOpen, onClose, currentHandBets, al
   }, [isOpen, onClose]);
 
   const isClosed = alertType === 'closed';
-  const bgGradient = isClosed ? 'from-red-600 to-red-700' : 'from-orange-600 to-orange-700';
-  const borderColor = isClosed ? 'border-red-400' : 'border-orange-400';
-  const textColor = isClosed ? 'text-red-100' : 'text-orange-100';
+  const isOnePair = alertType === 'onepair';
+  const bgGradient = isClosed ? 'from-red-600 to-red-700' : isOnePair ? 'from-purple-600 to-purple-700' : 'from-orange-600 to-orange-700';
+  const borderColor = isClosed ? 'border-red-400' : isOnePair ? 'border-purple-400' : 'border-orange-400';
+  const textColor = isClosed ? 'text-red-100' : isOnePair ? 'text-purple-100' : 'text-orange-100';
 
   return (
     <AnimatePresence>
@@ -61,6 +63,15 @@ export default function RankBetLimitAlert({ isOpen, onClose, currentHandBets, al
                     </p>
                     <p className={`${textColor} text-sm font-semibold mb-4`}>
                       Due To Exceeding More Than 2 Card Hand Bets
+                    </p>
+                  </>
+                ) : isOnePair ? (
+                  <>
+                    <p className={`${textColor} text-lg font-semibold mb-6`}>
+                      One Pair Must Be Bet Exclusively
+                    </p>
+                    <p className={`${textColor} text-sm font-semibold mb-4`}>
+                      One Pair Cannot Be Combined With Any Other Rank Bet
                     </p>
                   </>
                 ) : (

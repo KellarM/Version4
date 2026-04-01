@@ -14,19 +14,20 @@ const TOOLS = [
   { icon: PieChart,  label: 'Game Stats',                 href: '/game-stats' },
 ];
 
-// Updated betting rules (as of 2026-03-29)
+// Updated betting rules (as of 2026-04-01)
 const BETTING_RULES = `
 RAPID FIRE - TEXAS 10 BETTING RULES:
 
 CARD HAND BETS:
-• Max 4 simultaneous Card Hand bets allowed
-• Alert triggers when attempting 5th bet (5-sec countdown)
+• Max 2 Card Hand bets allowed when any Hand Rank bet is active
+• Alert triggers when limit is exceeded (5-sec countdown)
 
 HAND RANK BETS:
-• Unavailable if more than 2 Card Hand bets are active
-• Only 1 Hand Rank bet allowed per round
-• Alert triggers when attempting to bet with >2 active hand bets
-• Progressives (RF, SF, OP) always available before deal
+• 0 Card Hand bets: unlimited rank bets allowed
+• 1–2 Card Hand bets: max 2 rank bets allowed
+• 3+ Card Hand bets: all rank bets locked
+• ONE PAIR ISOLATION: One Pair must be bet alone — cannot combine with any other rank bet
+• All ranks are fixed-odds (no progressives)
 
 COLOR BOARD (Red/Black):
 • Available during betting phase

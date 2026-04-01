@@ -14,11 +14,12 @@
  *   H9  3♣3♥   4,156,093 wins  H10  A♥5♦   2,061,754 wins
  *
  * BETTING CONSTRAINTS (Updated 2026-04-01):
- * - Max 4 simultaneous Card Hand bets (no restriction)
- * - Max 2 Card Hand bets allowed IF betting on Hand Rank board
- * - Only 1 Hand Rank bet allowed at a time
- * - All Hand Rank bets (including One Pair and Straight Flush) are fixed-odds — no progressives
- * - All Hand Rank bets require ≤2 Hand bets to be active
+ * - Max 2 Card Hand bets allowed when any Hand Rank bet is active
+ * - 0 Card Hand bets: unlimited rank bets allowed
+ * - 1–2 Card Hand bets: max 2 rank bets allowed
+ * - 3+ Card Hand bets: all rank bets locked
+ * - ONE PAIR ISOLATION RULE: One Pair must be bet exclusively — cannot combine with any other rank bet
+ * - All Hand Rank bets are fixed-odds — no progressives
  *
  * NOTE: Progressive jackpots removed as of 2026-04-01.
  * One Pair and Straight Flush are now fixed-odds bets calibrated to 96.5% RTP,

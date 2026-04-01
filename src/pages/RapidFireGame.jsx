@@ -229,12 +229,12 @@ export default function RapidFireGame() {
     // One Pair isolation rule: One Pair can only be bet alone
     const currentRankKeys = Object.keys(pRankBets);
     if (key === 'One Pair' && currentRankKeys.length > 0 && !pRankBets['One Pair']) {
-      setRankAlertType('limit');
+      setRankAlertType('onepair');
       setShowRankLimitAlert(true);
       return;
     }
     if (key !== 'One Pair' && pRankBets['One Pair'] && !pRankBets[key]) {
-      setRankAlertType('limit');
+      setRankAlertType('onepair');
       setShowRankLimitAlert(true);
       return;
     }

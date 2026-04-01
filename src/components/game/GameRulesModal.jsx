@@ -180,6 +180,7 @@ export default function GameRulesModal() {
                     <Rule label="0 card hand bets">unlimited rank bets — all positions open.</Rule>
                     <Rule label="1–2 card hand bets">max 2 rank bets allowed.</Rule>
                     <Rule label="3+ card hand bets">all rank bets locked.</Rule>
+                    <Rule label="One Pair isolation">One Pair must be bet exclusively — cannot be combined with any other rank bet, and vice versa.</Rule>
                     <Rule label="No minimum bet">required — all ranks are standard fixed-odds bets.</Rule>
                   </div>
                 </Section>
