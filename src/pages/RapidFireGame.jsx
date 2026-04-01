@@ -141,10 +141,10 @@ export default function RapidFireGame() {
   const rankBetCountTotal = Object.keys(pRankBets).length;
 
   // Hand betting rules based on rank bets:
-  // 0 rank bets: allow 4 hands
-  // 1+ rank bets: allow up to 2 hands
-  const handBetsLockedByRanks = false; // hands are never locked by rank bets
-  const maxHandBetsAllowed = rankBetCountTotal === 0 ? 4 : 2;
+  // 0–2 rank bets: allow up to 2 hand bets
+  // 3+ rank bets: all hand bets locked
+  const handBetsLockedByRanks = rankBetCountTotal >= 3;
+  const maxHandBetsAllowed = 2;
 
   // Rank betting rules based on hand bets:
   // 0 hand bets: unlimited rank bets

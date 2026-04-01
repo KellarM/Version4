@@ -155,15 +155,15 @@ export default function GameRulesModal() {
                   </div>
                   <div className="mt-3 bg-blue-900/20 border border-blue-700/40 rounded-lg px-4 py-2 space-y-1">
                     <p className="text-blue-300 font-semibold text-xs">Betting Limits:</p>
-                    <Rule label="Max 4 Card Hand bets">per round simultaneously.</Rule>
-                    <Rule label="Max 2 Card Hand bets">if you also have a Hand Rank bet active.</Rule>
+                    <Rule label="0–2 Hand Rank bets">max 2 Carded Hand bets allowed.</Rule>
+                    <Rule label="3+ Hand Rank bets">all Carded Hand bets locked.</Rule>
                     <Rule label="Right-click or use Clear">to remove a bet before the deal.</Rule>
                   </div>
                 </Section>
 
                 {/* Hand Rank Bets */}
                 <Section title="Hand Rank Bets — Payouts">
-                  <p className="text-gray-400 text-xs mb-3">Bet on what poker rank the winning hand will achieve. Only 1 Hand Rank bet allowed per round.</p>
+                  <p className="text-gray-400 text-xs mb-3">Bet on what poker rank the winning hand will achieve.</p>
                   <div className="space-y-1.5">
                     {RANK_BETS.map(r => (
                       <div key={r.name} className="flex justify-between items-center bg-slate-800/60 rounded-lg px-3 py-1.5">
