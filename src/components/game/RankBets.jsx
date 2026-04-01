@@ -49,9 +49,10 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const isLeading = leadingRank === opt.key && !isWinner;
           const isProgressive = opt.minBet !== undefined; // Royal Flush, Straight Flush, One Pair
           const styles = COLOR_STYLES[opt.color];
-          // All ranks follow same rule: 0 hands = all allowed, 1-2 hands = limit to 2, 3+ hands = closed
+          // Rank betting rules: 0 hands = unlimited, 1-2 hands = max 2 ranks, 3+ hands = locked
           const allRankBetCount = Object.keys(rankBets).length;
-          const canBetThisRank = (handBetCount === 0) || (handBetCount >= 1 && handBetCount <= 2 && allRankBetCount < 2);
+          const canBetThisRank = (handBetCount === 0) || 
+                                 (handBetCount >= 1 && handBetCount <= 2 && (allRankBetCount < 2 || rankBets[opt.key] > 0));
 
           let cls = styles.inactive;
           if (!canBetThisRank && bet === 0) cls = 'border-red-700/60 bg-red-950/60 text-red-500 opacity-40 cursor-not-allowed';

@@ -137,19 +137,20 @@ export default function RapidFireGame() {
   const rankBetCount = Object.keys(pRankBets).length;
 
   // Betting constraints
-  // Progressives (RF, SF, OP) don't lock hand bets
-  // Non-progressive ranks: 4OAK, Full House, Flush, Straight, 3OAK, Two Pair
   const MAX_HAND_BETS = 4;
-  const progressiveRanks = ['Royal Flush', 'Straight Flush', 'One Pair'];
-  const nonProgRankBetCount = Object.keys(pRankBets).filter(key => !progressiveRanks.includes(key)).length;
-  
-  // Hand betting rules based on non-progressive rank bets:
-  // 0 non-prog: allow 4 hands
-  // 1-2 non-prog: allow 1-2 hands
-  // 3+ non-prog: lock all hands
-  const canBetHand = nonProgRankBetCount <= 2;
-  const handBetsLockedByRanks = nonProgRankBetCount >= 3;
-  const maxHandBetsAllowed = nonProgRankBetCount === 0 ? 4 : 2;
+  const rankBetCountTotal = Object.keys(pRankBets).length;
+
+  // Hand betting rules based on rank bets:
+  // 0 rank bets: allow 4 hands
+  // 1+ rank bets: allow up to 2 hands
+  const handBetsLockedByRanks = false; // hands are never locked by rank bets
+  const maxHandBetsAllowed = rankBetCountTotal === 0 ? 4 : 2;
+
+  // Rank betting rules based on hand bets:
+  // 0 hand bets: unlimited rank bets
+  // 1-2 hand bets: max 2 rank bets
+  // 3+ hand bets: 0 rank bets (all locked)
+  const nonProgRankBetCount = rankBetCountTotal; // keep variable name for downstream compatibility
 
   const totalBet = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
     Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
@@ -212,25 +213,14 @@ export default function RapidFireGame() {
   const handleRankBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
     const existing = (rankBets[pid] || {})[key] || 0;
-    const isProgressive = key === 'Royal Flush' || key === 'Straight Flush' || key === 'One Pair';
-    
-    // Progressive rank min bets
-    const progressiveMinBets = { 'Royal Flush': 25, 'Straight Flush': 15, 'One Pair': 10 };
-    const minBet = progressiveMinBets[key];
 
-    // Count only non-progressive rank bets for this player
-    const nonProgRankBetCountForPlayer = Object.keys(pRankBets)
-      .filter(k => !['Royal Flush', 'Straight Flush', 'One Pair'].includes(k))
-      .length;
-
-    // Non-progressive ranks: locked if 3+ hand bets, or limited to 2 if 1-2 hand bets
-    // Progressives are always available
-    if (!isProgressive && handBetCount >= 3) {
+    // Rank rules: 0 hands = unlimited, 1-2 hands = max 2 ranks, 3+ hands = all locked
+    if (handBetCount >= 3) {
       setRankAlertType('closed');
       setShowRankLimitAlert(true);
       return;
     }
-    if (!isProgressive && handBetCount >= 1 && handBetCount <= 2 && nonProgRankBetCountForPlayer >= 2) {
+    if (handBetCount >= 1 && handBetCount <= 2 && Object.keys(pRankBets).length >= 2 && !pRankBets[key]) {
       setRankAlertType('limit');
       setShowRankLimitAlert(true);
       return;
@@ -249,17 +239,8 @@ export default function RapidFireGame() {
     }
     if (balance <= 0 || balance < selectedChip) return;
 
-    // For progressive ranks: cap at minBet, don't deduct excess chip
-    if (isProgressive && minBet) {
-      const amountNeeded = Math.max(0, minBet - existing);
-      const amountToAdd = Math.min(selectedChip, amountNeeded);
-
-      setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + amountToAdd } }));
-      setBalances(b => { const n = [...b]; n[pid] -= amountToAdd; return n; });
-    } else {
-      setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
-      setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-    }
+    setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
+    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
   }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount, rankBetCount]);
 
   const handleRemoveRankBet = useCallback((key) => {

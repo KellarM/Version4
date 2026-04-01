@@ -177,10 +177,10 @@ export default function GameRulesModal() {
                   </div>
                   <div className="mt-3 bg-purple-900/20 border border-purple-700/40 rounded-lg px-4 py-2 space-y-1">
                     <p className="text-purple-300 font-semibold text-xs">Hand Rank Betting Rules:</p>
-                    <Rule label="Only 1 rank bet">allowed per round.</Rule>
-                    <Rule label="All ranks locked">if you have 3 or more card hand bets active.</Rule>
-                    <Rule label="All ranks limited to 1">if you have 1–2 card hand bets active.</Rule>
-                    <Rule label="No minimum bet">required — all ranks including One Pair and Straight Flush are standard fixed-odds bets.</Rule>
+                    <Rule label="0 card hand bets">unlimited rank bets — all positions open.</Rule>
+                    <Rule label="1–2 card hand bets">max 2 rank bets allowed.</Rule>
+                    <Rule label="3+ card hand bets">all rank bets locked.</Rule>
+                    <Rule label="No minimum bet">required — all ranks are standard fixed-odds bets.</Rule>
                   </div>
                 </Section>
 
