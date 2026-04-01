@@ -14,9 +14,10 @@ Deno.serve(async (req) => {
 
     // Current payouts
     const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
-    const RANKS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush','Royal Flush'];
-    const RANK_PAYOUTS = [null, 16.76, 3.95, 5.02, 3.10, 2.53, 12.43, null, null];
-    const RANK_FREQ = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139, 0.000154];
+    // Royal Flush removed as a betting position. One Pair and Straight Flush use jackpot multiplier odds.
+    const RANKS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush'];
+    const RANK_PAYOUTS = [158.34, 16.76, 3.95, 5.02, 3.10, 2.53, 12.43, 255.42];
+    const RANK_FREQ = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139];
     const RANK_CUM = [];
     let cum = 0;
     for (const f of RANK_FREQ) { cum += f; RANK_CUM.push(cum); }
@@ -37,8 +38,8 @@ Deno.serve(async (req) => {
     let rankBet = 0, rankPayout = 0;
     let colorBet = 0, colorPayout = 0;
     let lhBet = 0, lhPayout = 0;
-    const rankBetsArr = new Float64Array(9);
-    const rankPayoutsArr = new Float64Array(9);
+    const rankBetsArr = new Float64Array(8);
+    const rankPayoutsArr = new Float64Array(8);
     const colorBetsArr = new Float64Array(6);
     const colorPayoutsArr = new Float64Array(6);
 
@@ -100,8 +101,8 @@ Deno.serve(async (req) => {
     for (let g = 0; g < gamesToSimulate; g++) {
       const winningHand = (Math.random() * 10) | 0;
       const rankRoll = Math.random();
-      let gameRank = 8;
-      for (let r = 0; r < 9; r++) if (rankRoll < RANK_CUM[r]) { gameRank = r; break; }
+      let gameRank = 7;
+      for (let r = 0; r < 8; r++) if (rankRoll < RANK_CUM[r]) { gameRank = r; break; }
       const gameRedCount = rollRedCount();
       const gameBlackCount = 5 - gameRedCount;
       const gameLH = Math.random() < 0.5 ? 0 : 1;
@@ -206,16 +207,16 @@ Deno.serve(async (req) => {
 
     const suggestedRankPayouts = {};
     const rankDetail = {};
-    for (let r = 0; r < 9; r++) {
+    for (let r = 0; r < 8; r++) {
       const mult = RANK_PAYOUTS[r];
       const obsRTP = rankBetsArr[r] > 0 ? rankPayoutsArr[r] / rankBetsArr[r] : 0;
-      const suggested = mult !== null ? Math.round(mult * scaleRank * 100) / 100 : null;
+      const suggested = Math.round(mult * scaleRank * 100) / 100;
       suggestedRankPayouts[RANKS[r]] = suggested;
       rankDetail[RANKS[r]] = {
         currentPayout: mult,
         currentRTP: (obsRTP * 100).toFixed(2) + '%',
         winFrequency: (RANK_FREQ[r] * 100).toFixed(4) + '%',
-        suggested: suggested !== null ? suggested : 'Progressive (jackpot)',
+        suggested,
       };
     }
 

@@ -11,9 +11,10 @@ Deno.serve(async (req) => {
 
     // Payout tables
     const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
-    const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush','Royal Flush'];
-    const RANK_FREQS = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139, 0.000154];
-    const RANK_PAYOUTS_ARR = [null, 16.76, 3.95, 5.02, 3.10, 2.53, 12.43, null, null]; // null = progressive
+    // Royal Flush removed as a betting position. One Pair and Straight Flush use jackpot multiplier odds.
+    const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush'];
+    const RANK_FREQS = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139];
+    const RANK_PAYOUTS_ARR = [158.34, 16.76, 3.95, 5.02, 3.10, 2.53, 12.43, 255.42];
     const RANK_CUM = [];
     let _rc = 0;
     for (const f of RANK_FREQS) { _rc += f; RANK_CUM.push(_rc); }
@@ -24,7 +25,7 @@ Deno.serve(async (req) => {
     function rollRank() {
       const r = Math.random();
       for (let i = 0; i < RANK_CUM.length; i++) if (r < RANK_CUM[i]) return i;
-      return 0;
+      return RANK_CUM.length - 1;
     }
     function rollRedCount() {
       const r = Math.random();
@@ -461,11 +462,9 @@ Deno.serve(async (req) => {
           rankBets += unit;
           if (ranks[i] === rankIdx) {
             const mult = RANK_PAYOUTS_ARR[rankIdx];
-            if (mult !== null) {
-              const p = unit * (1 + mult);
-              rankPays += p;
-              gameWin += p;
-            }
+            const p = unit * (1 + mult);
+            rankPays += p;
+            gameWin += p;
           }
         }
 

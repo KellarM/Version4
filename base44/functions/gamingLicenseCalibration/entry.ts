@@ -16,9 +16,10 @@ Deno.serve(async (req) => {
     // ── Payout Tables ────────────────────────────────────────────────
     const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
 
-    const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush','Royal Flush'];
-    const RANK_FREQS = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139, 0.000154];
-    const RANK_PAYOUTS = [null, 16.76, 3.95, 5.02, 3.10, 2.53, 12.43, null, null]; // null = progressive
+    // Royal Flush removed as a betting position. One Pair and Straight Flush use jackpot multiplier odds.
+    const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush'];
+    const RANK_FREQS = [0.42257, 0.04754, 0.02113, 0.04619, 0.00327, 0.02596, 0.00168, 0.00139];
+    const RANK_PAYOUTS = [158.34, 16.76, 3.95, 5.02, 3.10, 2.53, 12.43, 255.42];
     const RANK_CUM = [];
     let rc = 0;
     for (const f of RANK_FREQS) { rc += f; RANK_CUM.push(rc); }
@@ -176,8 +177,8 @@ Deno.serve(async (req) => {
     // Per-bet-type accumulators for individual compliance checks
     const handTypeBet = new Float64Array(10);
     const handTypePay = new Float64Array(10);
-    const rankTypeBet = new Float64Array(9);
-    const rankTypePay = new Float64Array(9);
+    const rankTypeBet = new Float64Array(8);
+    const rankTypePay = new Float64Array(8);
     const colorTypeBet = {}; COLOR_KEYS.forEach(k => { colorTypeBet[k] = 0; });
     const colorTypePay = {}; COLOR_KEYS.forEach(k => { colorTypePay[k] = 0; });
     let lhBetCount = 0;
@@ -212,7 +213,7 @@ Deno.serve(async (req) => {
         const mult = RANK_PAYOUTS[ri];
         rankBet += BET;
         rankTypeBet[ri] += BET;
-        if (ri === rankIdx && mult !== null) {
+        if (ri === rankIdx) {
           const p = BET * (1 + mult);
           rankPay += p;
           rankTypePay[ri] += p;
@@ -278,7 +279,7 @@ Deno.serve(async (req) => {
       bet: Math.round(rankTypeBet[i]),
       paid: Math.round(rankTypePay[i]),
       rtp: rankTypeBet[i] > 0 ? (rankTypePay[i] / rankTypeBet[i] * 100).toFixed(3) : 'N/A',
-      theoreticalRTP: RANK_PAYOUTS[i] !== null ? (RANK_FREQS[i] * (1 + RANK_PAYOUTS[i]) * 100).toFixed(3) : 'Progressive',
+      theoreticalRTP: (RANK_FREQS[i] * (1 + RANK_PAYOUTS[i]) * 100).toFixed(3),
     }));
 
     const colorBreakdown = COLOR_KEYS.map(k => ({

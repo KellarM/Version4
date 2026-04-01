@@ -42,10 +42,11 @@ Deno.serve(async (req) => {
     ].map(h => h.map(c => encodeCard(RANK_NAMES_ARR.indexOf(c.r), ['spades','hearts','diamonds','clubs'].indexOf(c.s))));
 
     const CURRENT_HAND_PAYOUTS = [14.51,4.21,10.98,6.75,5.63,4.48,4.04,4.69,4.11,9.30];
+    // Royal Flush removed as a betting position. One Pair and Straight Flush use jackpot multiplier odds.
     const CURRENT_RANK_PAYOUTS_MAP = {
-      'One Pair':null,'Two Pair':16.76,'Three of a Kind':3.95,
+      'One Pair':158.34,'Two Pair':16.76,'Three of a Kind':3.95,
       'Straight':5.02,'Flush':3.10,'Full House':2.53,
-      'Four of a Kind':12.43,'Straight Flush':null,'Royal Flush':null
+      'Four of a Kind':12.43,'Straight Flush':255.42
     };
     const COLOR_PAYOUTS_MAP = {'3R':0.93,'4R':4.81,'5R':43.36,'3B':0.93,'4B':4.81,'5B':43.46};
 
@@ -160,14 +161,14 @@ Deno.serve(async (req) => {
 
     const rankResults = RANK_LABEL.map((name,i) => {
       const hits=rankHits[i]; const freq=hits/N;
-      const cur=CURRENT_RANK_PAYOUTS_MAP[name];
+      const cur=CURRENT_RANK_PAYOUTS_MAP[name]; // undefined = Royal Flush (removed bet position)
       return {
         rank: name, hits,
         frequency: (freq*100).toFixed(4)+'%',
         frequencyRaw: +freq.toFixed(6),
-        currentPayout: cur,
-        impliedRTP: (cur!=null&&freq>0)?((freq*(1+cur))*100).toFixed(2)+'%':'—',
-        fairPayoutAt965: (cur!=null&&freq>0)?((TARGET/freq)-1).toFixed(4):'Progressive/N/A',
+        currentPayout: cur ?? 'N/A (removed)',
+        impliedRTP: (cur!=null&&freq>0)?((freq*(1+cur))*100).toFixed(2)+'%':'N/A',
+        fairPayoutAt965: (cur!=null&&freq>0)?((TARGET/freq)-1).toFixed(4):'N/A',
       };
     }).filter(r=>r.hits>0);
 
