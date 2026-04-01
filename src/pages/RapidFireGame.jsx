@@ -132,25 +132,25 @@ export default function RapidFireGame() {
   const pRankBets = rankBets[pid] || {};
   const pLowHighBet = lowHighBets[pid] || null;
 
-  // Count bets in each category
+  // Count bets in each category (always scoped to active player)
   const handBetCount = Object.keys(pHandBets).length;
   const rankBetCount = Object.keys(pRankBets).length;
 
-  // Betting constraints
-  const MAX_HAND_BETS = 4;
-  const rankBetCountTotal = Object.keys(pRankBets).length;
+  // Betting constraints — all per active player only
+  const rankBetCountTotal = rankBetCount;
 
-  // Hand betting rules based on rank bets:
-  // 0–2 rank bets: allow up to 2 hand bets
+  // Hand betting rules based on THIS player's rank bets:
+  // 0 rank bets: allow up to 4 hand bets
+  // 1–2 rank bets: allow up to 2 hand bets
   // 3+ rank bets: all hand bets locked
   const handBetsLockedByRanks = rankBetCountTotal >= 3;
-  const maxHandBetsAllowed = 2;
+  const maxHandBetsAllowed = rankBetCountTotal === 0 ? 4 : 2;
 
-  // Rank betting rules based on hand bets:
+  // Rank betting rules based on THIS player's hand bets:
   // 0 hand bets: unlimited rank bets
   // 1-2 hand bets: max 2 rank bets
   // 3+ hand bets: 0 rank bets (all locked)
-  const nonProgRankBetCount = rankBetCountTotal; // keep variable name for downstream compatibility
+  const nonProgRankBetCount = rankBetCountTotal;
 
   const totalBet = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
     Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
