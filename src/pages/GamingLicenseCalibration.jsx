@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, AlertTriangle, Play, RefreshCw, Shield, BarChart2, Layers, FlaskConical } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Play, RefreshCw, Shield, BarChart2, Layers, FlaskConical, FileDown, FileText, RotateCcw } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 import IndividualBetAudit from '@/components/calibration/IndividualBetAudit';
 
 const TARGET_LOW = 95;
@@ -216,6 +217,256 @@ export default function GamingLicenseCalibration() {
   };
 
   const abort = () => { abortRef.current = true; };
+
+  const handleClear = () => {
+    setFinalReport(null);
+    setRuns([]);
+    setTier(null);
+    setProgress(0);
+    setError(null);
+  };
+
+  const exportPDF = () => {
+    if (!finalReport) return;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const now = new Date().toLocaleString();
+    let y = 0;
+
+    // Header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageW, 22, 'F');
+    doc.setTextColor(250, 204, 21);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Rapid Fire Texas 10 — Gaming License Certification Report', 10, 14);
+    doc.setFontSize(8);
+    doc.setTextColor(180, 180, 180);
+    doc.text(`Generated: ${now}`, pageW - 10, 14, { align: 'right' });
+    y = 30;
+
+    // Summary banner
+    const pass = finalReport.certificationPass;
+    doc.setFillColor(pass ? 22 : 127, pass ? 101 : 29, pass ? 52 : 29);
+    doc.roundedRect(10, y, pageW - 20, 18, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text(pass ? '✓ CERTIFICATION PASS' : '✗ CERTIFICATION FAIL', 16, y + 8);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(200, 220, 200);
+    doc.text(`${finalReport.tier} — ${(finalReport.totalGamesSimulated / 1_000_000).toFixed(1)}M rounds simulated`, 16, y + 14);
+    y += 24;
+
+    // Key metrics row
+    const metrics = [
+      { label: 'Overall RTP', value: finalReport.overallRTP + '%' },
+      { label: 'Non-Jackpot RTP', value: finalReport.nonJackpotRTP + '%' },
+      { label: 'Std Deviation', value: '±' + finalReport.stdDev + '%' },
+      { label: 'Total Rounds', value: (finalReport.totalGamesSimulated / 1_000_000).toFixed(1) + 'M' },
+    ];
+    const colW = (pageW - 20) / 4;
+    metrics.forEach((m, i) => {
+      doc.setFillColor(30, 41, 59);
+      doc.roundedRect(10 + i * colW, y, colW - 2, 20, 2, 2, 'F');
+      doc.setTextColor(150, 150, 150);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.text(m.label, 12 + i * colW, y + 7);
+      doc.setTextColor(250, 204, 21);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(m.value, 12 + i * colW, y + 16);
+    });
+    y += 26;
+
+    // Compliance Checklist
+    doc.setTextColor(250, 204, 21);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Compliance Checklist', 10, y);
+    y += 5;
+    const checklist = [
+      { label: `Non-Jackpot Blended RTP: ${finalReport.nonJackpotRTP}% (target 95–98%)`, pass: parseFloat(finalReport.nonJackpotRTP) >= 95 && parseFloat(finalReport.nonJackpotRTP) <= 98 },
+      { label: `Reproducibility: std deviation < 0.5% (got ±${finalReport.stdDev}%)`, pass: finalReport.reproducible },
+      { label: `Minimum rounds simulated (${(finalReport.totalGamesSimulated / 1_000_000).toFixed(1)}M)`, pass: finalReport.totalGamesSimulated >= 1_000_000 },
+      { label: `Carded Hands RTP: ${finalReport.categoryRTPs.hand}% (target 85–110%)`, pass: parseFloat(finalReport.categoryRTPs.hand) >= 85 && parseFloat(finalReport.categoryRTPs.hand) <= 110 },
+      { label: `Fixed Hand Rank RTP: ${finalReport.categoryRTPs.fixedRank}% (target 85–110%)`, pass: parseFloat(finalReport.categoryRTPs.fixedRank) >= 85 && parseFloat(finalReport.categoryRTPs.fixedRank) <= 110 },
+      { label: `One Pair / Straight Flush RTP: ${finalReport.categoryRTPs.progRank}% (informational)`, pass: true },
+      { label: `Color Board RTP: ${finalReport.categoryRTPs.color}% (target 85–125%)`, pass: parseFloat(finalReport.categoryRTPs.color) >= 85 && parseFloat(finalReport.categoryRTPs.color) <= 125 },
+      { label: `Low/High RTP: ${finalReport.categoryRTPs.lh}% (target 90–102%)`, pass: parseFloat(finalReport.categoryRTPs.lh) >= 90 && parseFloat(finalReport.categoryRTPs.lh) <= 102 },
+    ];
+    checklist.forEach((item) => {
+      doc.setFillColor(item.pass ? 20 : 60, item.pass ? 50 : 20, item.pass ? 30 : 20);
+      doc.rect(10, y, pageW - 20, 7, 'F');
+      doc.setTextColor(item.pass ? 74 : 239, item.pass ? 222 : 68, item.pass ? 128 : 68);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(item.pass ? '✓' : '✗', 13, y + 5);
+      doc.setTextColor(220, 220, 220);
+      doc.setFont('helvetica', 'normal');
+      doc.text(item.label, 20, y + 5);
+      doc.setTextColor(item.pass ? 74 : 239, item.pass ? 222 : 68, item.pass ? 128 : 68);
+      doc.text(item.pass ? 'PASS' : 'FAIL', pageW - 18, y + 5, { align: 'right' });
+      y += 8;
+    });
+    y += 4;
+
+    // Run-by-run
+    if (finalReport.runRTPs.length > 1) {
+      doc.setTextColor(250, 204, 21);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Reproducibility — Run-by-Run Results', 10, y);
+      y += 5;
+      finalReport.runRTPs.forEach((rtp, i) => {
+        const p = parseFloat(rtp) >= 95 && parseFloat(rtp) <= 98;
+        doc.setFillColor(30, 41, 59);
+        doc.rect(10, y, pageW - 20, 7, 'F');
+        doc.setTextColor(200, 200, 200);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Run #${i + 1}`, 13, y + 5);
+        doc.setTextColor(p ? 74 : 239, p ? 222 : 68, p ? 128 : 68);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${rtp}% — ${p ? 'PASS' : 'FAIL'}`, pageW - 14, y + 5, { align: 'right' });
+        y += 8;
+      });
+      y += 4;
+    }
+
+    // Category RTPs
+    doc.setTextColor(250, 204, 21);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Category RTP Summary', 10, y);
+    y += 5;
+    const cats = [
+      { label: 'Carded Hands', value: finalReport.categoryRTPs.hand + '%' },
+      { label: 'Fixed Rank Bets', value: finalReport.categoryRTPs.fixedRank + '%' },
+      { label: 'One Pair / SF (informational)', value: finalReport.categoryRTPs.progRank + '%' },
+      { label: 'Color Board', value: finalReport.categoryRTPs.color + '%' },
+      { label: 'Low / High', value: finalReport.categoryRTPs.lh + '%' },
+    ];
+    cats.forEach(c => {
+      doc.setFillColor(30, 41, 59);
+      doc.rect(10, y, pageW - 20, 7, 'F');
+      doc.setTextColor(200, 200, 200);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(c.label, 13, y + 5);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text(c.value, pageW - 14, y + 5, { align: 'right' });
+      y += 8;
+    });
+
+    // Footer
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text('Rapid Fire Texas 10 — Confidential Gaming License Certification Report', pageW / 2, 290, { align: 'center' });
+
+    doc.save(`RapidFire_CertificationReport_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
+  const exportWord = () => {
+    if (!finalReport) return;
+    const now = new Date().toLocaleString();
+    const pass = finalReport.certificationPass;
+
+    const checklist = [
+      { label: `Non-Jackpot Blended RTP: ${finalReport.nonJackpotRTP}% (target 95–98%)`, pass: parseFloat(finalReport.nonJackpotRTP) >= 95 && parseFloat(finalReport.nonJackpotRTP) <= 98 },
+      { label: `Reproducibility: std deviation < 0.5% (got ±${finalReport.stdDev}%)`, pass: finalReport.reproducible },
+      { label: `Minimum rounds simulated (${(finalReport.totalGamesSimulated / 1_000_000).toFixed(1)}M)`, pass: finalReport.totalGamesSimulated >= 1_000_000 },
+      { label: `Carded Hands RTP: ${finalReport.categoryRTPs.hand}% (target 85–110%)`, pass: parseFloat(finalReport.categoryRTPs.hand) >= 85 && parseFloat(finalReport.categoryRTPs.hand) <= 110 },
+      { label: `Fixed Hand Rank RTP: ${finalReport.categoryRTPs.fixedRank}% (target 85–110%)`, pass: parseFloat(finalReport.categoryRTPs.fixedRank) >= 85 && parseFloat(finalReport.categoryRTPs.fixedRank) <= 110 },
+      { label: `One Pair / Straight Flush RTP: ${finalReport.categoryRTPs.progRank}% (informational)`, pass: true },
+      { label: `Color Board RTP: ${finalReport.categoryRTPs.color}% (target 85–125%)`, pass: parseFloat(finalReport.categoryRTPs.color) >= 85 && parseFloat(finalReport.categoryRTPs.color) <= 125 },
+      { label: `Low/High RTP: ${finalReport.categoryRTPs.lh}% (target 90–102%)`, pass: parseFloat(finalReport.categoryRTPs.lh) >= 90 && parseFloat(finalReport.categoryRTPs.lh) <= 102 },
+    ];
+
+    const checklistRows = checklist.map(item => `
+      <tr>
+        <td style="padding:4px 8px;border:1px solid #ccc;color:${item.pass ? '#166534' : '#991b1b'};font-weight:bold;">${item.pass ? '✓' : '✗'}</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;">${item.label}</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;font-weight:bold;color:${item.pass ? '#166534' : '#991b1b'};">${item.pass ? 'PASS' : 'FAIL'}</td>
+      </tr>`).join('');
+
+    const runRows = finalReport.runRTPs.length > 1 ? finalReport.runRTPs.map((rtp, i) => {
+      const p = parseFloat(rtp) >= 95 && parseFloat(rtp) <= 98;
+      return `<tr>
+        <td style="padding:4px 8px;border:1px solid #ccc;">Run #${i + 1}</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;font-weight:bold;">${rtp}%</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;font-weight:bold;color:${p ? '#166534' : '#991b1b'};">${p ? 'PASS' : 'FAIL'}</td>
+      </tr>`;
+    }).join('') : '';
+
+    const html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+      <head><meta charset="utf-8"><title>Certification Report</title></head>
+      <body style="font-family:Arial,sans-serif;font-size:10pt;color:#111;">
+        <h1 style="color:#1e293b;">Rapid Fire Texas 10 &mdash; Gaming License Certification Report</h1>
+        <p style="color:#555;">Generated: ${now}</p>
+        <h2 style="color:${pass ? '#166534' : '#991b1b'};">${pass ? '✓ CERTIFICATION PASS' : '✗ CERTIFICATION FAIL'}</h2>
+        <p><strong>Tier:</strong> ${finalReport.tier} &nbsp;|&nbsp; <strong>Total Rounds:</strong> ${(finalReport.totalGamesSimulated / 1_000_000).toFixed(1)}M</p>
+        <table style="border-collapse:collapse;margin-bottom:16px;">
+          <tr>
+            <td style="padding:6px 12px;background:#f1f5f9;border:1px solid #ccc;"><b>Overall RTP</b></td>
+            <td style="padding:6px 12px;border:1px solid #ccc;">${finalReport.overallRTP}%</td>
+            <td style="padding:6px 12px;background:#f1f5f9;border:1px solid #ccc;"><b>Non-Jackpot RTP</b></td>
+            <td style="padding:6px 12px;border:1px solid #ccc;">${finalReport.nonJackpotRTP}%</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 12px;background:#f1f5f9;border:1px solid #ccc;"><b>Std Deviation</b></td>
+            <td style="padding:6px 12px;border:1px solid #ccc;">±${finalReport.stdDev}%</td>
+            <td style="padding:6px 12px;background:#f1f5f9;border:1px solid #ccc;"><b>Runs</b></td>
+            <td style="padding:6px 12px;border:1px solid #ccc;">${finalReport.runRTPs.length}</td>
+          </tr>
+        </table>
+        <h3>Compliance Checklist</h3>
+        <table style="border-collapse:collapse;width:100%;margin-bottom:16px;">
+          <tr style="background:#f1f5f9;">
+            <th style="padding:4px 8px;border:1px solid #ccc;width:30px;"></th>
+            <th style="padding:4px 8px;border:1px solid #ccc;text-align:left;">Item</th>
+            <th style="padding:4px 8px;border:1px solid #ccc;width:60px;">Result</th>
+          </tr>
+          ${checklistRows}
+        </table>
+        ${finalReport.runRTPs.length > 1 ? `
+        <h3>Run-by-Run Reproducibility</h3>
+        <table style="border-collapse:collapse;width:100%;margin-bottom:16px;">
+          <tr style="background:#f1f5f9;">
+            <th style="padding:4px 8px;border:1px solid #ccc;text-align:left;">Run</th>
+            <th style="padding:4px 8px;border:1px solid #ccc;text-align:left;">RTP</th>
+            <th style="padding:4px 8px;border:1px solid #ccc;text-align:left;">Result</th>
+          </tr>
+          ${runRows}
+        </table>` : ''}
+        <h3>Category RTP Summary</h3>
+        <table style="border-collapse:collapse;width:100%;margin-bottom:16px;">
+          <tr style="background:#f1f5f9;">
+            <th style="padding:4px 8px;border:1px solid #ccc;text-align:left;">Category</th>
+            <th style="padding:4px 8px;border:1px solid #ccc;text-align:left;">Actual RTP</th>
+          </tr>
+          <tr><td style="padding:4px 8px;border:1px solid #ccc;">Carded Hands</td><td style="padding:4px 8px;border:1px solid #ccc;font-weight:bold;">${finalReport.categoryRTPs.hand}%</td></tr>
+          <tr><td style="padding:4px 8px;border:1px solid #ccc;">Fixed Rank Bets</td><td style="padding:4px 8px;border:1px solid #ccc;font-weight:bold;">${finalReport.categoryRTPs.fixedRank}%</td></tr>
+          <tr><td style="padding:4px 8px;border:1px solid #ccc;">One Pair / SF (informational)</td><td style="padding:4px 8px;border:1px solid #ccc;font-weight:bold;">${finalReport.categoryRTPs.progRank}%</td></tr>
+          <tr><td style="padding:4px 8px;border:1px solid #ccc;">Color Board</td><td style="padding:4px 8px;border:1px solid #ccc;font-weight:bold;">${finalReport.categoryRTPs.color}%</td></tr>
+          <tr><td style="padding:4px 8px;border:1px solid #ccc;">Low / High</td><td style="padding:4px 8px;border:1px solid #ccc;font-weight:bold;">${finalReport.categoryRTPs.lh}%</td></tr>
+        </table>
+        <p style="color:#888;font-size:8pt;">Rapid Fire Texas 10 &mdash; Confidential Gaming License Certification Report</p>
+      </body></html>`;
+
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RapidFire_CertificationReport_${new Date().toISOString().slice(0, 10)}.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const pct = totalBatches > 0 ? Math.round((progress / totalBatches) * 100) : 0;
   const gamesSimulated = progress * 100_000;
@@ -522,12 +773,24 @@ export default function GamingLicenseCalibration() {
             )}
 
             {/* Action row */}
-            <div className="flex gap-3 flex-wrap">
+            <div className="flex gap-3 flex-wrap items-center">
               <button
-                onClick={() => { setFinalReport(null); setRuns([]); setTier(null); setProgress(0); }}
-                className="px-5 py-2.5 rounded-xl border border-slate-600 bg-slate-700 hover:bg-slate-600 text-sm font-semibold transition-all"
+                onClick={handleClear}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-600 bg-slate-700 hover:bg-slate-600 text-sm font-semibold transition-all"
               >
-                Run Again
+                <RotateCcw className="w-4 h-4" /> Clear / Run Again
+              </button>
+              <button
+                onClick={exportPDF}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-blue-700 bg-blue-900/30 hover:bg-blue-900/50 text-blue-300 text-sm font-semibold transition-all"
+              >
+                <FileDown className="w-4 h-4" /> Export PDF
+              </button>
+              <button
+                onClick={exportWord}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-emerald-700 bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-300 text-sm font-semibold transition-all"
+              >
+                <FileText className="w-4 h-4" /> Export Word
               </button>
               <div className={`flex-1 rounded-xl border-2 px-5 py-2.5 text-sm font-bold text-center
                 ${finalReport.certificationPass ? 'border-green-500 bg-green-900/20 text-green-300' : 'border-red-500 bg-red-900/20 text-red-300'}`}>
