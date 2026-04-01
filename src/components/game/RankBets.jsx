@@ -51,8 +51,14 @@ export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet
           const styles = COLOR_STYLES[opt.color];
           // Rank betting rules: 0 hands = unlimited, 1-2 hands = max 2 ranks, 3+ hands = locked
           const allRankBetCount = Object.keys(rankBets).length;
-          const canBetThisRank = (handBetCount === 0) || 
-                                 (handBetCount >= 1 && handBetCount <= 2 && (allRankBetCount < 2 || rankBets[opt.key] > 0));
+          const hasOnePairBet = rankBets['One Pair'] > 0;
+          const hasOtherRankBet = Object.keys(rankBets).some(k => k !== 'One Pair' && rankBets[k] > 0);
+          const onePairIsolationLocked =
+            (opt.key === 'One Pair' && hasOtherRankBet) ||
+            (opt.key !== 'One Pair' && hasOnePairBet);
+          const canBetThisRank = !onePairIsolationLocked &&
+                                 ((handBetCount === 0) || 
+                                 (handBetCount >= 1 && handBetCount <= 2 && (allRankBetCount < 2 || rankBets[opt.key] > 0)));
 
           let cls = styles.inactive;
           if (!canBetThisRank && bet === 0) cls = 'border-red-700/60 bg-red-950/60 text-red-500 opacity-40 cursor-not-allowed';

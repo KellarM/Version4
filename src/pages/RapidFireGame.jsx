@@ -226,6 +226,19 @@ export default function RapidFireGame() {
       return;
     }
 
+    // One Pair isolation rule: One Pair can only be bet alone
+    const currentRankKeys = Object.keys(pRankBets);
+    if (key === 'One Pair' && currentRankKeys.length > 0 && !pRankBets['One Pair']) {
+      setRankAlertType('limit');
+      setShowRankLimitAlert(true);
+      return;
+    }
+    if (key !== 'One Pair' && pRankBets['One Pair'] && !pRankBets[key]) {
+      setRankAlertType('limit');
+      setShowRankLimitAlert(true);
+      return;
+    }
+
     // Check insufficient funds
     if (existing === 0 && balance < selectedChip) {
       setShowInsufficientFunds(true);
