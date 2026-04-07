@@ -6,11 +6,11 @@ function shortRank(rank) {
   const map = {
     'Royal Flush': 'R.FLUSH',
     'Straight Flush': 'S.FLUSH',
-    'Four of a Kind': '4OAK',
+    'Four of a Kind': '4 OF A KIND',
     'Full House': 'HOUSE',
     'Flush': 'FLUSH',
     'Straight': 'STRAIGHT',
-    'Three of a Kind': '3OAK',
+    'Three of a Kind': '3 OF A KIND',
     'Two Pair': '2 PAIR',
     'One Pair': '1 PAIR',
     'High Card': 'HI CRD',
