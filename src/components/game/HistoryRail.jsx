@@ -48,6 +48,8 @@ export default function HistoryRail({ history }) {
                 entry.handRank === 'Full House' ? 'text-green-300' :
                 entry.handRank === 'Straight' ? 'text-teal-300' :
                 entry.handRank === 'Flush' ? 'text-orange-400' :
+                entry.handRank === 'Three of a Kind' ? 'text-purple-400' :
+                entry.handRank === 'Two Pair' ? 'text-blue-400' :  
                 'text-gray-400';
 
               const handColor0 = entry.cards[0]?.suit === 'hearts' || entry.cards[0]?.suit === 'diamonds' ? 'text-red-400' : 'text-gray-200';
