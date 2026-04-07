@@ -7,7 +7,7 @@ function shortRank(rank) {
     'Royal Flush': 'R.FLUSH',
     'Straight Flush': 'S.FLUSH',
     'Four of a Kind': '4 OF A KIND',
-    'Full House': 'HOUSE',
+    'Full House': 'FULL HOUSE',
     'Flush': 'FLUSH',
     'Straight': 'STRAIGHT',
     'Three of a Kind': '3 OF A KIND',
