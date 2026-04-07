@@ -9,7 +9,7 @@ function shortRank(rank) {
     'Four of a Kind': '4OAK',
     'Full House': 'HOUSE',
     'Flush': 'FLUSH',
-    'Straight': 'STRA.',
+    'Straight': 'STRAIGHT',
     'Three of a Kind': '3OAK',
     'Two Pair': '2 PAIR',
     'One Pair': '1 PAIR',
