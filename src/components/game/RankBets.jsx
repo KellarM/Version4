@@ -13,13 +13,13 @@ const PLAYER_CHIP_COLORS = [
 // Royal Flush removed as a betting position (RTP non-compliant)
 // All ranks are fixed-odds — no progressives
 export const RANK_BET_OPTIONS = [
-  { key: 'Straight Flush',  label: 'Straight Flush',  payout: `${HAND_RANK_PAYOUTS['Straight Flush']}:1`,        color: 'orange' },
+  { key: 'Straight Flush',  label: 'Straight Flush',  payout: `${HAND_RANK_PAYOUTS['Straight Flush']}:1`,        color: 'white'  },
   { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: `${HAND_RANK_PAYOUTS['Four of a Kind']}:1`,        color: 'yellow' },
-  { key: 'Full House',      label: 'Full House',       payout: `${HAND_RANK_PAYOUTS['Full House']}:1`,            color: 'green'  },
+  { key: 'Full House',      label: 'Full House',       payout: `${HAND_RANK_PAYOUTS['Full House']}:1`,            color: 'orange' },
   { key: 'Flush',           label: 'Flush',            payout: `${HAND_RANK_PAYOUTS['Flush']}:1`,                color: 'blue'   },
   { key: 'Straight',        label: 'Straight',         payout: `${HAND_RANK_PAYOUTS['Straight']}:1`,             color: 'teal'   },
-  { key: 'Three of a Kind', label: 'Three of a Kind',  payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1`,      color: 'green'  },
-  { key: 'Two Pair',        label: 'Two Pair',         payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,             color: 'green'  },
+  { key: 'Three of a Kind', label: 'Three of a Kind',  payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1`,      color: 'purple' },
+  { key: 'Two Pair',        label: 'Two Pair',         payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,             color: 'pink'   },
   { key: 'One Pair',        label: 'One Pair',         payout: `${HAND_RANK_PAYOUTS['One Pair']}:1`,             color: 'green'  },
 ];
 
