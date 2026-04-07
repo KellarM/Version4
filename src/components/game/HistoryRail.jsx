@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 function shortRank(rank) {
   const map = {
     'Royal Flush': 'R.FLUSH',
-    'Straight Flush': 'STR.FL',
+    'Straight Flush': 'S.FLUSH',
     'Four of a Kind': '4OAK',
-    'Full House': 'FULL H',
+    'Full House': 'HOUSE',
     'Flush': 'FLUSH',
     'Straight': 'STRA.',
-    'Three of a Kind': 'TRIPS',
+    'Three of a Kind': '3OAK',
     'Two Pair': '2 PAIR',
     'One Pair': '1 PAIR',
     'High Card': 'HI CRD',
