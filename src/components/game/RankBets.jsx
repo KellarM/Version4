@@ -13,14 +13,14 @@ const PLAYER_CHIP_COLORS = [
 // Royal Flush removed as a betting position (RTP non-compliant)
 // All ranks are fixed-odds — no progressives
 export const RANK_BET_OPTIONS = [
-  { key: 'Straight Flush',  label: 'Straight Flush',  payout: `${HAND_RANK_PAYOUTS['Straight Flush']}:1`,        color: 'orange' },
+  { key: 'Straight Flush',  label: 'Straight Flush',  payout: `${HAND_RANK_PAYOUTS['Straight Flush']}:1`,        color: 'white'  },
   { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: `${HAND_RANK_PAYOUTS['Four of a Kind']}:1`,        color: 'yellow' },
   { key: 'Full House',      label: 'Full House',       payout: `${HAND_RANK_PAYOUTS['Full House']}:1`,            color: 'green'  },
-  { key: 'Flush',           label: 'Flush',            payout: `${HAND_RANK_PAYOUTS['Flush']}:1`,                color: 'blue'   },
+  { key: 'Flush',           label: 'Flush',            payout: `${HAND_RANK_PAYOUTS['Flush']}:1`,                color: 'orange' },
   { key: 'Straight',        label: 'Straight',         payout: `${HAND_RANK_PAYOUTS['Straight']}:1`,             color: 'teal'   },
-  { key: 'Three of a Kind', label: 'Three of a Kind',  payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1`,      color: 'green'  },
-  { key: 'Two Pair',        label: 'Two Pair',         payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,             color: 'green'  },
-  { key: 'One Pair',        label: 'One Pair',         payout: `${HAND_RANK_PAYOUTS['One Pair']}:1`,             color: 'green'  },
+  { key: 'Three of a Kind', label: 'Three of a Kind',  payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1`,      color: 'purple' },
+  { key: 'Two Pair',        label: 'Two Pair',         payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,             color: 'blue'   },
+  { key: 'One Pair',        label: 'One Pair',         payout: `${HAND_RANK_PAYOUTS['One Pair']}:1`,             color: 'pink'   },
 ];
 
 // Winner always highlights in gold/yellow with flash animation
@@ -33,6 +33,8 @@ const COLOR_STYLES = {
   blue:   { active: 'border-blue-400 bg-blue-900/50 text-blue-200',       inactive: 'border-blue-800/40 bg-blue-950/20 text-blue-400/60',       winner: WINNER_STYLE },
   teal:   { active: 'border-teal-400 bg-teal-900/50 text-teal-200',       inactive: 'border-teal-800/40 bg-teal-950/20 text-teal-400/60',       winner: WINNER_STYLE },
   green:  { active: 'border-green-500 bg-green-900/50 text-green-200',    inactive: 'border-green-800/40 bg-green-950/20 text-green-400/60',    winner: WINNER_STYLE },
+  white:  { active: 'border-white-500 bg-white-900/50 text-white-200',    inactive: 'border-white-800/40 bg-white-950/20 text-white-400/60',    winner: WINNER_STYLE },
+  pink:   { active: 'border-pink-500 bg-pink-900/50 text-pink-200',       inactive: 'border-pink-800/40 bg-pink-950/20 text-pink-400/60',       winner: WINNER_STYLE },
 };
 
 export default function RankBets({ rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, gamePhase, winningRank, leadingRank, disabled, disabledByConstraint, handBetCount, rankBetCount, onAttemptLockedRank }) {
