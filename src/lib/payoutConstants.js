@@ -28,16 +28,16 @@
 
 // CARDED HANDS — "For 96.5%" column from 22M game audit
 export const CARDED_HAND_PAYOUTS = [
-  14.50,  // Hand 1:  A♦10♥
-  4.25,   // Hand 2:  K♣K♠
-  11.0,  // Hand 3:  Q♣J♠
+  14.25,  // Hand 1:  A♦10♥
+  4.1,   // Hand 2:  K♣K♠
+  10.75,  // Hand 3:  Q♣J♠
   6.75,   // Hand 4:  Q♠10♠
   5.75,   // Hand 5:  J♣9♣
-  4.50,   // Hand 6:  8♦6♦
+  4.25,   // Hand 6:  8♦6♦
   4.25,   // Hand 7:  7♦7♠
-  4.75,   // Hand 8:  4♥2♥
+  4.25,   // Hand 8:  4♥2♥
   4.25,   // Hand 9:  3♣3♥
-  9.50,   // Hand 10: A♥5♦
+  9.25,   // Hand 10: A♥5♦
 ];
 
 // HAND RANK PAYOUTS — "For 96.5%" column from 22M game audit
@@ -45,27 +45,27 @@ export const CARDED_HAND_PAYOUTS = [
 // calibrated from real 22M-game simulation of the 32-card deck with 10 fixed hands.
 export const HAND_RANK_PAYOUTS = {
   'Straight Flush':  255.0,  // Fixed odds — 0.382% win frequency
-  'Four of a Kind':  12.25,
+  'Four of a Kind':  12.00,
   'Full House':      2.5,
-  'Flush':           3.25,
-  'Straight':        5.0,
-  'Three of a Kind': 4.0,
-  'Two Pair':        16.50,
+  'Flush':           3.0,
+  'Straight':        4.5,
+  'Three of a Kind': 3.25,
+  'Two Pair':        16.00,
   'One Pair':        158.0,  // Fixed odds — 0.605% win frequency
 };
 
 // COLOR BOARD PAYOUTS — "For 96.5%" column from 22M game audit
 export const COLOR_BOARD_PAYOUTS = {
-  '3R': 0.90,
-  '3B': 0.90,
-  '4R': 4.5,
-  '4B': 4.5,
+  '3R': 0.85,
+  '3B': 0.85,
+  '4R': 4.25,
+  '4B': 4.25,
   '5R': 42.0,
   '5B': 42.0,
 };
 
 // LOW/HIGH PAYOUT — "For 96.5%" column from 22M game audit
-export const LOW_HIGH_PAYOUT = 0.92;
+export const LOW_HIGH_PAYOUT = 0.90;
 
 /**
  * Calculate total payout from bet and ratio
