@@ -14,16 +14,16 @@ Deno.serve(async (req) => {
     const runIndex = body.runIndex || 0;
 
     // ── Payout Tables ────────────────────────────────────────────────
-    const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
+    const HAND_PAYOUTS = [14.50, 4.25, 11.00, 6.75, 5.75, 4.50, 4.50, 4.75, 4.25, 9.50];
 
     // All ranks are now fixed-odds — no progressives.
     // One Pair (idx 0) and Straight Flush (idx 7) are fixed like all other ranks.
     const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush'];
-    const RANK_PAYOUTS = [158.34, 16.76, 3.95, 5.02, 3.10, 2.53, 12.43, 255.42];
+    const RANK_PAYOUTS = [158.0, 16.50, 4.00, 5.00, 3.25, 2.50, 12.25, 255.00];
 
     const COLOR_KEYS = ['3R','3B','4R','4B','5R','5B'];
-    const COLOR_PAYOUTS = { '3R': 0.93, '3B': 0.93, '4R': 4.81, '4B': 4.81, '5R': 43.36, '5B': 43.46 };
-    const LH_PAYOUT = 0.93;
+    const COLOR_PAYOUTS = { '3R': 0.90, '3B': 0.90, '4R': 4.50, '4B': 4.50, '5R': 42.0, '5B': 42.0 };
+    const LH_PAYOUT = 0.92;
     const COLOR_WIN_PROBS = { '3R': 0.5, '3B': 0.5, '4R': 0.1875, '4B': 0.1875, '5R': 0.03125, '5B': 0.03125 };
 
     // ── Real 32-card deck simulation ─────────────────────────────────
