@@ -43,7 +43,7 @@ export default function HistoryRail({ history }) {
               const isRed = entry.colorResult?.includes('R');
               const rankColor =
                 entry.handRank === 'Royal Flush' ? 'text-gray-400' :
-                entry.handRank === 'Straight Flush' ? 'text-gray-400' :
+                entry.handRank === 'Straight Flush' ? 'text-white-400' :
                 entry.handRank === 'Four of a Kind' ? 'text-yellow-400' :
                 entry.handRank === 'Full House' ? 'text-green-300' :
                 entry.handRank === 'Straight' ? 'text-teal-300' :
