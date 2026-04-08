@@ -28,40 +28,40 @@
 
 // CARDED HANDS — "For 96.5%" column from 22M game audit
 export const CARDED_HAND_PAYOUTS = [
-  14.51,  // Hand 1:  A♦10♥
-  4.21,   // Hand 2:  K♣K♠
-  10.98,  // Hand 3:  Q♣J♠
+  14.50,  // Hand 1:  A♦10♥
+  4.25,   // Hand 2:  K♣K♠
+  11.0,  // Hand 3:  Q♣J♠
   6.75,   // Hand 4:  Q♠10♠
-  5.63,   // Hand 5:  J♣9♣
-  4.48,   // Hand 6:  8♦6♦
-  4.04,   // Hand 7:  7♦7♠
-  4.69,   // Hand 8:  4♥2♥
-  4.11,   // Hand 9:  3♣3♥
-  9.30,   // Hand 10: A♥5♦
+  5.75,   // Hand 5:  J♣9♣
+  4.50,   // Hand 6:  8♦6♦
+  4.25,   // Hand 7:  7♦7♠
+  4.75,   // Hand 8:  4♥2♥
+  4.25,   // Hand 9:  3♣3♥
+  9.50,   // Hand 10: A♥5♦
 ];
 
 // HAND RANK PAYOUTS — "For 96.5%" column from 22M game audit
 // All positions are fixed-odds — no progressives. One Pair and Straight Flush
 // calibrated from real 22M-game simulation of the 32-card deck with 10 fixed hands.
 export const HAND_RANK_PAYOUTS = {
-  'Straight Flush':  255.4,  // Fixed odds — 0.382% win frequency
-  'Four of a Kind':  12.2,
+  'Straight Flush':  255.0,  // Fixed odds — 0.382% win frequency
+  'Four of a Kind':  12.25,
   'Full House':      2.5,
-  'Flush':           3.1,
+  'Flush':           3.25,
   'Straight':        5.0,
-  'Three of a Kind': 3.95,
+  'Three of a Kind': 4.0,
   'Two Pair':        16.50,
-  'One Pair':        158.3,  // Fixed odds — 0.605% win frequency
+  'One Pair':        158.0,  // Fixed odds — 0.605% win frequency
 };
 
 // COLOR BOARD PAYOUTS — "For 96.5%" column from 22M game audit
 export const COLOR_BOARD_PAYOUTS = {
-  '3R': 0.92,
-  '3B': 0.92,
-  '4R': 4.7,
-  '4B': 4.7,
-  '5R': 42.5,
-  '5B': 42.5,
+  '3R': 0.90,
+  '3B': 0.90,
+  '4R': 4.5,
+  '4B': 4.5,
+  '5R': 42.0,
+  '5B': 42.0,
 };
 
 // LOW/HIGH PAYOUT — "For 96.5%" column from 22M game audit
