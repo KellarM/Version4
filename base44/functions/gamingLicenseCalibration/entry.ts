@@ -1,8 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 // Gaming License Calibration — runs a single batch chunk using REAL deal simulation
-// Frontend calls this multiple times and accumulates results
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -16,10 +14,20 @@ Deno.serve(async (req) => {
     // ── Payout Tables ────────────────────────────────────────────────
     const HAND_PAYOUTS = [14.50, 4.25, 11.00, 6.75, 5.75, 4.50, 4.50, 4.75, 4.25, 9.50];
 
-    // All ranks are now fixed-odds — no progressives.
-    // One Pair (idx 0) and Straight Flush (idx 7) are fixed like all other ranks.
     const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush'];
     const RANK_PAYOUTS = [158.0, 16.50, 4.00, 5.00, 3.25, 2.50, 12.25, 255.00];
+
+    // Probability of each rank occurring in a 32-card deck (Used for Theo RTP calculation)
+    const RANK_PROBS = [
+      0.413,   // One Pair
+      0.047,   // Two Pair
+      0.022,   // Three of a Kind
+      0.005,   // Straight
+      0.004,   // Flush
+      0.003,   // Full House
+      0.0006,  // Four of a Kind
+      0.0001   // Straight Flush
+    ];
 
     const COLOR_KEYS = ['3R','3B','4R','4B','5R','5B'];
     const COLOR_PAYOUTS = { '3R': 0.90, '3B': 0.90, '4R': 4.50, '4B': 4.50, '5R': 42.0, '5B': 42.0 };
@@ -55,7 +63,6 @@ Deno.serve(async (req) => {
       [enc('A','hearts'),enc('5','diamonds')],
     ];
 
-    // Fast 5-card evaluator (returns rank 0-8: 0=OnePair,...,7=StraightFlush,8=RoyalFlush; -1=HighCard)
     function eval5(c0,c1,c2,c3,c4) {
       const r0=c0>>2,r1=c1>>2,r2=c2>>2,r3=c3>>2,r4=c4>>2;
       const s0=c0&3,s1=c1&3,s2=c2&3,s3=c3&3,s4=c4&3;
@@ -93,7 +100,6 @@ Deno.serve(async (req) => {
       for(let i=31;i>0;i--){const j=(Math.random()*(i+1))|0;const t=deck[i];deck[i]=deck[j];deck[j]=t;}
     }
 
-    // ── Red count helper — use actual community cards ─────────────────
     function countRed(c0,c1,c2,c3,c4){
       let r=0;
       const cards=[c0,c1,c2,c3,c4];
@@ -101,7 +107,7 @@ Deno.serve(async (req) => {
       return r;
     }
 
-    // ── Strategy pool ────────────────────────────────────────────────
+    // Strategies Pool
     const STRAT_POOL = [
       { hands:[1,6], ranks:[2,6], colors:[], river:'strict4' },
       { hands:[0,2,3,1], ranks:[0], colors:[], river:'strict4' },
@@ -217,33 +223,27 @@ Deno.serve(async (req) => {
     const colorTypeBet={};COLOR_KEYS.forEach(k=>{colorTypeBet[k]=0;});
     const colorTypePay={};COLOR_KEYS.forEach(k=>{colorTypePay[k]=0;});
 
-    // ── Main simulation loop — REAL deals ────────────────────────────
     for(let g=0;g<N;g++){
       shuffle();
       const c0=deck[0],c1=deck[1],c2=deck[2],c3=deck[3],c4=deck[4];
 
-      // Find winning hand index and winning rank via real evaluation
-      let topScore=-2,winHand=0;
+      let topScore=-2;
       const scores=new Array(10);
       for(let h=0;h<10;h++){
         const s=best7(HANDS[h][0],HANDS[h][1],c0,c1,c2,c3,c4);
         scores[h]=s;
-        if(s>topScore){topScore=s;winHand=h;}
+        if(s>topScore){topScore=s;}
       }
-      // rankIdx: map evaluator score (−1=HC,0=Pair,...,7=SF,8=RF) to RANK_KEYS index
-      // RANK_KEYS = [OnePair=0, TwoPair=1, Trips=2, Straight=3, Flush=4, FH=5, 4OAK=6, SF=7]
-      // evaluator: -1=HC, 0=OnePair, 1=TwoPair, 2=Trips, 3=Straight, 4=Flush, 5=FH, 6=4OAK, 7=SF, 8=RF
-      const rankIdx = topScore; // direct mapping (RF=8 has no bet position, ignored)
+      const rankIdx = topScore; 
 
       const redCount=countRed(c0,c1,c2,c3,c4);
       const blackCount=5-redCount;
-      const riverIsLow=(c4>>2)<=5; // rank 0-5 = 2,3,4,5,6,7
+      const riverIsLow=(c4>>2)<=5;
       const lowShowing=(Math.random()*5)|0;
       const highShowing=4-lowShowing;
 
       const strat=STRAT_POOL[(g*7+runIndex*3)%STRAT_POOL.length];
 
-      // Hand bets — win if this hand ties the top score
       for(let i=0;i<strat.hands.length;i++){
         const h=strat.hands[i];
         handBet+=BET; handTypeBet[h]+=BET;
@@ -253,7 +253,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Rank bets — win if winning rank matches
       for(let i=0;i<strat.ranks.length;i++){
         const ri=strat.ranks[i];
         rankBet+=BET; rankTypeBet[ri]+=BET;
@@ -263,7 +262,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Color bets
       for(let i=0;i<strat.colors.length;i++){
         const cKey=strat.colors[i];
         const cCount=parseInt(cKey[0]);
@@ -275,7 +273,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // River bet
       if(strat.river!=='none'){
         let shouldBet=false,betLow=false;
         if(strat.river==='strict4'){if(lowShowing>=4){shouldBet=true;betLow=false;}else if(highShowing>=4){shouldBet=true;betLow=true;}}
@@ -300,10 +297,24 @@ Deno.serve(async (req) => {
       theoreticalRTP:((1/10)*(1+payout)*100).toFixed(3),
     }));
 
-    const rankBreakdown=RANK_KEYS.map((name,i)=>{
-      const payout=RANK_PAYOUTS[i];
-      const actualRTP=rankTypeBet[i]>0?(rankTypePay[i]/rankTypeBet[i]*100).toFixed(3):'N/A';
-      return {name,payout,isProgressive:false,bet:Math.round(rankTypeBet[i]),paid:Math.round(rankTypePay[i]),rtp:actualRTP};
+    // UPDATED RANK BREAKDOWN LOGIC
+    const rankBreakdown = RANK_KEYS.map((name, i) => {
+      const payout = RANK_PAYOUTS[i];
+      const actualRTP = rankTypeBet[i] > 0 ? (rankTypePay[i] / rankTypeBet[i] * 100) : 0;
+      
+      const theoRTP = (RANK_PROBS[i] * (1 + payout) * 100).toFixed(3);
+      const frequency = (RANK_PROBS[i] * 100).toFixed(2);
+
+      return {
+        name,
+        payout,
+        isProgressive: false,
+        bet: Math.round(rankTypeBet[i]),
+        paid: Math.round(rankTypePay[i]),
+        rtp: actualRTP.toFixed(3),
+        theoreticalRTP: theoRTP,
+        freq: frequency
+      };
     });
 
     const colorBreakdown=COLOR_KEYS.map(k=>({
@@ -312,8 +323,6 @@ Deno.serve(async (req) => {
       rtp:colorTypeBet[k]>0?(colorTypePay[k]/colorTypeBet[k]*100).toFixed(3):'N/A',
       theoreticalRTP:(COLOR_WIN_PROBS[k]*(1+COLOR_PAYOUTS[k])*100).toFixed(3),
     }));
-
-    const lhTheoretical=(0.5*(1+LH_PAYOUT)*100).toFixed(3);
 
     return Response.json({
       success:true,batchSize:N,runIndex,
@@ -328,7 +337,7 @@ Deno.serve(async (req) => {
       },
       rtp:(rtp*100).toFixed(4),
       compliant:rtp>=0.95&&rtp<=0.98,
-      breakdown:{hands:handBreakdown,ranks:rankBreakdown,colors:colorBreakdown,lhTheoretical,lhRTP:lhBet>0?(lhPay/lhBet*100).toFixed(3):'N/A'},
+      breakdown:{hands:handBreakdown,ranks:rankBreakdown,colors:colorBreakdown,lhTheoretical:(0.5*(1+LH_PAYOUT)*100).toFixed(3),lhRTP:lhBet>0?(lhPay/lhBet*100).toFixed(3):'N/A'},
     });
 
   } catch(error){
