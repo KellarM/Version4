@@ -44,28 +44,28 @@ export const CARDED_HAND_PAYOUTS = [
 // All positions are fixed-odds — no progressives. One Pair and Straight Flush
 // calibrated from real 22M-game simulation of the 32-card deck with 10 fixed hands.
 export const HAND_RANK_PAYOUTS = {
-  'Straight Flush':  255.42,  // Fixed odds — 0.382% win frequency
-  'Four of a Kind':  12.43,
-  'Full House':      2.53,
-  'Flush':           3.10,
-  'Straight':        5.02,
+  'Straight Flush':  255.4,  // Fixed odds — 0.382% win frequency
+  'Four of a Kind':  12.2,
+  'Full House':      2.5,
+  'Flush':           3.1,
+  'Straight':        5.0,
   'Three of a Kind': 3.95,
-  'Two Pair':        16.76,
-  'One Pair':        158.34,  // Fixed odds — 0.605% win frequency
+  'Two Pair':        16.50,
+  'One Pair':        158.3,  // Fixed odds — 0.605% win frequency
 };
 
 // COLOR BOARD PAYOUTS — "For 96.5%" column from 22M game audit
 export const COLOR_BOARD_PAYOUTS = {
-  '3R': 0.93,
-  '3B': 0.93,
-  '4R': 4.81,
-  '4B': 4.81,
-  '5R': 43.36,
-  '5B': 43.46,
+  '3R': 0.92,
+  '3B': 0.92,
+  '4R': 4.7,
+  '4B': 4.7,
+  '5R': 42.5,
+  '5B': 42.5,
 };
 
 // LOW/HIGH PAYOUT — "For 96.5%" column from 22M game audit
-export const LOW_HIGH_PAYOUT = 0.93;
+export const LOW_HIGH_PAYOUT = 0.92;
 
 /**
  * Calculate total payout from bet and ratio
