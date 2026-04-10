@@ -52,7 +52,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
 
       {/* Center: Large suit symbol (5x) - vertically centered with equal spacing */}
       <div className="flex-1 flex items-center justify-center px-1 -my-1">
-        <div style={{ fontSize: '2.5em', color: isRed ? '#dc2626' : '#000', opacity: 0.7, lineHeight: 1 }} className="mx-3">
+        <div style={{ fontSize: '2.5em', color: isRed ? '#dc2626' : '#000', opacity: 0.7, lineHeight: 1 }} className="mx-auto my-1">
           {suitSymbol}
         </div>
       </div>
