@@ -6,15 +6,15 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
     sm: 'w-[3.9rem] h-[5.5rem]',
     md: 'w-14 h-20',
     lg: 'w-16 h-24',
-    xl: 'w-20 h-28',
+    xl: 'w-20 h-28'
   };
 
   if (faceDown) {
     return (
       <div
         className={`${sizeClasses[size]} rounded-md border-2 border-yellow-500/80 shadow-lg shadow-yellow-900/60 overflow-hidden relative`}
-        style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0f2040 30%, #1a0a2e 60%, #0a1628 100%)' }}
-      >
+        style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0f2040 30%, #1a0a2e 60%, #0a1628 100%)' }}>
+        
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.03) 3px, rgba(255,255,255,0.03) 6px)' }} />
         <div className="absolute inset-[3px] rounded-sm border border-yellow-500/40 pointer-events-none z-10" />
         <div className="absolute inset-0 flex items-center justify-center z-20">
@@ -29,8 +29,8 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
         </div>
         <div className="absolute top-1 left-1 z-20 leading-none" style={{ fontSize: '0.9em' }}>🔥</div>
         <div className="absolute bottom-1 right-1 z-20 leading-none" style={{ fontSize: '0.9em', transform: 'rotate(180deg)' }}>🔥</div>
-      </div>
-    );
+      </div>);
+
   }
 
   if (!card) return <div className={`${sizeClasses[size]} rounded-md border-2 border-dashed border-yellow-600/30 bg-transparent`} />;
@@ -42,8 +42,8 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
 
   return (
     <div
-      className={`${sizeClasses[size]} rounded-lg border-2 bg-white flex flex-col shadow-lg select-none overflow-hidden relative ${borderColor} ${glow ? 'ring-2 ring-yellow-400 shadow-yellow-400/80' : ''}`}
-    >
+      className={`${sizeClasses[size]} rounded-lg border-2 bg-white flex flex-col shadow-lg select-none overflow-hidden relative ${borderColor} ${glow ? 'ring-2 ring-yellow-400 shadow-yellow-400/80' : ''}`}>
+      
       {/* Top-left: rank + suit below it */}
       <div className={`flex flex-col items-start leading-none p-1 ${textColor}`} style={{ fontWeight: 'bold' }}>
         <div style={{ fontSize: '1.1em' }}>{card.rank}</div>
@@ -52,7 +52,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
 
       {/* Center: Large suit symbol (5x) - vertically centered with equal spacing */}
       <div className="flex-1 flex items-center justify-center px-1 -my-1">
-        <div style={{ fontSize: '2.5em', color: isRed ? '#dc2626' : '#000', opacity: 0.7, lineHeight: 1 }}>
+        <div style={{ fontSize: '2.5em', color: isRed ? '#dc2626' : '#000', opacity: 0.7, lineHeight: 1 }} className="mx-3">
           {suitSymbol}
         </div>
       </div>
@@ -62,6 +62,6 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
         <div style={{ fontSize: '1.1em' }}>{card.rank}</div>
         <div style={{ fontSize: '0.55em' }}>{suitSymbol}</div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
