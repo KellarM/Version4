@@ -41,8 +41,8 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
   const borderColor = isRed ? 'border-red-500/60' : 'border-gray-500/60';
 
   return (
-    <div
-      className={`${sizeClasses[size]} rounded-lg border-2 bg-white flex flex-col shadow-lg select-none overflow-hidden relative ${borderColor} ${glow ? 'ring-2 ring-yellow-400 shadow-yellow-400/80' : ''}`}>
+    <div className="bg-white rounded-lg w-[3.9rem] h-[5.5rem] border-2 flex flex-col shadow-lg select-none overflow-hidden relative border-red-500/60">
+      
       
       {/* Top-left: rank + suit below it */}
       <div className={`flex flex-col items-start leading-none p-1 ${textColor}`} style={{ fontWeight: 'bold' }}>
