@@ -28,9 +28,9 @@
 
 // CARDED HANDS — "For 96.5%" column from 22M game audit
 export const CARDED_HAND_PAYOUTS = [
-  14.0,  // Hand 1:  A♦10♥
-  1.9,   // Hand 2:  K♣K♠
-  10.0,  // Hand 3:  Q♣J♠
+  14.0,   // Hand 1:  A♦10♥
+  3.95,   // Hand 2:  K♣K♠
+  10.0,   // Hand 3:  Q♣J♠
   6.25,   // Hand 4:  Q♠10♠
   5.75,   // Hand 5:  J♣9♣
   4.25,   // Hand 6:  8♦6♦
