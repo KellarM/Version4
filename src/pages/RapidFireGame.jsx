@@ -24,7 +24,7 @@ import InsufficientFundsAlert from '@/components/game/InsufficientFundsAlert';
 
 
 const STARTING_BALANCE = 10000;
-const CHIP_VALUES = [1, 2, 5, 10, 25, 50, 100];
+const CHIP_VALUES = [5, 10, 25, 50, 100];
 const DEFAULT_CHIP = 5;
 const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4, 5];
 
