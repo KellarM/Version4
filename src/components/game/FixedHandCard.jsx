@@ -109,7 +109,7 @@ export default function FixedHandCard({
       </div>
 
       {/* Card names */}
-      <div className="text-center text-xs text-green-300/80 truncate leading-none">{cardDisplayName}</div>
+      <div className="text-green-300/80 text-xs text-center leading-none opacity-100 truncate">{cardDisplayName}</div>
 
       {/* Current eval */}
       {currentEval && currentEval.name !== 'No Hand' && currentEval.name !== 'High Card' &&
