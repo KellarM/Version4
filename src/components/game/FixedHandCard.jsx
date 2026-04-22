@@ -102,7 +102,7 @@ export default function FixedHandCard({
       </div>
 
       {/* Cards */}
-      <div className="mx-1 py-3 flex gap-0.5 justify-center" style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
+      <div className="mx-1 flex gap-0.5 justify-center" style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
         {hand.cards.map((card, i) =>
         <PlayingCard key={i} card={card} size="sm" glow={isLeading || isWinner} />
         )}
