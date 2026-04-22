@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FIXED_HANDS, shuffleDeck, DEALER_DECK, findLeadingHand,
   resolveRedBlack, resolveLowHigh, cardColor, isLowCard,
-  SUITS, cardDisplay
-} from '@/lib/gameEngine';
+  SUITS, cardDisplay } from
+'@/lib/gameEngine';
 import { HAND_RANK_PAYOUTS as RANK_PAYOUT_MAP, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } from '@/lib/payoutConstants';
 import FixedHandCard from '@/components/game/FixedHandCard';
 import CommunityCards from '@/components/game/CommunityCards';
@@ -30,12 +30,12 @@ const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4, 5];
 
 // Must match PLAYER_CHIP_COLORS in child components
 const PLAYER_TAB_STYLES = [
-  { active: 'border-yellow-400 bg-yellow-500 text-black',   inactive: 'border-yellow-700/40 bg-yellow-900/20 text-yellow-400' },
-  { active: 'border-blue-400 bg-blue-500 text-white',       inactive: 'border-blue-700/40 bg-blue-900/20 text-blue-400'       },
-  { active: 'border-pink-400 bg-pink-500 text-white',       inactive: 'border-pink-700/40 bg-pink-900/20 text-pink-400'       },
-  { active: 'border-green-400 bg-green-500 text-black',     inactive: 'border-green-700/40 bg-green-900/20 text-green-400'    },
-  { active: 'border-orange-400 bg-orange-500 text-black',   inactive: 'border-orange-700/40 bg-orange-900/20 text-orange-400' },
-];
+{ active: 'border-yellow-400 bg-yellow-500 text-black', inactive: 'border-yellow-700/40 bg-yellow-900/20 text-yellow-400' },
+{ active: 'border-blue-400 bg-blue-500 text-white', inactive: 'border-blue-700/40 bg-blue-900/20 text-blue-400' },
+{ active: 'border-pink-400 bg-pink-500 text-white', inactive: 'border-pink-700/40 bg-pink-900/20 text-pink-400' },
+{ active: 'border-green-400 bg-green-500 text-black', inactive: 'border-green-700/40 bg-green-900/20 text-green-400' },
+{ active: 'border-orange-400 bg-orange-500 text-black', inactive: 'border-orange-700/40 bg-orange-900/20 text-orange-400' }];
+
 
 // Phases: 'betting' | 'flop' | 'turn' | 'lowHighBetting' | 'river' | 'settlement' | 'winner'
 const PHASE_LABELS = {
@@ -45,7 +45,7 @@ const PHASE_LABELS = {
   lowHighBetting: 'Low / High Betting Open',
   river: 'River',
   settlement: 'Settling...',
-  winner: 'Round Complete',
+  winner: 'Round Complete'
 };
 
 export default function RapidFireGame() {
@@ -90,7 +90,7 @@ export default function RapidFireGame() {
   // Insufficient funds alert mouseup handler
   useEffect(() => {
     if (!showInsufficientFunds) return;
-    
+
     const handleMouseUp = () => setShowInsufficientFunds(false);
     document.addEventListener('mouseup', handleMouseUp);
     return () => document.removeEventListener('mouseup', handleMouseUp);
@@ -119,7 +119,7 @@ export default function RapidFireGame() {
       balances,
       roundId,
       casinoProfit,
-      roundsPlayed,
+      roundsPlayed
     };
     localStorage.setItem('rapidFireGameState', JSON.stringify(gameState));
   }, [balances, roundId, casinoProfit, roundsPlayed]);
@@ -153,9 +153,9 @@ export default function RapidFireGame() {
   const nonProgRankBetCount = rankBetCountTotal;
 
   const totalBet = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
-    Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
-    Object.values(pRankBets).reduce((s, v) => s + v, 0) +
-    (pLowHighBet ? pLowHighBet.amount : 0);
+  Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
+  Object.values(pRankBets).reduce((s, v) => s + v, 0) + (
+  pLowHighBet ? pLowHighBet.amount : 0);
 
   // Total bets across ALL players this round (for casino profit calc)
   const totalAllBets = () => {
@@ -164,7 +164,7 @@ export default function RapidFireGame() {
       t += Object.values(handBets[i] || {}).reduce((s, v) => s + v, 0);
       t += Object.values(redBlackBets[i] || {}).reduce((s, v) => s + v, 0);
       t += Object.values(rankBets[i] || {}).reduce((s, v) => s + v, 0);
-      t += (lowHighBets[i]?.amount || 0);
+      t += lowHighBets[i]?.amount || 0;
     }
     return t;
   };
@@ -174,7 +174,7 @@ export default function RapidFireGame() {
     if (gamePhase !== 'betting') return;
     const existing = (handBets[pid] || {})[handId] || 0;
     const currentCount = Object.keys(handBets[pid] || {}).length;
-    
+
     // Check constraints
     if (existing === 0 && currentCount >= maxHandBetsAllowed) {
       setShowHandLimitAlert(true);
@@ -193,21 +193,21 @@ export default function RapidFireGame() {
 
     // Right-click / if already bet: remove it
     if (existing > 0 && balance < selectedChip) {
-      setHandBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[handId]; return { ...prev, [pid]: n }; });
-      setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+      setHandBets((prev) => {const n = { ...(prev[pid] || {}) };delete n[handId];return { ...prev, [pid]: n };});
+      setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
       return;
     }
     if (balance <= 0 || balance < selectedChip) return;
-    setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
-    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+    setHandBets((prev) => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
+    setBalances((b) => {const n = [...b];n[pid] -= selectedChip;return n;});
   }, [gamePhase, balance, selectedChip, pid, handBets, nonProgRankBetCount, maxHandBetsAllowed, handBetsLockedByRanks]);
 
   const handleRemoveHandBet = useCallback((handId) => {
     if (gamePhase !== 'betting') return;
     const existing = (handBets[pid] || {})[handId] || 0;
     if (existing <= 0) return;
-    setHandBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[handId]; return { ...prev, [pid]: n }; });
-    setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+    setHandBets((prev) => {const n = { ...(prev[pid] || {}) };delete n[handId];return { ...prev, [pid]: n };});
+    setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
   }, [gamePhase, pid, handBets]);
 
   const handleRankBet = useCallback((key) => {
@@ -246,74 +246,74 @@ export default function RapidFireGame() {
     }
 
     if (existing > 0 && balance < selectedChip) {
-      setRankBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
-      setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+      setRankBets((prev) => {const n = { ...(prev[pid] || {}) };delete n[key];return { ...prev, [pid]: n };});
+      setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
       return;
     }
     if (balance <= 0 || balance < selectedChip) return;
 
-    setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
-    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+    setRankBets((prev) => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
+    setBalances((b) => {const n = [...b];n[pid] -= selectedChip;return n;});
   }, [gamePhase, balance, selectedChip, pid, rankBets, handBetCount, rankBetCount]);
 
   const handleRemoveRankBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
     const existing = (rankBets[pid] || {})[key] || 0;
     if (existing <= 0) return;
-    setRankBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
-    setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+    setRankBets((prev) => {const n = { ...(prev[pid] || {}) };delete n[key];return { ...prev, [pid]: n };});
+    setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
   }, [gamePhase, pid, rankBets]);
 
   const handleRedBlackBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
     const existing = (redBlackBets[pid] || {})[key] || 0;
-    
+
     // Check insufficient funds
     if (existing === 0 && balance < selectedChip) {
       setShowInsufficientFunds(true);
       return;
     }
-    
+
     if (existing > 0 && balance < selectedChip) {
-      setRedBlackBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
-      setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+      setRedBlackBets((prev) => {const n = { ...(prev[pid] || {}) };delete n[key];return { ...prev, [pid]: n };});
+      setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
       return;
     }
     if (balance <= 0 || balance < selectedChip) return;
-    setRedBlackBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
-    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+    setRedBlackBets((prev) => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
+    setBalances((b) => {const n = [...b];n[pid] -= selectedChip;return n;});
   }, [gamePhase, balance, selectedChip, pid, redBlackBets]);
 
   const handleRemoveRedBlackBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
     const existing = (redBlackBets[pid] || {})[key] || 0;
     if (existing <= 0) return;
-    setRedBlackBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
-    setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+    setRedBlackBets((prev) => {const n = { ...(prev[pid] || {}) };delete n[key];return { ...prev, [pid]: n };});
+    setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
   }, [gamePhase, pid, redBlackBets]);
 
   const handleLowHighBet = useCallback((type) => {
     if (gamePhase !== 'lowHighBetting') return;
     // Max bet = total already on board (hand + rank + rb bets), excluding low/high itself
     const boardBet = Object.values(handBets[pid] || {}).reduce((s, v) => s + v, 0) +
-      Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0) +
-      Object.values(rankBets[pid] || {}).reduce((s, v) => s + v, 0);
+    Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0) +
+    Object.values(rankBets[pid] || {}).reduce((s, v) => s + v, 0);
     const current = pLowHighBet && pLowHighBet.type === type ? pLowHighBet.amount : 0;
     const remaining = boardBet - current;
     if (remaining <= 0) return;
     // Substitute: use min of chip and remaining (don't exceed table total)
     const addAmount = Math.min(selectedChip, remaining);
     if (balance <= 0 || balance < addAmount) return;
-    setLowHighBets(prev => ({ ...prev, [pid]: { type, amount: (prev[pid]?.type === type ? prev[pid].amount : 0) + addAmount } }));
-    setBalances(b => { const n = [...b]; n[pid] -= addAmount; return n; });
+    setLowHighBets((prev) => ({ ...prev, [pid]: { type, amount: (prev[pid]?.type === type ? prev[pid].amount : 0) + addAmount } }));
+    setBalances((b) => {const n = [...b];n[pid] -= addAmount;return n;});
   }, [gamePhase, balance, selectedChip, handBets, redBlackBets, rankBets, pLowHighBet, pid]);
 
   const handleRemoveLowHighBet = useCallback(() => {
     // Can only remove Low/High bet during lowHighBetting phase (after turn, before river)
     if (gamePhase !== 'lowHighBetting') return;
     if (!pLowHighBet || pLowHighBet.amount <= 0) return;
-    setBalances(b => { const n = [...b]; n[pid] += pLowHighBet.amount; return n; });
-    setLowHighBets(prev => ({ ...prev, [pid]: null }));
+    setBalances((b) => {const n = [...b];n[pid] += pLowHighBet.amount;return n;});
+    setLowHighBets((prev) => ({ ...prev, [pid]: null }));
   }, [gamePhase, pid, pLowHighBet]);
 
   // Drag-drop: move a chip from one hand to another, or back to bank
@@ -324,11 +324,11 @@ export default function RapidFireGame() {
 
     if (toHandId === 'bank') {
       // Drag to bank — refund
-      setHandBets(prev => { const n = { ...(prev[dragPid] || {}) }; delete n[fromHandId]; return { ...prev, [dragPid]: n }; });
-      setBalances(b => { const n = [...b]; n[dragPid] += fromAmt; return n; });
+      setHandBets((prev) => {const n = { ...(prev[dragPid] || {}) };delete n[fromHandId];return { ...prev, [dragPid]: n };});
+      setBalances((b) => {const n = [...b];n[dragPid] += fromAmt;return n;});
     } else {
       // Move entire bet from fromHandId to toHandId
-      setHandBets(prev => {
+      setHandBets((prev) => {
         const pb = { ...(prev[dragPid] || {}) };
         const toAmt = pb[toHandId] || 0;
         delete pb[fromHandId];
@@ -340,12 +340,12 @@ export default function RapidFireGame() {
 
   const clearBets = () => {
     const refund = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
-      Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
-      Object.values(pRankBets).reduce((s, v) => s + v, 0);
-    setBalances(b => { const n = [...b]; n[pid] += refund; return n; });
-    setHandBets(prev => ({ ...prev, [pid]: {} }));
-    setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
-    setRankBets(prev => ({ ...prev, [pid]: {} }));
+    Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
+    Object.values(pRankBets).reduce((s, v) => s + v, 0);
+    setBalances((b) => {const n = [...b];n[pid] += refund;return n;});
+    setHandBets((prev) => ({ ...prev, [pid]: {} }));
+    setRedBlackBets((prev) => ({ ...prev, [pid]: {} }));
+    setRankBets((prev) => ({ ...prev, [pid]: {} }));
   };
 
   // ---- GAME FLOW ----
@@ -361,12 +361,12 @@ export default function RapidFireGame() {
     setLeadingHandIds(leader ? leader.handIds : []);
     setLeadingRank(leader ? leader.handResult.name : null);
 
-    const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
-    const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
+    const leaderHand = leader ? FIXED_HANDS.find((h) => h.id === leader.handIds[0]) : null;
+    const leaderCards = leaderHand ? leaderHand.cards.map((c) => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
     setDealerMessage(
-      leader
-        ? `Flop: ${flop.map(cardDisplay).join(', ')}. ${leaderCards} is leading with ${leader.handResult.name}.`
-        : `Flop: ${flop.map(cardDisplay).join(', ')}.`
+      leader ?
+      `Flop: ${flop.map(cardDisplay).join(', ')}. ${leaderCards} is leading with ${leader.handResult.name}.` :
+      `Flop: ${flop.map(cardDisplay).join(', ')}.`
     );
     setGamePhase('flop');
   };
@@ -376,15 +376,15 @@ export default function RapidFireGame() {
     const turnCard = deck[deckIndex];
     const newComm = [...communityCards, turnCard];
     setCommunityCards(newComm);
-    setDeckIndex(i => i + 1);
+    setDeckIndex((i) => i + 1);
 
     const leader = findLeadingHand(newComm);
     setLeadingHandIds(leader ? leader.handIds : []);
     setLeadingRank(leader ? leader.handResult.name : null);
 
-    const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
-    const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
-    const lows = newComm.filter(c => isLowCard(c)).length;
+    const leaderHand = leader ? FIXED_HANDS.find((h) => h.id === leader.handIds[0]) : null;
+    const leaderCards = leaderHand ? leaderHand.cards.map((c) => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
+    const lows = newComm.filter((c) => isLowCard(c)).length;
     const highs = newComm.length - lows;
 
     setDealerMessage(
@@ -398,7 +398,7 @@ export default function RapidFireGame() {
     const riverCard = deck[deckIndex];
     const newComm = [...communityCards, riverCard];
     setCommunityCards(newComm);
-    setDeckIndex(i => i + 1);
+    setDeckIndex((i) => i + 1);
 
     const leader = findLeadingHand(newComm);
     setLeadingHandIds([]);
@@ -411,15 +411,15 @@ export default function RapidFireGame() {
     setWinningRedBlack(winRB);
     setWinningLowHigh(winLH);
 
-    const reds = newComm.filter(c => cardColor(c) === 'red').length;
+    const reds = newComm.filter((c) => cardColor(c) === 'red').length;
     const blacks = newComm.length - reds;
-    const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
-    const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
+    const leaderHand = leader ? FIXED_HANDS.find((h) => h.id === leader.handIds[0]) : null;
+    const leaderCards = leaderHand ? leaderHand.cards.map((c) => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
 
     setDealerMessage(
-      leader
-        ? `🏆 Winner! ${leaderCards} wins with ${leader.handResult.name}! Board: ${reds}R / ${blacks}B. River card is ${winLH}.`
-        : `River: ${cardDisplay(riverCard)}.`
+      leader ?
+      `🏆 Winner! ${leaderCards} wins with ${leader.handResult.name}! Board: ${reds}R / ${blacks}B. River card is ${winLH}.` :
+      `River: ${cardDisplay(riverCard)}.`
     );
     setGamePhase('river');
 
@@ -452,24 +452,24 @@ export default function RapidFireGame() {
 
       // Carded hand bets
       if (leader) {
-        leader.handIds.forEach(wid => {
+        leader.handIds.forEach((wid) => {
           const bet = ph[wid] || 0;
           if (bet > 0) {
-            const hand = FIXED_HANDS.find(h => h.id === wid);
+            const hand = FIXED_HANDS.find((h) => h.id === wid);
             const payout = calculatePayout(bet, hand.payout);
             w += payout;
             wins.push({
               label: `Hand ${wid}`,
               bet,
               odds: `${hand.payout}:1`,
-              payout,
+              payout
             });
           }
         });
       }
 
       // Red/Black
-      winRB.forEach(key => {
+      winRB.forEach((key) => {
         const bet = prb[key] || 0;
         if (bet > 0) {
           const ratio = COLOR_BOARD_PAYOUTS[key];
@@ -479,7 +479,7 @@ export default function RapidFireGame() {
             label: key,
             bet,
             odds: `${ratio}:1`,
-            payout,
+            payout
           });
         }
       });
@@ -492,7 +492,7 @@ export default function RapidFireGame() {
           label: plh.type,
           bet: plh.amount,
           odds: `${LOW_HIGH_PAYOUT}:1`,
-          payout,
+          payout
         });
       }
 
@@ -510,7 +510,7 @@ export default function RapidFireGame() {
               label: handResult.name,
               bet: rankBetAmt,
               odds: `${ratio}:1`,
-              payout,
+              payout
             });
           }
         }
@@ -519,21 +519,21 @@ export default function RapidFireGame() {
 
       // Total bets for this player
       const playerTotalBet =
-        Object.values(ph).reduce((s, v) => s + v, 0) +
-        Object.values(prb).reduce((s, v) => s + v, 0) +
-        Object.values(prk).reduce((s, v) => s + v, 0) +
-        (plh?.amount || 0);
+      Object.values(ph).reduce((s, v) => s + v, 0) +
+      Object.values(prb).reduce((s, v) => s + v, 0) +
+      Object.values(prk).reduce((s, v) => s + v, 0) + (
+      plh?.amount || 0);
 
       totalBetsAllPlayers += playerTotalBet;
       totalWinningsAllPlayers += w;
       // Push total payout (balance update will add this to current balance)
       playerWinnings.push(w);
-      
+
       // Build payout display data (net = payout - bet)
       playerPayouts.push({
         wins,
         totalBet: playerTotalBet,
-        netWin: w - playerTotalBet,
+        netWin: w - playerTotalBet
       });
     }
 
@@ -542,13 +542,13 @@ export default function RapidFireGame() {
       handBets: snapHandBets,
       redBlackBets: snapRedBlackBets,
       rankBets: snapRankBets,
-      totalBet: totalBetsAllPlayers,
+      totalBet: totalBetsAllPlayers
     });
 
 
 
     // Update all player balances (add payouts received)
-    setBalances(prev => {
+    setBalances((prev) => {
       const n = [...prev];
       for (let i = 0; i < playerCount; i++) {
         // Current balance already had bets deducted, so just add payout back
@@ -558,13 +558,13 @@ export default function RapidFireGame() {
     });
 
     // Update player stats
-    setPlayerStats(prev => {
+    setPlayerStats((prev) => {
       const updated = { ...prev };
       for (let i = 0; i < playerCount; i++) {
         const playerBet = Object.values(snapHandBets[i] || {}).reduce((s, v) => s + v, 0) +
-                         Object.values(snapRedBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
-                         Object.values(snapRankBets[i] || {}).reduce((s, v) => s + v, 0) +
-                         (snapLowHighBets[i]?.amount || 0);
+        Object.values(snapRedBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+        Object.values(snapRankBets[i] || {}).reduce((s, v) => s + v, 0) + (
+        snapLowHighBets[i]?.amount || 0);
 
         const playerWin = playerWinnings[i] || 0;
         const multiplier = playerBet > 0 ? playerWin / playerBet : 0;
@@ -575,7 +575,7 @@ export default function RapidFireGame() {
           totalWins: prev_i.totalWins + playerWin,
           roundsPlayed: prev_i.roundsPlayed + (playerBet > 0 ? 1 : 0),
           roundsWon: prev_i.roundsWon + (playerWin > playerBet ? 1 : 0),
-          highestMultiplier: Math.max(prev_i.highestMultiplier, multiplier),
+          highestMultiplier: Math.max(prev_i.highestMultiplier, multiplier)
         };
       }
       return updated;
@@ -583,8 +583,8 @@ export default function RapidFireGame() {
 
     // Casino profit = total bets - total winnings paid out
     const roundProfit = totalBetsAllPlayers - totalWinningsAllPlayers;
-    setCasinoProfit(p => p + roundProfit);
-    setRoundsPlayed(r => r + 1);
+    setCasinoProfit((p) => p + roundProfit);
+    setRoundsPlayed((r) => r + 1);
 
     setGamePhase('winner');
 
@@ -592,24 +592,24 @@ export default function RapidFireGame() {
     setTimeout(() => {
       setLastWinInfo({
         playerPayouts,
-        playerCount,
+        playerCount
       });
       setDisplayWindowVisible(true);
     }, 1000);
 
     // History — capture ALL winning outcomes regardless of wagers
-    const reds = finalComm.filter(c => cardColor(c) === 'red').length;
+    const reds = finalComm.filter((c) => cardColor(c) === 'red').length;
     const blacks = finalComm.length - reds;
     const colorResult = reds >= blacks ? `${reds}R` : `${blacks}B`;
-    
-    setHistory(prev => [{
+
+    setHistory((prev) => [{
       roundId,
       winningHandId: leader ? leaderHand?.id : null,
       handRank: handResult?.name || 'No Hand',
       cards: leader ? leaderHand?.cards : [],
       colorResult,
       colorWinners: winRB,
-      lowHighResult: winLH || '-',
+      lowHighResult: winLH || '-'
     }, ...prev].slice(0, 20));
   };
 
@@ -656,7 +656,7 @@ export default function RapidFireGame() {
     setRepeatUsedThisRound(false);
     setDeck(shuffleDeck(DEALER_DECK));
     setDeckIndex(0);
-    setRoundId(r => r + 1);
+    setRoundId((r) => r + 1);
     setDealerMessage("Texas Hold'em is open for play. Players, please place your bets.");
     setGamePhase('betting');
     setActivePlayer(0);
@@ -664,31 +664,31 @@ export default function RapidFireGame() {
 
   const handleRepeatBets = () => {
     if (!previousBets) return;
-    
+
     // Check if all players have sufficient funds for previous bets
     for (let i = 0; i < playerCount; i++) {
-      const playerBet = 
-        Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
-        Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
-        Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
+      const playerBet =
+      Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
+      Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+      Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
       if ((balances[i] || STARTING_BALANCE) < playerBet) {
         setShowInsufficientFunds(true);
         return;
       }
     }
-    
+
     setHandBets(previousBets.handBets);
     setRedBlackBets(previousBets.redBlackBets);
     setRankBets(previousBets.rankBets);
     setRepeatUsedThisRound(true);
     // Deduct from balances
-    setBalances(b => {
+    setBalances((b) => {
       const n = [...b];
       for (let i = 0; i < playerCount; i++) {
-        const playerBet = 
-          Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
-          Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
-          Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
+        const playerBet =
+        Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
+        Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+        Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
         n[i] = Math.max(0, n[i] - playerBet);
       }
       return n;
@@ -697,13 +697,13 @@ export default function RapidFireGame() {
 
   // Check if repeat button should show
   const canRepeat = previousBets && gamePhase === 'betting' && roundId > 1 && !repeatUsedThisRound &&
-    Array.from({ length: playerCount }, (_, i) => {
-      const playerBet = 
-        Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
-        Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
-        Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
-      return (balances[i] || STARTING_BALANCE) >= playerBet;
-    }).every(v => v);
+  Array.from({ length: playerCount }, (_, i) => {
+    const playerBet =
+    Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
+    Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+    Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
+    return (balances[i] || STARTING_BALANCE) >= playerBet;
+  }).every((v) => v);
 
   const handleAddPlayer = (playerNum) => {
     if (playerNum > playerCount) {
@@ -725,30 +725,30 @@ export default function RapidFireGame() {
 
   return (
     <div className="h-screen w-screen overflow-hidden text-white flex flex-col"
-      style={{ background: 'radial-gradient(ellipse at top, #0a1628 0%, #050d1a 100%)' }}>
+    style={{ background: 'radial-gradient(ellipse at top, #0a1628 0%, #050d1a 100%)' }}>
 
       {/* Alerts */}
-      <HandBetLimitAlert 
-        isOpen={showHandLimitAlert} 
-        onClose={() => setShowHandLimitAlert(false)} 
-      />
-      <RankBetLimitAlert 
-        isOpen={showRankLimitAlert} 
-        onClose={() => setShowRankLimitAlert(false)} 
+      <HandBetLimitAlert
+        isOpen={showHandLimitAlert}
+        onClose={() => setShowHandLimitAlert(false)} />
+      
+      <RankBetLimitAlert
+        isOpen={showRankLimitAlert}
+        onClose={() => setShowRankLimitAlert(false)}
         currentHandBets={handBetCount}
-        alertType={rankAlertType}
-      />
-      <InsufficientFundsAlert 
-        isVisible={showInsufficientFunds}
-      />
+        alertType={rankAlertType} />
+      
+      <InsufficientFundsAlert
+        isVisible={showInsufficientFunds} />
+      
 
       {/* Player Stats Panel */}
-      <PlayerStatsPanel 
-        isOpen={showStatsPanel} 
-        onClose={() => setShowStatsPanel(false)} 
+      <PlayerStatsPanel
+        isOpen={showStatsPanel}
+        onClose={() => setShowStatsPanel(false)}
         playerStats={playerStats}
-        playerCount={playerCount}
-      />
+        playerCount={playerCount} />
+      
 
       {/* Header */}
       <div className="w-full bg-black/60 border-b border-yellow-700/30 px-3 py-1.5 flex items-center justify-between flex-shrink-0">
@@ -765,9 +765,9 @@ export default function RapidFireGame() {
                 WebkitTextFillColor: 'transparent',
                 textShadow: 'none',
                 letterSpacing: '-0.05em',
-                filter: 'drop-shadow(2px 0 4px rgba(148,163,184,0.5))',
-              }}
-            >
+                filter: 'drop-shadow(2px 0 4px rgba(148,163,184,0.5))'
+              }}>
+              
               RAPID
             </span>
             {/* FIRE */}
@@ -780,58 +780,58 @@ export default function RapidFireGame() {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.8)) drop-shadow(0 0 12px rgba(239,68,68,0.5))',
-                letterSpacing: '-0.02em',
-              }}
-            >
+                letterSpacing: '-0.02em'
+              }}>
+              
               🔥FIRE
             </span>
             {/* TEXAS 10 inline */}
             <span className="text-yellow-500/50 text-xs font-bold leading-none mx-0.5">—</span>
-            <span
-              className="font-black italic text-xs leading-none tracking-widest"
-              style={{
-                fontFamily: 'Oswald, sans-serif',
-                transform: 'skewX(-12deg)',
-                background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))',
-              }}
-            >
+            <span className="text-base font-black tracking-widest leading-none italic"
+
+            style={{
+              fontFamily: 'Oswald, sans-serif',
+              transform: 'skewX(-12deg)',
+              background: 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 0 4px rgba(74,222,128,0.4))'
+            }}>
+              
               TEXAS 10
             </span>
           </div>
           {/* Player count selector */}
-          {gamePhase === 'betting' && roundId === 1 && Object.values(handBets).every(b => Object.keys(b || {}).length === 0) && (
-            <div className="flex items-center gap-1 ml-2">
+          {gamePhase === 'betting' && roundId === 1 && Object.values(handBets).every((b) => Object.keys(b || {}).length === 0) &&
+          <div className="flex items-center gap-1 ml-2">
               <span className="text-yellow-400/60 text-xs">Players:</span>
-              {PLAYER_COUNT_OPTIONS.map(n => (
-                <button key={n} onClick={() => { setPlayerCount(n); setActivePlayer(0); }}
-                  className={`w-6 h-6 rounded-full text-xs font-bold border transition-all
+              {PLAYER_COUNT_OPTIONS.map((n) =>
+            <button key={n} onClick={() => {setPlayerCount(n);setActivePlayer(0);}}
+            className={`w-6 h-6 rounded-full text-xs font-bold border transition-all
                     ${playerCount === n ? 'border-yellow-400 bg-yellow-600 text-black' : 'border-yellow-700/40 bg-yellow-900/20 text-yellow-400 hover:border-yellow-500'}`}>
                   {n}
                 </button>
-              ))}
+            )}
             </div>
-          )}
+          }
         </div>
         <div className="flex items-center gap-3">
           {/* Player tabs — colored to match chip color */}
-          {playerCount > 1 && (
-            <div className="flex items-center gap-1">
+          {playerCount > 1 &&
+          <div className="flex items-center gap-1">
               {Array.from({ length: playerCount }, (_, i) => {
-                const style = PLAYER_TAB_STYLES[i % PLAYER_TAB_STYLES.length];
-                return (
-                  <button key={i}
-                    onClick={() => gamePhase === 'betting' || gamePhase === 'lowHighBetting' ? setActivePlayer(i) : null}
-                    className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-all
+              const style = PLAYER_TAB_STYLES[i % PLAYER_TAB_STYLES.length];
+              return (
+                <button key={i}
+                onClick={() => gamePhase === 'betting' || gamePhase === 'lowHighBetting' ? setActivePlayer(i) : null}
+                className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-all
                       ${activePlayer === i ? style.active : style.inactive}`}>
                     P{i + 1} <span className="opacity-70">${(balances[i] || STARTING_BALANCE).toFixed(0)}</span>
-                  </button>
-                );
-              })}
+                  </button>);
+
+            })}
             </div>
-          )}
+          }
           <div className="text-center">
             <div className="text-yellow-400/60 text-xs">ROUND</div>
             <div className="text-white font-bold text-sm">#{roundId}</div>
@@ -840,35 +840,35 @@ export default function RapidFireGame() {
             <div className="text-yellow-400/60 text-xs">PHASE</div>
             <div className="text-green-300 font-bold text-xs">{PHASE_LABELS[gamePhase]}</div>
           </div>
-          {playerCount === 1 && (
-            <div className="text-center">
+          {playerCount === 1 &&
+          <div className="text-center">
               <div className="text-yellow-400/60 text-xs">BALANCE</div>
               <div className="text-yellow-300 font-black text-base">${balance.toFixed(2)}</div>
             </div>
-          )}
-          {totalBet > 0 && (
-            <div className="text-center">
+          }
+          {totalBet > 0 &&
+          <div className="text-center">
               <div className="text-yellow-400/60 text-xs">BET</div>
               <div className="text-white font-bold text-sm">${totalBet}</div>
             </div>
-          )}
+          }
           {/* Casino Profit */}
-          {roundsPlayed > 0 && (
-            <div className="text-center border-l border-yellow-700/30 pl-3">
+          {roundsPlayed > 0 &&
+          <div className="text-center border-l border-yellow-700/30 pl-3">
               <div className="text-yellow-400/60 text-xs">CASINO P/L</div>
               <div className={`font-black text-sm ${casinoProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {casinoProfit >= 0 ? '+' : ''}${casinoProfit.toFixed(2)}
               </div>
               <div className="text-yellow-400/40 text-xs">{roundsPlayed} rounds</div>
             </div>
-          )}
+          }
           <GameRulesModal />
           <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} />
           <button
             onClick={handleResetGame}
             className="ml-2 px-2 py-1 rounded-lg border border-red-700/60 bg-red-900/30 text-red-300 text-xs font-bold hover:bg-red-800/50 transition-all"
-            title="Reset entire game"
-          >
+            title="Reset entire game">
+            
             ↺ Reset
           </button>
         </div>
@@ -927,26 +927,26 @@ export default function RapidFireGame() {
           {/* 10 Fixed Hands Grid */}
           <div className="flex-1 min-h-0">
             <div className="grid grid-cols-5 gap-1.5 h-full auto-rows-fr">
-              {FIXED_HANDS.map(hand => (
-                <FixedHandCard
-                  key={hand.id}
-                  hand={hand}
-                  isLeading={leadingHandIds.includes(hand.id)}
-                  isWinner={winnerHandIds.includes(hand.id)}
-                  communityCards={communityCards}
-                  betAmount={pHandBets[hand.id] || 0}
-                  allHandBets={handBets}
-                  playerCount={playerCount}
-                  activePlayerId={pid}
-                  onBet={handleHandBet}
-                  onRemoveBet={handleRemoveHandBet}
-                  onDropChip={handleDropChip}
-                  gamePhase={gamePhase}
-                  disabled={balance < selectedChip && !pHandBets[hand.id]}
-                  disabledByConstraint={handBetsLockedByRanks || (handBetCount >= maxHandBetsAllowed && !pHandBets[hand.id])}
-                  onAttemptLockedBet={() => setShowHandLimitAlert(true)}
-                />
-              ))}
+              {FIXED_HANDS.map((hand) =>
+              <FixedHandCard
+                key={hand.id}
+                hand={hand}
+                isLeading={leadingHandIds.includes(hand.id)}
+                isWinner={winnerHandIds.includes(hand.id)}
+                communityCards={communityCards}
+                betAmount={pHandBets[hand.id] || 0}
+                allHandBets={handBets}
+                playerCount={playerCount}
+                activePlayerId={pid}
+                onBet={handleHandBet}
+                onRemoveBet={handleRemoveHandBet}
+                onDropChip={handleDropChip}
+                gamePhase={gamePhase}
+                disabled={balance < selectedChip && !pHandBets[hand.id]}
+                disabledByConstraint={handBetsLockedByRanks || handBetCount >= maxHandBetsAllowed && !pHandBets[hand.id]}
+                onAttemptLockedBet={() => setShowHandLimitAlert(true)} />
+
+              )}
             </div>
           </div>
 
@@ -954,92 +954,92 @@ export default function RapidFireGame() {
           <div className="flex items-center justify-between gap-2 border-t border-yellow-700/20 pt-1.5 flex-shrink-0">
             <div className="flex items-center gap-2">
               {/* Bank drop zone — drag chips here to refund */}
-              {gamePhase === 'betting' && (
-                <div
-                  id="bank-drop-zone"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const data = e.dataTransfer.getData('text/plain');
-                    if (!data) return;
-                    try {
-                      const parsed = JSON.parse(data);
-                      const { from, type, pid: dragPid } = parsed;
-                      
-                      if (type === 'hand') {
-                        handleDropChip(from, 'bank', dragPid);
-                      } else if (type === 'rank') {
-                        const amt = (rankBets[dragPid] || {})[from] || 0;
-                        if (amt > 0) {
-                          setRankBets(prev => { const n = { ...(prev[dragPid] || {}) }; delete n[from]; return { ...prev, [dragPid]: n }; });
-                          setBalances(b => { const n = [...b]; n[dragPid] += amt; return n; });
-                        }
-                      } else if (type === 'rb') {
-                        const amt = (redBlackBets[dragPid] || {})[from] || 0;
-                        if (amt > 0) {
-                          setRedBlackBets(prev => { const n = { ...(prev[dragPid] || {}) }; delete n[from]; return { ...prev, [dragPid]: n }; });
-                          setBalances(b => { const n = [...b]; n[dragPid] += amt; return n; });
-                        }
+              {gamePhase === 'betting' &&
+              <div
+                id="bank-drop-zone"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const data = e.dataTransfer.getData('text/plain');
+                  if (!data) return;
+                  try {
+                    const parsed = JSON.parse(data);
+                    const { from, type, pid: dragPid } = parsed;
+
+                    if (type === 'hand') {
+                      handleDropChip(from, 'bank', dragPid);
+                    } else if (type === 'rank') {
+                      const amt = (rankBets[dragPid] || {})[from] || 0;
+                      if (amt > 0) {
+                        setRankBets((prev) => {const n = { ...(prev[dragPid] || {}) };delete n[from];return { ...prev, [dragPid]: n };});
+                        setBalances((b) => {const n = [...b];n[dragPid] += amt;return n;});
                       }
-                    } catch (e) {}
-                  }}
-                  className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-dashed border-yellow-600/50 bg-yellow-900/20 text-yellow-500/60 text-xs font-bold transition-all hover:border-yellow-400 hover:bg-yellow-900/40"
-                  title="Drag chip here to refund to bank"
-                >
+                    } else if (type === 'rb') {
+                      const amt = (redBlackBets[dragPid] || {})[from] || 0;
+                      if (amt > 0) {
+                        setRedBlackBets((prev) => {const n = { ...(prev[dragPid] || {}) };delete n[from];return { ...prev, [dragPid]: n };});
+                        setBalances((b) => {const n = [...b];n[dragPid] += amt;return n;});
+                      }
+                    }
+                  } catch (e) {}
+                }}
+                className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-dashed border-yellow-600/50 bg-yellow-900/20 text-yellow-500/60 text-xs font-bold transition-all hover:border-yellow-400 hover:bg-yellow-900/40"
+                title="Drag chip here to refund to bank">
+                
                   💰
                 </div>
-              )}
+              }
               <span className="text-yellow-400/60 text-xs">Chip:</span>
-              {CHIP_VALUES.map(v => (
-                <button
-                  key={v}
-                  onClick={() => setSelectedChip(v)}
-                  className={`w-9 h-9 rounded-full font-bold text-xs border-2 transition-all
-                    ${selectedChip === v
-                      ? 'border-yellow-400 bg-yellow-600 text-black shadow-yellow-400/50 shadow-md scale-110'
-                      : 'border-yellow-700/40 bg-yellow-900/30 text-yellow-300 hover:border-yellow-500'}`}
-                >
+              {CHIP_VALUES.map((v) =>
+              <button
+                key={v}
+                onClick={() => setSelectedChip(v)}
+                className={`w-9 h-9 rounded-full font-bold text-xs border-2 transition-all
+                    ${selectedChip === v ?
+                'border-yellow-400 bg-yellow-600 text-black shadow-yellow-400/50 shadow-md scale-110' :
+                'border-yellow-700/40 bg-yellow-900/30 text-yellow-300 hover:border-yellow-500'}`}>
+                
                   ${v}
                 </button>
-              ))}
+              )}
               <div className="border-l border-yellow-700/20 pl-2 ml-1">
-                <NewPlayerButton 
-                  playerCount={playerCount} 
+                <NewPlayerButton
+                  playerCount={playerCount}
                   onAddPlayer={handleAddPlayer}
-                  gamePhase={gamePhase}
-                />
+                  gamePhase={gamePhase} />
+                
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {gamePhase === 'betting' && totalBet > 0 && (
-                <button
-                  onClick={clearBets}
-                  className="px-3 py-1.5 rounded-lg border border-red-700/50 bg-red-900/30 text-red-300 text-xs font-semibold hover:bg-red-900/50 transition-all"
-                >
+              {gamePhase === 'betting' && totalBet > 0 &&
+              <button
+                onClick={clearBets}
+                className="px-3 py-1.5 rounded-lg border border-red-700/50 bg-red-900/30 text-red-300 text-xs font-semibold hover:bg-red-900/50 transition-all">
+                
                   Clear
                 </button>
-              )}
-              {btn && (
-                <motion.button
-                  whileTap={btn.disabled ? {} : { scale: 0.97 }}
-                  onClick={!btn.disabled && btn.action ? btn.action : undefined}
-                  className={`px-5 py-2 rounded-xl font-black text-sm tracking-wider transition-all
-                    ${btn.disabled
-                      ? 'border border-gray-600 bg-gray-800 text-gray-500 cursor-not-allowed'
-                      : 'border-2 border-yellow-500 bg-yellow-600 hover:bg-yellow-500 text-black shadow-yellow-500/40 shadow-lg cursor-pointer'}`}
-                >
+              }
+              {btn &&
+              <motion.button
+                whileTap={btn.disabled ? {} : { scale: 0.97 }}
+                onClick={!btn.disabled && btn.action ? btn.action : undefined}
+                className={`px-5 py-2 rounded-xl font-black text-sm tracking-wider transition-all
+                    ${btn.disabled ?
+                'border border-gray-600 bg-gray-800 text-gray-500 cursor-not-allowed' :
+                'border-2 border-yellow-500 bg-yellow-600 hover:bg-yellow-500 text-black shadow-yellow-500/40 shadow-lg cursor-pointer'}`}>
+                
                   {btn.label}
                 </motion.button>
-              )}
-              {canRepeat && (
-                <motion.button
-                  onClick={handleRepeatBets}
-                  whileTap={{ scale: 0.97 }}
-                  className="px-4 py-2 rounded-xl border-2 border-green-500 bg-green-600 hover:bg-green-500 text-black font-black text-sm tracking-wider transition-all"
-                >
+              }
+              {canRepeat &&
+              <motion.button
+                onClick={handleRepeatBets}
+                whileTap={{ scale: 0.97 }}
+                className="px-4 py-2 rounded-xl border-2 border-green-500 bg-green-600 hover:bg-green-500 text-black font-black text-sm tracking-wider transition-all">
+                
                   🔄 Repeat
                 </motion.button>
-              )}
+              }
             </div>
           </div>
         </div>
@@ -1068,8 +1068,8 @@ export default function RapidFireGame() {
               onAttemptLockedRank={(type) => {
                 setRankAlertType(type);
                 setShowRankLimitAlert(true);
-              }}
-            />
+              }} />
+            
           </div>
           {/* Side Bets panel */}
           <div className="border border-yellow-700/40 rounded-xl p-2 bg-black/30 flex-1 overflow-hidden">
@@ -1087,11 +1087,11 @@ export default function RapidFireGame() {
               winningRedBlack={winningRedBlack}
               winningLowHigh={winningLowHigh}
               disabled={gamePhase === 'betting' ? balance < selectedChip : gamePhase === 'lowHighBetting' ? balance < selectedChip : true}
-              playerCount={playerCount}
-            />
+              playerCount={playerCount} />
+            
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
