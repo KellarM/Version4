@@ -56,7 +56,7 @@ export default function FixedHandCard({
   borderCls = 'border-green-700/60 bg-green-900/40';
 
   return (
-    <motion.div className="bg-green-900/40 py-3 rounded-xl relative border-2 cursor-pointer transition-colors duration-200 select-none flex flex-col justify-between border-green-700/60"
+    <motion.div className="bg-green-900/40 rounded-xl relative border-2 cursor-pointer transition-colors duration-200 select-none flex flex-col justify-between border-green-700/60"
 
     animate={isLeading && !isWinner ? { scale: [1, 1.02, 1] } : { scale: 1 }}
     transition={{ duration: 0.5, repeat: isLeading && !isWinner ? Infinity : 0, repeatDelay: 1.5 }}
