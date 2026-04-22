@@ -59,7 +59,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
 
       {/* Bottom-right: rank + suit below it (right-side up) */}
       <div className={`flex flex-col items-end leading-none p-1 pb-0.5 ${textColor}`} style={{ fontWeight: 'bold' }}>
-        <div style={{ fontSize: '1.1em' }}>{card.rank}</div>
+        <div style={{ fontSize: '1.1em' }} className="ml-2">{card.rank}</div>
         <div style={{ fontSize: '0.55em' }}>{suitSymbol}</div>
       </div>
     </div>);
