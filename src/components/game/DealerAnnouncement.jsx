@@ -1,37 +1,54 @@
-import { motion, AnimatePresence } from 'framer-motion';
+const PHASE_GRADIENT = {
+  betting:        'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
+  flop:           'linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%)',
+  turn:           'linear-gradient(90deg, #fb923c 0%, #f97316 100%)',
+  lowHighBetting: 'linear-gradient(90deg, #60a5fa 0%, #93c5fd 100%)',
+  river:          'linear-gradient(90deg, #fef08a 0%, #f97316 100%)',
+  settlement:     'linear-gradient(90deg, #a3a3a3 0%, #737373 100%)',
+  winner:         'linear-gradient(90deg, #fef08a 0%, #f97316 100%)',
+};
 
 export default function DealerAnnouncement({ message, phase }) {
+  const gradient = PHASE_GRADIENT[phase] || PHASE_GRADIENT.betting;
+  const text = message || '';
+  const duration = Math.max(7, text.length * 0.15);
+
   return (
-    <AnimatePresence mode="wait">
-      {message && (
-        <motion.div
-          key={message}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="text-center flex items-center justify-center h-full"
+    <div
+      style={{
+        width: '100%',
+        height: '32px',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        display: 'flex',
+        alignItems: 'center',
+        position: 'relative',
+      }}
+    >
+      {text && (
+        <span
+          key={text}
+          style={{
+            display: 'inline-block',
+            whiteSpace: 'nowrap',
+            fontFamily: 'Oswald, sans-serif',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            fontStyle: 'italic',
+            lineHeight: '32px',
+            height: '32px',
+            transform: 'skewX(-8deg)',
+            background: gradient,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            animation: `dealer-marquee ${duration}s linear infinite`,
+            willChange: 'transform',
+            paddingLeft: '0.75rem',
+          }}
         >
-          <div className="flex flex-col items-center justify-center">
-            <p
-              className="text-sm font-bold leading-relaxed max-w-2xl italic"
-              style={{
-                fontFamily: 'Oswald, sans-serif',
-                transform: 'skewX(-8deg)',
-                background: phase === 'winner' 
-                  ? 'linear-gradient(90deg, #fef08a 0%, #f97316 100%)'
-                  : phase === 'lowHighBetting'
-                  ? 'linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%)'
-                  : 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              {message}
-            </p>
-          </div>
-        </motion.div>
+          {text}
+        </span>
       )}
-    </AnimatePresence>
+    </div>
   );
 }
