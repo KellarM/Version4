@@ -26,26 +26,22 @@ Deno.serve(async (req) => {
 
     const rankPayoutMap = {
       'Royal Flush': 100,
-      'Straight Flush': 50,
       'Four of a Kind': 5.8,
       'Full House': 1.5,
       'Flush': 2.0,
       'Straight': 2.9,
       'Three of a Kind': 1.5,
       'Two Pair': 7.4,
-      'One Pair': 9.0,
     };
 
     const rankFrequencies = {
       'Royal Flush': 0.000154,
-      'Straight Flush': 0.00139,
       'Four of a Kind': 0.00168,
       'Full House': 0.00261,
       'Flush': 0.00327,
       'Straight': 0.00462,
       'Three of a Kind': 0.02113,
       'Two Pair': 0.04754,
-      'One Pair': 0.42256,
     };
 
     const rbPayoutMap = { '3R': 0.19, '3B': 0.19, '4R': 0.74, '4B': 0.74, '5R': 2.9, '5B': 2.9 };
@@ -80,7 +76,7 @@ Deno.serve(async (req) => {
         if (isStrong) {
           return {
             handBet: true,
-            rankBets: ['One Pair', 'Two Pair', 'Three of a Kind', 'Full House', 'Four of a Kind'],
+            rankBets: ['Two Pair', 'Three of a Kind', 'Full House', 'Four of a Kind'],
             colorBets: true,
             lowHighBet: true,
           };
@@ -98,7 +94,7 @@ Deno.serve(async (req) => {
 
         return {
           handBet: true,
-          rankBets: ['One Pair', 'Two Pair', 'Three of a Kind'],
+          rankBets: ['Two Pair', 'Three of a Kind'],
           colorBets: true,
           lowHighBet: isRedHeavy ? 'HIGH' : 'LOW',
         };
@@ -111,7 +107,7 @@ Deno.serve(async (req) => {
       const highEV = runStrategy(handsToSimulate, FIXED_HANDS, rankPayoutMap, rankFrequencies, rbPayoutMap, lowHighPayout, (flop, winningHand) => {
         return {
           handBet: true,
-          rankBets: ['One Pair', 'Two Pair', 'Three of a Kind', 'Four of a Kind', 'Straight Flush', 'Royal Flush'],
+          rankBets: ['Two Pair', 'Three of a Kind', 'Four of a Kind'],
           colorBets: false,
           lowHighBet: false,
         };
