@@ -1,21 +1,35 @@
-import { useState, useRef, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { useState, useRef } from 'react';
+import { runBetAuditWithAbort, runMicroscopeWithAbort, runExportWithAbort, resetPersistentWorker } from '@/lib/workerBridge';
 import { motion } from 'framer-motion';
-import { Play, RefreshCw, Trash2, FileDown, FileText, SkipForward } from 'lucide-react';
+import { Play, RefreshCw, Trash2, FileDown, FileText, SkipForward, Microscope, ChevronDown, ChevronRight, Download, X } from 'lucide-react';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 import { jsPDF } from 'jspdf';
+import VerificationLog from './VerificationLog';
 
 const STORAGE_KEY = 'individualBetAudit_results';
 const PROGRESS_KEY = 'individualBetAudit_progress';
-const BATCHES_PER_BET_DEFAULT = 40; // 40 × 50K = 2M per bet
 
-// Sample size options: label, total games per bet, batches of 50K each
 const SAMPLE_SIZES = [
   { label: '2M (Full)', gamesPerBet: 2_000_000, batches: 40 },
   { label: '1M',        gamesPerBet: 1_000_000, batches: 20 },
   { label: '500K',      gamesPerBet:   500_000, batches: 10 },
   { label: '100K',      gamesPerBet:   100_000, batches:  2 },
 ];
+
+const EXPORT_ROW_OPTIONS = [
+  { label: '1M rows', rows: 1_000_000 },
+  { label: '500K',    rows:   500_000 },
+  { label: '100K',    rows:   100_000 },
+];
+
+function getLivePayouts() {
+  return {
+    handPayouts: [...CARDED_HAND_PAYOUTS],
+    rankPayouts: { ...HAND_RANK_PAYOUTS },
+    colorPayouts: { ...COLOR_BOARD_PAYOUTS },
+    lhPayout: LOW_HIGH_PAYOUT,
+  };
+}
 
 const BET_DEFINITIONS = [
   { betType: 'hand', betKey: '1',  label: 'Hand 1 — A♦/10♥',  group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[0] },
@@ -28,14 +42,12 @@ const BET_DEFINITIONS = [
   { betType: 'hand', betKey: '8',  label: 'Hand 8 — 4♥/2♥',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[7] },
   { betType: 'hand', betKey: '9',  label: 'Hand 9 — 3♣/3♥',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[8] },
   { betType: 'hand', betKey: '10', label: 'Hand 10 — A♥/5♦',  group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[9] },
-  { betType: 'rank', betKey: 'One Pair',         label: 'One Pair',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['One Pair'] },
   { betType: 'rank', betKey: 'Two Pair',         label: 'Two Pair',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Two Pair'] },
   { betType: 'rank', betKey: 'Three of a Kind',  label: 'Three of a Kind', group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Three of a Kind'] },
   { betType: 'rank', betKey: 'Straight',         label: 'Straight',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Straight'] },
   { betType: 'rank', betKey: 'Flush',            label: 'Flush',           group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Flush'] },
-  { betType: 'rank', betKey: 'Full House',       label: 'Full House',      group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Full House'] },
+  { betType: 'rank', betKey: 'Full House',        label: 'Full House',      group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Full House'] },
   { betType: 'rank', betKey: 'Four of a Kind',   label: 'Four of a Kind',  group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Four of a Kind'] },
-  { betType: 'rank', betKey: 'Straight Flush',   label: 'Straight Flush',  group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Straight Flush'] },
   { betType: 'color', betKey: '3R', label: '3 Red',    group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3R'] },
   { betType: 'color', betKey: '3B', label: '3 Black',  group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3B'] },
   { betType: 'color', betKey: '4R', label: '4 Red',    group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['4R'] },
@@ -48,7 +60,6 @@ const BET_DEFINITIONS = [
 
 const GROUPS = ['Carded Hands', 'Hand Ranks', 'Color Board', 'Low / High'];
 
-// Plain-text labels for PDF/Word export (no suit symbols)
 const PLAIN_LABELS = {
   'hand:1':  'Hand 1 - A(Dia)/10(Hrt)',
   'hand:2':  'Hand 2 - K(Clu)/K(Spa)',
@@ -67,44 +78,17 @@ function plainLabel(def) {
 
 const GROUP_COLORS = {
   'Carded Hands': 'text-blue-400',
-  'Hand Ranks':   'text-purple-400',
+  'Hand Ranks':   'text-yellow-400',
   'Color Board':  'text-red-400',
   'Low / High':   'text-teal-400',
 };
 
-function RTPCell({ rtp }) {
-  if (rtp === null || rtp === undefined) return <span className="text-gray-500">—</span>;
-  const num = parseFloat(rtp);
-  const ok = num >= 95 && num <= 98;
-  return (
-    <span className={`font-bold ${ok ? 'text-green-400' : num > 98 ? 'text-orange-400' : 'text-red-400'}`}>
-      {rtp}%
-    </span>
-  );
-}
-
-function OddsCell({ odds, current }) {
-  if (odds === null || odds === undefined) return <span className="text-gray-500">—</span>;
-  const diff = current !== null ? odds - current : null;
-  return (
-    <span className="font-bold text-yellow-300">
-      {odds}:1
-      {diff !== null && (
-        <span className={`ml-1 text-xs ${diff > 0.5 ? 'text-green-400' : diff < -0.5 ? 'text-red-400' : 'text-gray-400'}`}>
-          ({diff > 0 ? '+' : ''}{diff.toFixed(2)})
-        </span>
-      )}
-    </span>
-  );
-}
-
-// Selection options for the dropdown
 const SELECTION_OPTIONS = [
-  { value: 'all',          label: '— All 27 Bets —' },
-  { value: 'group:Carded Hands', label: 'Group: Carded Hands' },
-  { value: 'group:Hand Ranks',   label: 'Group: Hand Ranks' },
-  { value: 'group:Color Board',  label: 'Group: Color Board' },
-  { value: 'group:Low / High',   label: 'Group: Low / High' },
+  { value: 'all',                  label: '— All 26 Bets —' },
+  { value: 'group:Carded Hands',   label: 'Group: Carded Hands' },
+  { value: 'group:Hand Ranks',     label: 'Group: Hand Ranks' },
+  { value: 'group:Color Board',    label: 'Group: Color Board' },
+  { value: 'group:Low / High',     label: 'Group: Low / High' },
   ...BET_DEFINITIONS.map(d => ({ value: `single:${d.betType}:${d.betKey}`, label: `  ${d.label}` })),
 ];
 
@@ -122,6 +106,150 @@ function getSelectedDefs(selectionValue) {
   return BET_DEFINITIONS;
 }
 
+function RTPCell({ rtp }) {
+  if (rtp === null || rtp === undefined) return <span className="text-gray-500">—</span>;
+  const num = parseFloat(rtp);
+  const ok = num >= 95 && num <= 98;
+  return (
+    <span className={`font-bold ${ok ? 'text-green-400' : num > 98 ? 'text-orange-400' : 'text-red-400'}`}>
+      {rtp}%
+    </span>
+  );
+}
+
+function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunning, microscopeLog, microscopeSource, exportKey, exportRunning, exportProgress }) {
+  const [open, setOpen] = useState(false);
+  const key = `${def.betType}:${def.betKey}`;
+  const isMicActive = microscopeKey === key;
+  const isExportActive = exportKey === key;
+
+  if (!r) {
+    return (
+      <tr className="border-b border-slate-700/40">
+        <td className="px-2 py-2.5 w-8"></td>
+        <td className="px-3 py-2.5 text-gray-300">{def.label}</td>
+        <td colSpan={9} className="px-4 py-2.5 text-gray-600 text-xs italic">pending...</td>
+      </tr>
+    );
+  }
+
+  const houseEdgeNum = r.houseEdge !== undefined ? parseFloat(r.houseEdge) : (100 - parseFloat(r.rtp));
+
+  return (
+    <>
+      <motion.tr
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={`border-b border-slate-700/40 hover:bg-slate-700/10 ${isMicActive ? 'bg-cyan-950/10' : ''}`}
+      >
+        <td className="px-2 py-2.5 w-8">
+          {/* "ex" button — triggers export, does NOT expand row */}
+          <button
+            onClick={e => { e.stopPropagation(); onExport(def); }}
+            disabled={exportRunning}
+            title="Export 1M row CSV for this bet"
+            className={`inline-flex items-center justify-center w-7 h-6 rounded text-xs font-bold border transition-all
+              ${isExportActive && exportRunning
+                ? 'border-amber-500 bg-amber-900/30 text-amber-300 animate-pulse'
+                : 'border-slate-600 bg-slate-700/60 text-gray-400 hover:border-amber-500 hover:text-amber-300'
+              } disabled:opacity-30`}
+          >
+            {isExportActive && exportRunning ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : 'ex'}
+          </button>
+        </td>
+        {/* Clicking the data cells expands/collapses the row */}
+        <td
+          className="px-3 py-2.5 font-semibold text-white text-sm cursor-pointer select-none"
+          onClick={() => setOpen(v => !v)}
+        >
+          <span className="flex items-center gap-1.5">
+            {open ? <ChevronDown className="w-3.5 h-3.5 text-gray-400" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />}
+            {def.label}
+          </span>
+        </td>
+        <td className="px-3 py-2.5 text-right text-white font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>
+          {r.wins.toLocaleString()}
+          <span className="text-gray-600 ml-1">/ {(r.totalGames / 1000).toFixed(0)}K</span>
+        </td>
+        <td className="px-3 py-2.5 text-right text-gray-300 font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>{r.winFrequency}%</td>
+        <td className="px-3 py-2.5 text-right cursor-pointer" onClick={() => setOpen(v => !v)}>
+          <span className={`font-bold text-xs font-mono ${houseEdgeNum > 0 ? 'text-red-400' : 'text-green-400'}`}>
+            {houseEdgeNum.toFixed(2)}%
+          </span>
+        </td>
+        <td className="px-3 py-2.5 text-right cursor-pointer" onClick={() => setOpen(v => !v)}><RTPCell rtp={r.rtp} /></td>
+        <td className="px-3 py-2.5 text-right text-gray-300 font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>{r.currentPayout}:1</td>
+        <td className="px-3 py-2.5 text-right text-gray-400 font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>
+          {r.fairOdds !== null ? `${r.fairOdds}:1` : '—'}
+        </td>
+        <td className="px-3 py-2.5 text-right text-green-400 font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>
+          {r.for95 !== null ? `${r.for95}:1` : '—'}
+        </td>
+        <td className="px-3 py-2.5 text-right text-yellow-400 font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>
+          {r.for965 !== null ? `${r.for965}:1` : '—'}
+        </td>
+        <td className="px-3 py-2.5 text-right text-blue-400 font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>
+          {r.for98 !== null ? `${r.for98}:1` : '—'}
+        </td>
+      </motion.tr>
+
+      {open && (
+        <tr className="border-b border-slate-700/30">
+          <td colSpan={11} className="px-4 pb-4 pt-1 bg-slate-900/40">
+            {/* Export progress bar */}
+            {isExportActive && exportRunning && (
+              <div className="mb-3">
+                <div className="flex justify-between text-xs text-amber-400/70 mb-1">
+                  <span className="flex items-center gap-1"><Download className="w-3 h-3" /> Generating CSV export...</span>
+                  <span>{Math.round(exportProgress * 100)}%</span>
+                </div>
+                <div className="w-full bg-slate-700 rounded-full h-1 overflow-hidden">
+                  <motion.div
+                    className="h-1 rounded-full bg-amber-500"
+                    animate={{ width: `${Math.round(exportProgress * 100)}%` }}
+                    transition={{ ease: 'linear', duration: 0.2 }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
+              <button
+                onClick={e => { e.stopPropagation(); onInspect(def); }}
+                disabled={microscopeRunning}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all
+                  ${isMicActive
+                    ? 'border-cyan-500 bg-cyan-900/30 text-cyan-300'
+                    : 'border-slate-600 bg-slate-700/50 text-gray-300 hover:border-cyan-600 hover:text-cyan-300'
+                  } disabled:opacity-40`}
+              >
+                {microscopeRunning && isMicActive
+                  ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  : <Microscope className="w-3.5 h-3.5" />
+                }
+                {microscopeRunning && isMicActive ? 'Reading buffer...' : 'Microscope (50 hands)'}
+              </button>
+              {isMicActive && !microscopeRunning && microscopeSource && (
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${
+                  microscopeSource === 'buffer'
+                    ? 'text-green-400 border-green-700/50 bg-green-900/20'
+                    : 'text-amber-400 border-amber-700/50 bg-amber-900/20'
+                }`}>
+                  {microscopeSource === 'buffer' ? 'Rows 1–50 from audit buffer' : 'Fresh 50-hand sample'}
+                </span>
+              )}
+            </div>
+
+            {isMicActive && !microscopeRunning && microscopeLog && (
+              <VerificationLog log={microscopeLog} betLabel={def.label} />
+            )}
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
 export default function IndividualBetAudit() {
   const [running, setRunning] = useState(false);
   const [selectedSize, setSelectedSize] = useState(SAMPLE_SIZES[0]);
@@ -133,110 +261,206 @@ export default function IndividualBetAudit() {
     try { return parseInt(localStorage.getItem(PROGRESS_KEY) || '0'); } catch { return 0; }
   });
   const [currentBet, setCurrentBet] = useState('');
-  const abortRef = useRef(false);
+  const [microscopeKey, setMicroscopeKey] = useState(null);
+  const [microscopeLog, setMicroscopeLog] = useState(null);
+  const [microscopeRunning, setMicroscopeRunning] = useState(false);
+  const [betProgress, setBetProgress] = useState(0);
 
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(results)); } catch {}
-  }, [results]);
-  useEffect(() => {
-    try { localStorage.setItem(PROGRESS_KEY, String(progress)); } catch {}
-  }, [progress]);
+  // Export state
+  const [exportKey, setExportKey] = useState(null);
+  const [exportRunning, setExportRunning] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportRowCount, setExportRowCount] = useState(EXPORT_ROW_OPTIONS[0].rows);
+  const exportWorkerRef = useRef(null);
+
+  const abortRef = useRef(false);
+  const workerRef = useRef(null);
+  const microscopeWorkerRef = useRef(null);
 
   const activeDefs = getSelectedDefs(selection);
   const totalBets = activeDefs.length;
+  const anyResults = Object.keys(results).length > 0;
+  const pct = Math.round((progress / totalBets) * 100);
+  const canContinue = !running && progress > 0 && progress < totalBets;
 
   const clearResults = () => {
     setResults({});
     setProgress(0);
+    setMicroscopeLog(null);
+    setMicroscopeKey(null);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROGRESS_KEY);
   };
 
-  // Core loop — starts from startIndex, uses batchesPerBet batches of 50K each
-  const runAuditFrom = async (startIndex, batchesPerBet, existingResults, defs) => {
+  const runAuditFrom = async (startIndex, batchesPerBet, defs) => {
     setRunning(true);
     abortRef.current = false;
+    const livePayouts = getLivePayouts();
+    const totalGames = batchesPerBet * 50_000;
 
-    let currentResults = { ...existingResults };
-
-    outer: for (let bi = startIndex; bi < defs.length; bi++) {
+    for (let bi = startIndex; bi < defs.length; bi++) {
       if (abortRef.current) break;
       const def = defs[bi];
       setCurrentBet(def.label);
+      setBetProgress(0);
 
-      let totalWins = 0;
-      let totalPaid = 0;
-      const totalGames = batchesPerBet * 50_000;
+      let livePayout = def.currentPayout;
+      if (def.betType === 'hand') livePayout = livePayouts.handPayouts[parseInt(def.betKey) - 1];
+      else if (def.betType === 'rank') livePayout = livePayouts.rankPayouts[def.betKey];
+      else if (def.betType === 'color') livePayout = livePayouts.colorPayouts[def.betKey];
+      else if (def.betType === 'lh') livePayout = livePayouts.lhPayout;
 
-      for (let b = 0; b < batchesPerBet; b++) {
-        if (abortRef.current) break outer;
-        try {
-          const res = await base44.functions.invoke('individualBetAudit', {
-            batchSize: 50_000,
+      try {
+        const { promise, abort } = runBetAuditWithAbort(
+          {
+            rounds: totalGames,
             betType: def.betType,
             betKey: def.betKey,
-          });
-          if (res.data.success) {
-            totalWins += res.data.wins;
-            const batchBet = 50_000 * 100;
-            totalPaid += (parseFloat(res.data.rtp) / 100) * batchBet;
-          }
-        } catch (e) {
-          // skip batch on error
-        }
+            handPayouts: livePayouts.handPayouts,
+            rankPayouts: livePayouts.rankPayouts,
+            colorPayouts: livePayouts.colorPayouts,
+            lhPayout: livePayouts.lhPayout,
+            captureLog: false,
+          },
+          (pct) => setBetProgress(pct)
+        );
+        workerRef.current = { abort };
+
+        const res = await promise;
+        workerRef.current = null;
+        if (abortRef.current) break;
+
+        const key = `${def.betType}:${def.betKey}`;
+        const newResult = {
+          wins: res.wins,
+          totalGames,
+          winFrequency: res.winFrequency,
+          rtp: parseFloat(res.rtp).toFixed(2),
+          houseEdge: res.houseEdge !== undefined ? parseFloat(res.houseEdge).toFixed(2) : (100 - parseFloat(res.rtp)).toFixed(2),
+          fairOdds: res.fairOdds,
+          for95: res.for95,
+          for965: res.for965,
+          for98: res.for98,
+          currentPayout: livePayout,
+        };
+
+        setResults(prev => {
+          const updated = { ...prev, [key]: newResult };
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+        const newProgress = bi + 1;
+        setProgress(newProgress);
+        setBetProgress(0);
+        try { localStorage.setItem(PROGRESS_KEY, String(newProgress)); } catch {}
+      } catch {
+        if (abortRef.current) break;
       }
-
-      if (abortRef.current) break;
-
-      const winFreq = totalWins / totalGames;
-      const totalBetAmt = totalGames * 100;
-      const rtp = totalBetAmt > 0 ? (totalPaid / totalBetAmt) * 100 : 0;
-      const fairOdds = winFreq > 0 ? Math.round(((1 / winFreq) - 1) * 100) / 100 : null;
-      const for965   = winFreq > 0 ? Math.round(((0.965 / winFreq) - 1) * 100) / 100 : null;
-      const for95    = winFreq > 0 ? Math.round(((0.95  / winFreq) - 1) * 100) / 100 : null;
-      const for98    = winFreq > 0 ? Math.round(((0.98  / winFreq) - 1) * 100) / 100 : null;
-
-      const key = `${def.betType}:${def.betKey}`;
-      const newResult = {
-        wins: totalWins,
-        totalGames,
-        winFrequency: (winFreq * 100).toFixed(4),
-        rtp: rtp.toFixed(2),
-        fairOdds,
-        for95, for965, for98,
-        currentPayout: def.currentPayout,
-        progressive: def.progressive,
-      };
-      currentResults = { ...currentResults, [key]: newResult };
-      setResults(prev => {
-        const updated = { ...prev, [key]: newResult };
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch {}
-        return updated;
-      });
-      const newProgress = bi + 1;
-      setProgress(newProgress);
-      try { localStorage.setItem(PROGRESS_KEY, String(newProgress)); } catch {}
     }
     setRunning(false);
     setCurrentBet('');
+    setBetProgress(0);
+    workerRef.current = null;
   };
 
-  // Full fresh run
   const runAudit = (size) => {
     const defs = getSelectedDefs(selection);
+    resetPersistentWorker();
     setResults({});
     setProgress(0);
+    setMicroscopeLog(null);
+    setMicroscopeKey(null);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROGRESS_KEY);
-    runAuditFrom(0, size.batches, {}, defs);
+    runAuditFrom(0, size.batches, defs);
   };
 
-  // Continue from where we left off (uses same batch count as selected size)
   const continueAudit = () => {
-    runAuditFrom(progress, selectedSize.batches, results, activeDefs);
+    runAuditFrom(progress, selectedSize.batches, activeDefs);
   };
 
-  const canContinue = !running && progress > 0 && progress < totalBets;
+  // Microscope — reads from globalAuditBuffer[0..49] if buffer matches this bet,
+  // otherwise falls back to 50 fresh hands
+  const [microscopeSource, setMicroscopeSource] = useState(null); // 'buffer' | 'fallback'
+
+  const runMicroscope = async (def) => {
+    if (microscopeWorkerRef.current) { microscopeWorkerRef.current.abort(); }
+    const key = `${def.betType}:${def.betKey}`;
+    setMicroscopeKey(key);
+    setMicroscopeLog(null);
+    setMicroscopeSource(null);
+    setMicroscopeRunning(true);
+    const livePayouts = getLivePayouts();
+    try {
+      const { promise, abort } = runMicroscopeWithAbort({
+        betType: def.betType,
+        betKey: def.betKey,
+        handPayouts: livePayouts.handPayouts,
+        rankPayouts: livePayouts.rankPayouts,
+        colorPayouts: livePayouts.colorPayouts,
+        lhPayout: livePayouts.lhPayout,
+      });
+      microscopeWorkerRef.current = { abort };
+      const res = await promise;
+      microscopeWorkerRef.current = null;
+      if (res.success && Array.isArray(res.verificationLog)) {
+        setMicroscopeLog(res.verificationLog);
+        setMicroscopeSource(res.source || 'fallback');
+      }
+    } catch {}
+    setMicroscopeRunning(false);
+    microscopeWorkerRef.current = null;
+  };
+
+  // CSV Export — re-runs exact batch simulation for that bet and streams rows
+  // Row count = min(batch size, exportRowCount, 1M) — 1:1 match with audit summary
+  const runExport = async (def) => {
+    if (exportRunning) return;
+    if (exportWorkerRef.current) { exportWorkerRef.current.abort(); }
+    const key = `${def.betType}:${def.betKey}`;
+    const auditResult = results[key];
+    const batchRows = auditResult ? Math.min(auditResult.totalGames, exportRowCount, 1_000_000) : Math.min(exportRowCount, 1_000_000);
+
+    setExportKey(key);
+    setExportRunning(true);
+    setExportProgress(0);
+
+    const livePayouts = getLivePayouts();
+    const csvChunks = [];
+
+    try {
+      const { promise, abort } = runExportWithAbort(
+        {
+          rows: batchRows,
+          betType: def.betType,
+          betKey: def.betKey,
+          handPayouts: livePayouts.handPayouts,
+          rankPayouts: livePayouts.rankPayouts,
+          colorPayouts: livePayouts.colorPayouts,
+          lhPayout: livePayouts.lhPayout,
+        },
+        (chunk) => { csvChunks.push(chunk); },
+        (pct) => setExportProgress(pct)
+      );
+      exportWorkerRef.current = { abort };
+      const result = await promise;
+      exportWorkerRef.current = null;
+
+      // Assemble and trigger download
+      const blob = new Blob(csvChunks, { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = def.label.replace(/[^a-zA-Z0-9]/g, '_');
+      a.download = `RapidFire_Export_${safeName}_${result.total}rows_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+
+    setExportRunning(false);
+    setExportProgress(0);
+    exportWorkerRef.current = null;
+  };
 
   const exportPDF = () => {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -244,147 +468,96 @@ export default function IndividualBetAudit() {
     const now = new Date().toLocaleString();
     const ROW_H = 7;
 
-    // ── Header banner ────────────────────────────────────────────────
     doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, pageW, 20, 'F');
     doc.setTextColor(250, 204, 21);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Rapid Fire Texas 10 — Individual Bet Audit Report', 10, 13);
+    doc.text('Rapid Fire Texas 10 — Data Lab Audit Report', 10, 13);
     doc.setFontSize(8);
     doc.setTextColor(200, 200, 200);
-    doc.text(`Generated: ${now}  |  ${progress} bets completed  |  ${selectedSize.gamesPerBet.toLocaleString()} games/bet`, pageW - 10, 13, { align: 'right' });
+    doc.text(`Generated: ${now}  |  ${progress} bets  |  ${selectedSize.gamesPerBet.toLocaleString()} rounds/bet  |  32-card engine`, pageW - 10, 13, { align: 'right' });
 
     let y = 28;
-    // cols: Bet, Wins, Win%, RTP, Current, Fair, For95%, For96.5%, For98%, Status
-    const colX =    [10,  72,  98,  118,  138,  160,  180,  203,  226,  249];
-    const headers = ['Bet','Wins','Win %','Actual RTP','Curr Odds','Fair (1:1)','For 95%','For 96.5%','For 98%','Status'];
-
-    const drawBorder = (rowY) => {
-      doc.setDrawColor(180, 180, 180);
-      doc.setLineWidth(0.2);
-      doc.rect(10, rowY - ROW_H + 1, pageW - 20, ROW_H, 'S');
-    };
+    const colX =    [10,  68,  92,  112,  133,  154,  175,  196,  216,  237,  258];
+    const headers = ['Bet','Wins','Win %','House Edge','Actual RTP','Curr Odds','Fair (1)','For 95%','For 96.5%','For 98%','Status'];
 
     GROUPS.forEach(group => {
       const defs = BET_DEFINITIONS.filter(d => d.group === group);
       const hasAny = defs.some(d => results[`${d.betType}:${d.betKey}`]);
       if (!hasAny) return;
-
       if (y > 175) { doc.addPage(); y = 15; }
-
-      // Group heading row
       doc.setFillColor(220, 230, 255);
       doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'F');
-      doc.setDrawColor(100, 130, 200);
-      doc.setLineWidth(0.3);
-      doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'S');
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.text(group, 12, y);
       y += ROW_H;
-
-      // Column header row
       doc.setFillColor(240, 240, 240);
       doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'F');
-      doc.setDrawColor(150, 150, 150);
-      doc.setLineWidth(0.2);
-      doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'S');
-      doc.setTextColor(0, 0, 0);
       doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
       headers.forEach((h, i) => doc.text(h, colX[i], y));
       y += ROW_H;
-
       defs.forEach((def) => {
         const key = `${def.betType}:${def.betKey}`;
         const r = results[key];
         if (!r) return;
-
         if (y > 185) { doc.addPage(); y = 15; }
-
         const rtp = parseFloat(r.rtp);
         const rtpOk = rtp >= 95 && rtp <= 98;
-
-        // White row background with border
+        const he = r.houseEdge !== undefined ? parseFloat(r.houseEdge).toFixed(2) : (100 - rtp).toFixed(2);
         doc.setFillColor(255, 255, 255);
         doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'F');
-        drawBorder(y);
-
         doc.setFontSize(7.5);
         doc.setFont('helvetica', 'bold');
-
-        // Bet label — plain text (no suit symbols)
         doc.setTextColor(0, 0, 0);
         doc.text(plainLabel(def), colX[0], y);
-
-        // Wins — bold black
         doc.text(r.wins.toLocaleString(), colX[1], y);
-
-        // Win %
         doc.text(r.winFrequency + '%', colX[2], y);
-
-        // Actual RTP — colour coded but bold
+        doc.setTextColor(180, 30, 30);
+        doc.text(he + '%', colX[3], y);
         if (rtpOk) doc.setTextColor(0, 140, 60);
         else if (rtp > 98) doc.setTextColor(200, 100, 0);
         else doc.setTextColor(200, 0, 0);
-        doc.text(r.rtp + '%', colX[3], y);
-
-        // Current Odds
+        doc.text(r.rtp + '%', colX[4], y);
         doc.setTextColor(0, 0, 0);
-        doc.text(r.currentPayout + ':1', colX[4], y);
-
-        // Fair odds
-        doc.text(r.fairOdds !== null ? r.fairOdds + ':1' : '—', colX[5], y);
-
-        // For 95%
+        doc.text(r.currentPayout + ':1', colX[5], y);
+        doc.text(r.fairOdds !== null ? r.fairOdds + ':1' : '—', colX[6], y);
         doc.setTextColor(0, 120, 0);
-        doc.text(r.for95 + ':1', colX[6], y);
-
-        // For 96.5%
+        doc.text(r.for95 + ':1', colX[7], y);
         doc.setTextColor(160, 100, 0);
-        doc.text(r.for965 + ':1', colX[7], y);
-
-        // For 98%
+        doc.text(r.for965 + ':1', colX[8], y);
         doc.setTextColor(0, 80, 180);
-        doc.text(r.for98 + ':1', colX[8], y);
-
-        // Status
+        doc.text(r.for98 + ':1', colX[9], y);
         doc.setTextColor(rtpOk ? 0 : 180, rtpOk ? 140 : 0, rtpOk ? 60 : 0);
-        doc.text(rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW', colX[9], y);
-
+        doc.text(rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW', colX[10], y);
         y += ROW_H;
       });
       y += 4;
     });
 
-    // ── Page footers ─────────────────────────────────────────────────
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(80, 80, 80);
-      doc.text(`Rapid Fire Texas 10 — Confidential Gaming Audit  |  Page ${i} of ${totalPages}`, pageW / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
+      doc.text(`Rapid Fire Texas 10 — Data Lab Report  |  Page ${i} of ${totalPages}`, pageW / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
     }
-
-    doc.save(`RapidFire_BetAudit_${new Date().toISOString().slice(0,10)}.pdf`);
+    doc.save(`RapidFire_DataLab_${new Date().toISOString().slice(0,10)}.pdf`);
   };
 
   const exportWord = () => {
     const now = new Date().toLocaleString();
-    const headers = ['Bet', 'Wins', 'Win %', 'Actual RTP', 'Curr Odds', 'Fair (1:1)', 'For 95%', 'For 96.5%', 'For 98%', 'Status'];
-
+    const headers = ['Bet','Wins','Win %','House Edge %','Actual RTP','Curr Odds','Fair (1)','For 95%','For 96.5%','For 98%','Status'];
     let tableRows = '';
     GROUPS.forEach(group => {
       const defs = BET_DEFINITIONS.filter(d => d.group === group);
       const hasAny = defs.some(d => results[`${d.betType}:${d.betKey}`]);
       if (!hasAny) return;
-
-      tableRows += `<tr><td colspan="10" style="background:#dce6ff;font-weight:bold;font-size:10pt;padding:4px 6px;border:1px solid #6480c8;">${group}</td></tr>`;
+      tableRows += `<tr><td colspan="11" style="background:#dce6ff;font-weight:bold;font-size:10pt;padding:4px 6px;border:1px solid #6480c8;">${group}</td></tr>`;
       tableRows += `<tr>${headers.map(h => `<td style="background:#f0f0f0;font-weight:bold;border:1px solid #aaa;padding:3px 6px;">${h}</td>`).join('')}</tr>`;
-
       defs.forEach(def => {
         const key = `${def.betType}:${def.betKey}`;
         const r = results[key];
@@ -395,77 +568,105 @@ export default function IndividualBetAudit() {
         const statusColor = rtpOk ? '#008000' : '#cc0000';
         const status = rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW';
         const td = (val, color = '#000') => `<td style="border:1px solid #ccc;padding:3px 6px;color:${color};font-weight:bold;">${val}</td>`;
+        const he = r.houseEdge !== undefined ? parseFloat(r.houseEdge).toFixed(2) : (100 - rtp).toFixed(2);
         tableRows += `<tr>
-          ${td(plainLabel(def))}
-          ${td(r.wins.toLocaleString())}
-          ${td(r.winFrequency + '%')}
-          ${td(r.rtp + '%', rtpColor)}
-          ${td(r.currentPayout + ':1')}
+          ${td(plainLabel(def))}${td(r.wins.toLocaleString())}${td(r.winFrequency + '%')}
+          ${td(he + '%', '#b41e1e')}${td(r.rtp + '%', rtpColor)}${td(r.currentPayout + ':1')}
           ${td(r.fairOdds !== null ? r.fairOdds + ':1' : '-')}
-          ${td(r.for95 + ':1', '#007800')}
-          ${td(r.for965 + ':1', '#a06400')}
-          ${td(r.for98 + ':1', '#0050b4')}
-          ${td(status, statusColor)}
+          ${td(r.for95 + ':1', '#007800')}${td(r.for965 + ':1', '#a06400')}
+          ${td(r.for98 + ':1', '#0050b4')}${td(status, statusColor)}
         </tr>`;
       });
     });
-
-    const html = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
-      <head><meta charset="utf-8"><title>Bet Audit Report</title></head>
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+      <head><meta charset="utf-8"><title>Data Lab Report</title></head>
       <body style="font-family:Arial,sans-serif;font-size:9pt;">
-        <h2 style="color:#000;">Rapid Fire Texas 10 &mdash; Individual Bet Audit Report</h2>
-        <p style="color:#444;">Generated: ${now} &nbsp;|&nbsp; ${progress} bets completed &nbsp;|&nbsp; ${selectedSize.gamesPerBet.toLocaleString()} games/bet</p>
-        <table style="border-collapse:collapse;width:100%;font-size:8.5pt;">
-          ${tableRows}
-        </table>
+        <h2>Rapid Fire Texas 10 &mdash; Data Lab Report</h2>
+        <p style="color:#444;">Generated: ${now} | ${progress} bets | ${selectedSize.gamesPerBet.toLocaleString()} rounds/bet | 32-card engine</p>
+        <table style="border-collapse:collapse;width:100%;font-size:8.5pt;">${tableRows}</table>
       </body></html>`;
-
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `RapidFire_BetAudit_${new Date().toISOString().slice(0,10)}.doc`;
+    a.download = `RapidFire_DataLab_${new Date().toISOString().slice(0,10)}.doc`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const pct = Math.round((progress / totalBets) * 100);
-  const anyResults = Object.keys(results).length > 0;
-
   return (
     <div className="space-y-5">
-      {/* Controls */}
       <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
-        <h3 className="font-bold text-lg mb-1">Individual Bet Audit</h3>
-        <p className="text-gray-400 text-sm mb-4">
-          Tests every betting option in isolation. Choose a sample size, then run a fresh audit or continue a paused one.
-          Results show win frequency, actual RTP, and the correct odds needed to hit 95%, 96.5%, and 98% RTP.
-        </p>
+        <div className="flex items-start justify-between mb-1">
+          <div>
+            <h3 className="font-bold text-lg text-white">Data Lab — Frequency & Probability Audit</h3>
+            <p className="text-gray-500 text-xs mt-0.5">32-card engine · Burn/Flop/Turn/River sequence · Live payouts from constants</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-700/40 rounded px-2 py-1">
+            <span className="font-semibold">Live Odds:</span>
+            <span className="font-mono">{LOW_HIGH_PAYOUT}:1 L/H · {COLOR_BOARD_PAYOUTS['3R']}:1 3R · {CARDED_HAND_PAYOUTS[0]}:1 H1</span>
+          </div>
+        </div>
 
-        {/* Bet selector */}
-        <div className="flex items-center gap-2 mb-3">
+        {/* Export row-count selector */}
+        <div className="flex items-center gap-2 mt-3 mb-1">
+          <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider whitespace-nowrap">CSV export size:</span>
+          {EXPORT_ROW_OPTIONS.map(opt => (
+            <button
+              key={opt.rows}
+              onClick={() => setExportRowCount(opt.rows)}
+              disabled={exportRunning}
+              className={`px-2.5 py-1 rounded text-xs font-bold border transition-all
+                ${exportRowCount === opt.rows
+                  ? 'border-amber-500 bg-amber-700/30 text-amber-300'
+                  : 'border-slate-600 bg-slate-700/40 text-gray-400 hover:border-amber-600 hover:text-amber-300'}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          {exportRunning && (
+            <button
+              onClick={() => { if (exportWorkerRef.current) exportWorkerRef.current.abort(); setExportRunning(false); setExportKey(null); }}
+              className="flex items-center gap-1 text-xs text-red-400 border border-red-700/50 px-2 py-1 rounded hover:bg-red-900/20"
+            >
+              <X className="w-3 h-3" /> Cancel Export
+            </button>
+          )}
+          {exportRunning && (
+            <span className="text-xs text-amber-400/70 flex items-center gap-1">
+              <Download className="w-3 h-3" /> {Math.round(exportProgress * 100)}% — generating CSV...
+            </span>
+          )}
+        </div>
+        <p className="text-gray-600 text-xs mb-4">Click <span className="text-amber-400 font-semibold">ex</span> on any result row to export raw CSV data. Click the row itself to expand Microscope.</p>
+
+        <div className="flex items-center gap-2 mt-2 mb-3">
           <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider whitespace-nowrap">Test scope:</span>
           <select
             value={selection}
-            onChange={e => { setSelection(e.target.value); setProgress(0); setResults({}); localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(PROGRESS_KEY); }}
+            onChange={e => {
+              setSelection(e.target.value);
+              setProgress(0);
+              setResults({});
+              setMicroscopeLog(null);
+              setMicroscopeKey(null);
+              localStorage.removeItem(STORAGE_KEY);
+              localStorage.removeItem(PROGRESS_KEY);
+            }}
             disabled={running}
             className="bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 py-1.5 focus:border-yellow-500 outline-none min-w-[220px]"
           >
-            {SELECTION_OPTIONS.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
+            {SELECTION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           {selection !== 'all' && (
             <span className="text-xs text-yellow-400 font-semibold">
-              {activeDefs.length} bet{activeDefs.length !== 1 ? 's' : ''} selected
+              {activeDefs.length} bet{activeDefs.length !== 1 ? 's' : ''}
             </span>
           )}
         </div>
 
-        {/* Sample size selector */}
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Games per bet:</span>
+          <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Rounds per bet:</span>
           {SAMPLE_SIZES.map(s => (
             <button
               key={s.label}
@@ -481,19 +682,16 @@ export default function IndividualBetAudit() {
           ))}
         </div>
 
-        {/* Action buttons */}
         <div className="flex flex-wrap gap-3 items-center">
-          {/* Run fresh */}
           <button
             onClick={() => runAudit(selectedSize)}
             disabled={running}
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-gray-500 font-bold text-sm transition-all"
           >
             {running ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            {running ? `Running... (${selectedSize.gamesPerBet.toLocaleString()}/bet)` : `Run Full Audit — ${selectedSize.label} per bet`}
+            {running ? `Running... (${selectedSize.gamesPerBet.toLocaleString()}/bet)` : `Run Audit — ${selectedSize.label} per bet`}
           </button>
 
-          {/* Continue */}
           {canContinue && (
             <button
               onClick={continueAudit}
@@ -504,17 +702,15 @@ export default function IndividualBetAudit() {
             </button>
           )}
 
-          {/* Abort */}
           {running && (
             <button
-              onClick={() => { abortRef.current = true; }}
+              onClick={() => { abortRef.current = true; if (workerRef.current) { workerRef.current.abort(); workerRef.current = null; } }}
               className="text-red-400 border border-red-700 px-3 py-2 rounded-lg text-sm hover:bg-red-900/20"
             >
               Abort
             </button>
           )}
 
-          {/* Export + Clear */}
           {!running && anyResults && (
             <>
               <button
@@ -533,13 +729,12 @@ export default function IndividualBetAudit() {
                 onClick={clearResults}
                 className="flex items-center gap-1.5 text-gray-500 border border-slate-600 px-3 py-2 rounded-lg text-sm hover:text-red-400 hover:border-red-700 transition-all"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Clear Results
+                <Trash2 className="w-3.5 h-3.5" /> Clear
               </button>
             </>
           )}
         </div>
 
-        {/* Progress bar */}
         {(running || anyResults) && (
           <div className="mt-4">
             <div className="flex justify-between text-xs text-gray-400 mb-1">
@@ -547,23 +742,31 @@ export default function IndividualBetAudit() {
                 {running
                   ? `Testing: ${currentBet}`
                   : progress === totalBets
-                    ? `✓ Complete — ${selectedSize.gamesPerBet.toLocaleString()} games/bet`
-                    : `⚡ Paused — ${progress}/${totalBets} bets done`}
+                    ? `Complete — ${selectedSize.gamesPerBet.toLocaleString()} rounds/bet`
+                    : `Paused — ${progress}/${totalBets} done`}
               </span>
-              <span>{progress}/{totalBets} bet{totalBets !== 1 ? 's' : ''} — {(progress * selectedSize.gamesPerBet).toLocaleString()} total games</span>
+              <span>{progress}/{totalBets} bets · {(progress * selectedSize.gamesPerBet).toLocaleString()} total rounds</span>
             </div>
-            <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden mb-1">
               <motion.div
                 className="h-2 rounded-full bg-green-500"
                 animate={{ width: `${pct}%` }}
                 transition={{ ease: 'linear', duration: 0.3 }}
               />
             </div>
+            {running && betProgress > 0 && (
+              <div className="w-full bg-slate-700/50 rounded-full h-1 overflow-hidden">
+                <motion.div
+                  className="h-1 rounded-full bg-yellow-500/60"
+                  animate={{ width: `${Math.round(betProgress * 100)}%` }}
+                  transition={{ ease: 'linear', duration: 0.2 }}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Results by group */}
       {anyResults && (
         <div className="space-y-5">
           {GROUPS.map(group => {
@@ -572,62 +775,44 @@ export default function IndividualBetAudit() {
             if (!hasAny) return null;
             return (
               <div key={group} className="bg-slate-800/60 border border-slate-700 rounded-xl overflow-hidden">
-                <div className={`px-5 py-3 border-b border-slate-700 font-bold ${GROUP_COLORS[group]}`}>{group}</div>
+                <div className={`px-5 py-3 border-b border-slate-700 font-bold text-sm ${GROUP_COLORS[group]}`}>{group}</div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-slate-700 text-xs text-gray-400 uppercase bg-slate-900/40">
-                        <th className="px-4 py-2 text-left">Bet</th>
-                        <th className="px-4 py-2 text-right">Wins</th>
-                        <th className="px-4 py-2 text-right">Win %</th>
-                        <th className="px-4 py-2 text-right">Actual RTP</th>
-                        <th className="px-4 py-2 text-right">Current Odds</th>
-                        <th className="px-4 py-2 text-right">Fair (1:1 RTP)</th>
-                        <th className="px-4 py-2 text-right bg-green-900/20">For 95% RTP</th>
-                        <th className="px-4 py-2 text-right bg-yellow-900/20">For 96.5% RTP</th>
-                        <th className="px-4 py-2 text-right bg-blue-900/20">For 98% RTP</th>
+                      <tr className="border-b border-slate-700 text-xs text-gray-500 uppercase bg-slate-900/40">
+                        <th className="w-8 px-2 py-2.5" title="Click 'ex' to export CSV">
+                          <span className="text-amber-600/70 text-xs font-bold">ex</span>
+                        </th>
+                        <th className="px-3 py-2.5 text-left">Bet</th>
+                        <th className="px-3 py-2.5 text-right">Wins</th>
+                        <th className="px-3 py-2.5 text-right">Win %</th>
+                        <th className="px-3 py-2.5 text-right">House Edge %</th>
+                        <th className="px-3 py-2.5 text-right">Actual RTP</th>
+                        <th className="px-3 py-2.5 text-right">Curr Odds</th>
+                        <th className="px-3 py-2.5 text-right">Fair (1)</th>
+                        <th className="px-3 py-2.5 text-right">For 95%</th>
+                        <th className="px-3 py-2.5 text-right">For 96.5%</th>
+                        <th className="px-3 py-2.5 text-right">For 98%</th>
                       </tr>
                     </thead>
                     <tbody>
                       {defs.map(def => {
                         const key = `${def.betType}:${def.betKey}`;
-                        const r = results[key];
-                        if (!r) return (
-                          <tr key={key} className="border-b border-slate-700/40">
-                            <td className="px-4 py-2 text-gray-300">{def.label}</td>
-                            <td colSpan="8" className="px-4 py-2 text-gray-600 text-xs italic">pending...</td>
-                          </tr>
-                        );
                         return (
-                          <motion.tr
+                          <ResultRow
                             key={key}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="border-b border-slate-700/40 hover:bg-slate-700/20"
-                          >
-                            <td className="px-4 py-2 font-semibold text-white">{def.label}</td>
-                            <td className="px-4 py-2 text-right text-white font-mono">
-                              {r.wins.toLocaleString()}
-                              <span className="text-gray-500 text-xs ml-1">/ {(r.totalGames / 1_000).toFixed(0)}K</span>
-                            </td>
-                            <td className="px-4 py-2 text-right text-gray-300">{r.winFrequency}%</td>
-                            <td className="px-4 py-2 text-right"><RTPCell rtp={r.rtp} /></td>
-                            <td className="px-4 py-2 text-right">
-                              <span className="text-gray-300">{r.currentPayout}:1</span>
-                            </td>
-                            <td className="px-4 py-2 text-right text-gray-400">
-                              {r.fairOdds !== null ? `${r.fairOdds}:1` : '—'}
-                            </td>
-                            <td className="px-4 py-2 text-right bg-green-900/10">
-                              <OddsCell odds={r.for95} current={r.currentPayout} />
-                            </td>
-                            <td className="px-4 py-2 text-right bg-yellow-900/10">
-                              <OddsCell odds={r.for965} current={r.currentPayout} />
-                            </td>
-                            <td className="px-4 py-2 text-right bg-blue-900/10">
-                              <OddsCell odds={r.for98} current={r.currentPayout} />
-                            </td>
-                          </motion.tr>
+                            def={def}
+                            r={results[key]}
+                            onInspect={runMicroscope}
+                            onExport={runExport}
+                            microscopeKey={microscopeKey}
+                            microscopeRunning={microscopeRunning}
+                            microscopeLog={microscopeKey === key ? microscopeLog : null}
+                            microscopeSource={microscopeKey === key ? microscopeSource : null}
+                            exportKey={exportKey}
+                            exportRunning={exportRunning}
+                            exportProgress={exportProgress}
+                          />
                         );
                       })}
                     </tbody>
@@ -637,14 +822,60 @@ export default function IndividualBetAudit() {
             );
           })}
 
-          {/* Legend */}
           <div className="bg-slate-800/40 border border-slate-700/60 rounded-xl p-4 text-xs text-gray-400 space-y-1">
-            <p className="font-semibold text-gray-300 mb-2">Reading the table:</p>
+            <p className="font-semibold text-gray-300 mb-1">Data Lab — Reading the table</p>
+            <p>• <span className="text-amber-400 font-semibold">ex</span> button: exports up to 1M rows of raw simulation data as .csv (19 columns)</p>
+            <p>• Click the row label/data to expand it and run the <span className="text-cyan-400">Microscope</span> — isolated 50-hand batch, instant results</p>
             <p>• <span className="text-green-400">Green RTP</span> = within 95–98% target &nbsp;|&nbsp; <span className="text-orange-400">Orange</span> = too high &nbsp;|&nbsp; <span className="text-red-400">Red</span> = too low</p>
-            <p>• <span className="text-yellow-300">For 96.5% column</span> = the exact payout multiplier needed to hit the 96.5% midpoint target</p>
-            <p>• <span className="text-green-400">(+x.xx)</span> = suggested odds are higher than current &nbsp;|&nbsp; <span className="text-red-400">(-x.xx)</span> = lower than current</p>
-            <p>• One Pair (158.34:1), Straight Flush (255.42:1) are fixed-odds bets calibrated to 96.5% RTP</p>
+            <p>• <span className="text-red-400">House Edge %</span> = 100% − Actual RTP</p>
           </div>
+        </div>
+      )}
+
+      {!anyResults && (
+        <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
+          <h4 className="font-bold text-sm text-cyan-400 mb-2 flex items-center gap-2">
+            <Microscope className="w-4 h-4" /> Quick Microscope — No Audit Required
+          </h4>
+          <p className="text-gray-400 text-xs mb-4">
+            Run an isolated 50-hand sample on any single bet and inspect the raw board data instantly.
+          </p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <select
+              value={selection.startsWith('single:') ? selection : 'single:hand:1'}
+              onChange={e => setSelection(e.target.value)}
+              disabled={microscopeRunning}
+              className="bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 py-1.5 focus:border-cyan-500 outline-none min-w-[220px]"
+            >
+              {BET_DEFINITIONS.map(d => (
+                <option key={`${d.betType}:${d.betKey}`} value={`single:${d.betType}:${d.betKey}`}>{d.label}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                const val = selection.startsWith('single:') ? selection : 'single:hand:1';
+                const [, betType, ...rest] = val.split(':');
+                const betKey = rest.join(':');
+                const def = BET_DEFINITIONS.find(d => d.betType === betType && d.betKey === betKey);
+                if (def) runMicroscope(def);
+              }}
+              disabled={microscopeRunning}
+              className="flex items-center gap-2 px-5 py-2 rounded-xl border border-cyan-600 bg-cyan-900/20 hover:bg-cyan-900/40 text-cyan-300 font-bold text-sm transition-all disabled:opacity-40"
+            >
+              {microscopeRunning
+                ? <><RefreshCw className="w-4 h-4 animate-spin" /> Running 50 hands...</>
+                : <><Microscope className="w-4 h-4" /> Inspect 50 Hands</>
+              }
+            </button>
+          </div>
+          {microscopeKey && !microscopeRunning && microscopeLog && (
+            <div className="mt-5">
+              <VerificationLog
+                log={microscopeLog}
+                betLabel={BET_DEFINITIONS.find(d => `${d.betType}:${d.betKey}` === microscopeKey)?.label}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
