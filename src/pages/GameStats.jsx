@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { computeBatch } from '@/lib/gameStatsEngine';
 import { motion } from 'framer-motion';
 import { Play, RefreshCw, FileDown, Presentation, BarChart2, ChevronDown, ChevronUp, SkipForward, Trash2 } from 'lucide-react';
 
 const STORAGE_KEY_STATE    = 'gameStats_state';
 const STORAGE_KEY_PROGRESS = 'gameStats_progress';
 
-const RANK_COLS  = ['Royal Flush','Straight Flush','4 Of A Kind','Full House','Flush','Straight','3 Of A Kind','2 Pair','1 Pair'];
+const RANK_COLS  = ['Royal Flush','Straight Flush (no bet)','4 Of A Kind','Full House','Flush','Straight','3 Of A Kind','2 Pair','1 Pair'];
 const COLOR_COLS = ['3R','4R','5R','3B','4B','5B'];
 const HAND_LABELS = [
   {id:'A',label:'A / 10'},
@@ -422,9 +422,7 @@ export default function GameStats() {
     while (batchStart < TOTAL_DEALS) {
       if (abortRef.current) break;
       try {
-        const res = await base44.functions.invoke('gameStatsCompute', { batchStart, batchSize: BATCH_SIZE });
-        const d = res.data;
-        if (!d.success) { setError('Function error'); break; }
+        const d = computeBatch(batchStart, BATCH_SIZE);
         mergeTally(s, d.tally);
         s.allRows.push(...d.rows);
         batchStart = d.batchEnd;
@@ -432,6 +430,7 @@ export default function GameStats() {
         setSavedProgress(batchStart);
         saveToStorage(s, batchStart);
         setState({ ...s, handRankMatrix: s.handRankMatrix.map(m=>({...m})), handColorMatrix: s.handColorMatrix.map(m=>({...m})), handWinCount: [...s.handWinCount], rankTotals: {...s.rankTotals}, colorTotals: {...s.colorTotals}, allRows: [...s.allRows] });
+        await new Promise(r => setTimeout(r, 0));
       } catch(e) {
         setError(`Paused at deal ${batchStart.toLocaleString()} — ${e.message}. Use "Continue" to resume.`);
         break;
