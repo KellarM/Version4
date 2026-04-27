@@ -1,75 +1,74 @@
 /**
- * CENTRALIZED PAYOUT CONSTANTS
- * =============================
- * All payouts stored as RATIOS (e.g., 16.5 means 16.5:1, total return = bet × (1 + ratio))
+ * CENTRALIZED PAYOUT CONSTANTS — RAPID FIRE TEXAS HOLD'EM
+ * =========================================================
+ * MASTER ODDS UPDATE — RAPID_FIRE_CONFIG (image_826d4a.png)
  *
- * CALIBRATION — 594M game audit (22M per bet × 27 betting positions)
- * Target RTP: 96.5% — using "For 96.5%" column from individual bet audit
+ * All payouts stored as RATIOS (e.g., 14.5 means 14.5:1)
+ * Total return to player per unit bet = bet × (1 + ratio)
  *
- * Empirical win frequencies (22M games per bet):
- *   H1  A♦10♥  1,368,978 wins   H2  K♣K♠   4,071,891 wins
- *   H3  Q♣J♠   1,772,338 wins   H4  Q♠10♠  2,737,359 wins
- *   H5  J♣9♣   3,200,758 wins   H6  8♦6♦   3,874,653 wins
- *   H7  7♦7♠   4,212,085 wins   H8  4♥2♥   3,733,547 wins
- *   H9  3♣3♥   4,156,093 wins  H10  A♥5♦   2,061,754 wins
+ * These values are authoritative for:
+ *   • Payout Engine (credit win calculation)
+ *   • Table Layout (felt label text)
+ *   • Game Rules / How to Play modal
+ *   • Simulation Worker (2-million-hand AGLC audit)
  *
  * BETTING CONSTRAINTS (Updated 2026-04-01):
  * - Max 2 Card Hand bets allowed when any Hand Rank bet is active
  * - 0 Card Hand bets: unlimited rank bets allowed
  * - 1–2 Card Hand bets: max 2 rank bets allowed
  * - 3+ Card Hand bets: all rank bets locked
- * - ONE PAIR ISOLATION RULE: One Pair must be bet exclusively — cannot combine with any other rank bet
  * - All Hand Rank bets are fixed-odds — no progressives
+ * - Minimum qualifying rank: Two Pair (One Pair removed 2026-04-14)
+ * - Maximum qualifying rank: Four of a Kind (Straight Flush removed 2026-04-14)
  *
  * NOTE: Progressive jackpots removed as of 2026-04-01.
- * One Pair and Straight Flush are now fixed-odds bets calibrated to 96.5% RTP,
- * identical in structure to all other Hand Rank positions.
  */
 
-// CARDED HANDS — "For 96.5%" column from 22M game audit
+// ── CARDED HANDS ──────────────────────────────────────────────
+// Win condition: this hand must be the table winner (highest 7-card rank)
 export const CARDED_HAND_PAYOUTS = [
-  14.0,   // Hand 1:  A♦10♥
-  3.95,   // Hand 2:  K♣K♠
-  10.0,   // Hand 3:  Q♣J♠
-  6.25,   // Hand 4:  Q♠10♠
-  5.75,   // Hand 5:  J♣9♣
-  4.25,   // Hand 6:  8♦6♦
-  4.25,   // Hand 7:  7♦7♠
-  4.25,   // Hand 8:  4♥2♥
-  4.25,   // Hand 9:  3♣3♥
-  10.0,   // Hand 10: A♥5♦
+  20.3,   // Hand 1:  A♦/10♥
+  4.35,    // Hand 2:  K♣/K♠
+  15.8,  // Hand 3:  Q♣/J♠
+  9.0,   // Hand 4:  Q♠/10♠
+  7.4,   // Hand 5:  J♣/9♣
+  5.9,    // Hand 6:  8♦/6♦
+  6.8,   // Hand 7:  7♦/7♠
+  7.3,    // Hand 8:  4♥/2♥
+  9.1,    // Hand 9:  3♣/3♥
+  15.8,   // Hand 10: A♥/5♦
 ];
 
-// HAND RANK PAYOUTS — "For 96.5%" column from 22M game audit
-// All positions are fixed-odds — no progressives. One Pair and Straight Flush
-// calibrated from real 22M-game simulation of the 32-card deck with 10 fixed hands.
+// ── HAND RANK PAYOUTS ─────────────────────────────────────────
+// Win condition: best 7-card rank across all 10 hands equals this rank
+// 6-rank model: Four of a Kind (max) → Two Pair (min). Straight Flush removed 2026-04-14.
 export const HAND_RANK_PAYOUTS = {
-  'Straight Flush':  255.0,  // Fixed odds — 0.382% win frequency
-  'Four of a Kind':  12.00,
-  'Full House':      2.5,
-  'Flush':           3.0,
-  'Straight':        4.5,
-  'Three of a Kind': 3.25,
-  'Two Pair':        16.00,
-  'One Pair':        158.0,  // Fixed odds — 0.605% win frequency
+  'Four of a Kind':  12.4,
+  'Full House':      2.55,
+  'Flush':           3.1,
+  'Straight':        5.1,
+  'Three of a Kind': 3.95,
+  'Two Pair':        16.8,
 };
 
-// COLOR BOARD PAYOUTS — "For 96.5%" column from 22M game audit
+// ── COLOR BOARD PAYOUTS ───────────────────────────────────────
+// Win condition: community cards contain >= N cards of that color
 export const COLOR_BOARD_PAYOUTS = {
-  '3R': 0.83,
-  '3B': 0.83,
-  '4R': 4.25,
-  '4B': 4.25,
-  '5R': 42.0,
-  '5B': 42.0,
+  '3R': 0.93,
+  '3B': 0.93,
+  '4R': 4.85,
+  '4B': 4.85,
+  '5R': 43.5,
+  '5B': 43.5,
 };
 
-// LOW/HIGH PAYOUT — "For 96.5%" column from 22M game audit
-export const LOW_HIGH_PAYOUT = 0.90;
+// ── LOW / HIGH PAYOUT ─────────────────────────────────────────
+// Win condition: river card rank — LOW = 2–7, HIGH = 8–A
+export const LOW_HIGH_PAYOUT = 0.93;
 
 /**
  * Calculate total payout from bet and ratio
- * Returns: bet amount returned (including original stake)
+ * Returns: total amount returned to player (including original stake)
  */
 export function calculatePayout(bet, ratio) {
   if (ratio === null || ratio === undefined) return 0;
