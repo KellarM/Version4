@@ -25,14 +25,12 @@ Deno.serve(async (req) => {
 
     const rankPayoutMap = {
       'Royal Flush': 0.005,
-      'Straight Flush': 0.0025,
       'Four of a Kind': 0.00035,
       'Full House': 0.000075,
       'Flush': 0.0001,
       'Straight': 0.0002,
       'Three of a Kind': 0.0001,
       'Two Pair': 0.0004,
-      'One Pair': 0.0005,
     };
 
     const rbPayoutMap = { '3R': 0.008, '3B': 0.008, '4R': 0.025, '4B': 0.025, '5R': 0.2, '5B': 0.2 };
