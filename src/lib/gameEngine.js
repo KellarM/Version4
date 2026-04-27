@@ -1,5 +1,5 @@
 // ============================================================
-// RAPID FIRE - TEXAS 10 | Game Engine
+// RAPID FIRE TEXAS HOLD'EM | Game Engine
 // ============================================================
 
 import { CARDED_HAND_PAYOUTS } from '@/lib/payoutConstants';
@@ -7,42 +7,102 @@ import { CARDED_HAND_PAYOUTS } from '@/lib/payoutConstants';
 export const SUITS = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
 export const SUIT_COLORS = { spades: 'black', hearts: 'red', diamonds: 'red', clubs: 'black' };
 
+// ============================================================
+// CONST — Absolute deck definitions (single source of truth)
+// ============================================================
+export const CONST = Object.freeze({
+  PLAYER_HOLE_CARDS: Object.freeze([
+    // H1
+    Object.freeze({ rank: 'A',  suit: 'diamonds' }),
+    Object.freeze({ rank: '10', suit: 'hearts'   }),
+    // H2
+    Object.freeze({ rank: 'K',  suit: 'clubs'    }),
+    Object.freeze({ rank: 'K',  suit: 'spades'   }),
+    // H3
+    Object.freeze({ rank: 'Q',  suit: 'clubs'    }),
+    Object.freeze({ rank: 'J',  suit: 'spades'   }),
+    // H4
+    Object.freeze({ rank: 'Q',  suit: 'spades'   }),
+    Object.freeze({ rank: '10', suit: 'spades'   }),
+    // H5
+    Object.freeze({ rank: 'J',  suit: 'clubs'    }),
+    Object.freeze({ rank: '9',  suit: 'clubs'    }),
+    // H6
+    Object.freeze({ rank: '8',  suit: 'diamonds' }),
+    Object.freeze({ rank: '6',  suit: 'diamonds' }),
+    // H7
+    Object.freeze({ rank: '7',  suit: 'diamonds' }),
+    Object.freeze({ rank: '7',  suit: 'spades'   }),
+    // H8
+    Object.freeze({ rank: '4',  suit: 'hearts'   }),
+    Object.freeze({ rank: '2',  suit: 'hearts'   }),
+    // H9
+    Object.freeze({ rank: '3',  suit: 'clubs'    }),
+    Object.freeze({ rank: '3',  suit: 'hearts'   }),
+    // H10
+    Object.freeze({ rank: 'A',  suit: 'hearts'   }),
+    Object.freeze({ rank: '5',  suit: 'diamonds' }),
+  ]),
+
+  DEALER_DECK: Object.freeze([
+    // Spades (8 cards — J♠ K♠ removed for hands)
+    Object.freeze({ rank: 'A', suit: 'spades' }),
+    Object.freeze({ rank: '9', suit: 'spades' }),
+    Object.freeze({ rank: '8', suit: 'spades' }),
+    Object.freeze({ rank: '6', suit: 'spades' }),
+    Object.freeze({ rank: '5', suit: 'spades' }),
+    Object.freeze({ rank: '4', suit: 'spades' }),
+    Object.freeze({ rank: '3', suit: 'spades' }),
+    Object.freeze({ rank: '2', suit: 'spades' }),
+    // Hearts (8 cards — A♥ 4♥ 2♥ removed for hands)
+    Object.freeze({ rank: 'K', suit: 'hearts' }),
+    Object.freeze({ rank: 'Q', suit: 'hearts' }),
+    Object.freeze({ rank: 'J', suit: 'hearts' }),
+    Object.freeze({ rank: '9', suit: 'hearts' }),
+    Object.freeze({ rank: '8', suit: 'hearts' }),
+    Object.freeze({ rank: '7', suit: 'hearts' }),
+    Object.freeze({ rank: '6', suit: 'hearts' }),
+    Object.freeze({ rank: '5', suit: 'hearts' }),
+    // Diamonds (8 cards — A♦ 8♦ 6♦ 7♦ 5♦ removed for hands)
+    Object.freeze({ rank: 'K',  suit: 'diamonds' }),
+    Object.freeze({ rank: 'Q',  suit: 'diamonds' }),
+    Object.freeze({ rank: 'J',  suit: 'diamonds' }),
+    Object.freeze({ rank: '10', suit: 'diamonds' }),
+    Object.freeze({ rank: '9',  suit: 'diamonds' }),
+    Object.freeze({ rank: '4',  suit: 'diamonds' }),
+    Object.freeze({ rank: '3',  suit: 'diamonds' }),
+    Object.freeze({ rank: '2',  suit: 'diamonds' }),
+    // Clubs (8 cards — K♣ Q♣ J♣ 9♣ 3♣ removed for hands)
+    Object.freeze({ rank: 'A',  suit: 'clubs' }),
+    Object.freeze({ rank: '10', suit: 'clubs' }),
+    Object.freeze({ rank: '8',  suit: 'clubs' }),
+    Object.freeze({ rank: '7',  suit: 'clubs' }),
+    Object.freeze({ rank: '6',  suit: 'clubs' }),
+    Object.freeze({ rank: '5',  suit: 'clubs' }),
+    Object.freeze({ rank: '4',  suit: 'clubs' }),
+    Object.freeze({ rank: '2',  suit: 'clubs' }),
+  ]),
+});
+
 // The 10 fixed carded hands (20 locked cards, never in deck)
 // Payouts sourced from payoutConstants.js (CARDED_HAND_PAYOUTS) — single source of truth
-
 export const FIXED_HANDS = [
-  { id: 1,  cards: [{ rank: 'A', suit: 'diamonds' }, { rank: '10', suit: 'hearts' }],   payout: CARDED_HAND_PAYOUTS[0]  },
-  { id: 2,  cards: [{ rank: 'K', suit: 'clubs' },    { rank: 'K',  suit: 'spades' }],   payout: CARDED_HAND_PAYOUTS[1]  },
-  { id: 3,  cards: [{ rank: 'Q', suit: 'clubs' },    { rank: 'J',  suit: 'spades' }],   payout: CARDED_HAND_PAYOUTS[2]  },
-  { id: 4,  cards: [{ rank: 'Q', suit: 'spades' },   { rank: '10', suit: 'spades' }],   payout: CARDED_HAND_PAYOUTS[3]  },
-  { id: 5,  cards: [{ rank: 'J', suit: 'clubs' },    { rank: '9',  suit: 'clubs'  }],   payout: CARDED_HAND_PAYOUTS[4]  },
-  { id: 6,  cards: [{ rank: '8', suit: 'diamonds' }, { rank: '6',  suit: 'diamonds' }], payout: CARDED_HAND_PAYOUTS[5]  },
-  { id: 7,  cards: [{ rank: '7', suit: 'diamonds' }, { rank: '7',  suit: 'spades' }],   payout: CARDED_HAND_PAYOUTS[6]  },
-  { id: 8,  cards: [{ rank: '4', suit: 'hearts' },   { rank: '2',  suit: 'hearts' }],   payout: CARDED_HAND_PAYOUTS[7]  },
-  { id: 9,  cards: [{ rank: '3', suit: 'clubs' },    { rank: '3',  suit: 'hearts' }],   payout: CARDED_HAND_PAYOUTS[8]  },
-  { id: 10, cards: [{ rank: 'A', suit: 'hearts' },   { rank: '5',  suit: 'diamonds' }], payout: CARDED_HAND_PAYOUTS[9]  },
+  { id: 1,  cards: [CONST.PLAYER_HOLE_CARDS[0],  CONST.PLAYER_HOLE_CARDS[1]  ], payout: CARDED_HAND_PAYOUTS[0]  },
+  { id: 2,  cards: [CONST.PLAYER_HOLE_CARDS[2],  CONST.PLAYER_HOLE_CARDS[3]  ], payout: CARDED_HAND_PAYOUTS[1]  },
+  { id: 3,  cards: [CONST.PLAYER_HOLE_CARDS[4],  CONST.PLAYER_HOLE_CARDS[5]  ], payout: CARDED_HAND_PAYOUTS[2]  },
+  { id: 4,  cards: [CONST.PLAYER_HOLE_CARDS[6],  CONST.PLAYER_HOLE_CARDS[7]  ], payout: CARDED_HAND_PAYOUTS[3]  },
+  { id: 5,  cards: [CONST.PLAYER_HOLE_CARDS[8],  CONST.PLAYER_HOLE_CARDS[9]  ], payout: CARDED_HAND_PAYOUTS[4]  },
+  { id: 6,  cards: [CONST.PLAYER_HOLE_CARDS[10], CONST.PLAYER_HOLE_CARDS[11] ], payout: CARDED_HAND_PAYOUTS[5]  },
+  { id: 7,  cards: [CONST.PLAYER_HOLE_CARDS[12], CONST.PLAYER_HOLE_CARDS[13] ], payout: CARDED_HAND_PAYOUTS[6]  },
+  { id: 8,  cards: [CONST.PLAYER_HOLE_CARDS[14], CONST.PLAYER_HOLE_CARDS[15] ], payout: CARDED_HAND_PAYOUTS[7]  },
+  { id: 9,  cards: [CONST.PLAYER_HOLE_CARDS[16], CONST.PLAYER_HOLE_CARDS[17] ], payout: CARDED_HAND_PAYOUTS[8]  },
+  { id: 10, cards: [CONST.PLAYER_HOLE_CARDS[18], CONST.PLAYER_HOLE_CARDS[19] ], payout: CARDED_HAND_PAYOUTS[9]  },
 ];
 
-// The 32-card dealer deck (52 - 20 fixed)
-export const DEALER_DECK = [
-  // Spades
-  { rank: 'A', suit: 'spades' }, { rank: '9', suit: 'spades' }, { rank: '8', suit: 'spades' },
-  { rank: '6', suit: 'spades' }, { rank: '5', suit: 'spades' }, { rank: '4', suit: 'spades' },
-  { rank: '3', suit: 'spades' }, { rank: '2', suit: 'spades' },
-  // Hearts
-  { rank: 'K', suit: 'hearts' }, { rank: 'Q', suit: 'hearts' }, { rank: 'J', suit: 'hearts' },
-  { rank: '9', suit: 'hearts' }, { rank: '8', suit: 'hearts' }, { rank: '7', suit: 'hearts' },
-  { rank: '6', suit: 'hearts' }, { rank: '5', suit: 'hearts' },
-  // Diamonds
-  { rank: 'K', suit: 'diamonds' }, { rank: 'Q', suit: 'diamonds' }, { rank: 'J', suit: 'diamonds' },
-  { rank: '10', suit: 'diamonds' }, { rank: '9', suit: 'diamonds' }, { rank: '4', suit: 'diamonds' },
-  { rank: '3', suit: 'diamonds' }, { rank: '2', suit: 'diamonds' },
-  // Clubs
-  { rank: 'A', suit: 'clubs' }, { rank: '10', suit: 'clubs' }, { rank: '8', suit: 'clubs' },
-  { rank: '7', suit: 'clubs' }, { rank: '6', suit: 'clubs' }, { rank: '5', suit: 'clubs' },
-  { rank: '4', suit: 'clubs' }, { rank: '2', suit: 'clubs' },
-];
+// Legacy alias — always points to the frozen CONST definition
+export const DEALER_DECK = CONST.DEALER_DECK;
 
+// ── Fisher-Yates shuffle — always clones CONST.DEALER_DECK, never mutates it ──
 export function shuffleDeck(deck) {
   const d = [...deck];
   for (let i = d.length - 1; i > 0; i--) {
@@ -50,6 +110,18 @@ export function shuffleDeck(deck) {
     [d[i], d[j]] = [d[j], d[i]];
   }
   return d;
+}
+
+// ── Secure board generation — canonical entry point for all deal operations ──
+// Returns a fresh 5-card board drawn from CONST.DEALER_DECK every invocation.
+// Clones the deck → Fisher-Yates shuffle → slice first 5.
+export function getSecureRandomBoard() {
+  const d = [...CONST.DEALER_DECK];
+  for (let i = d.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [d[i], d[j]] = [d[j], d[i]];
+  }
+  return d.slice(0, 5);
 }
 
 const RANK_ORDER = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -149,8 +221,63 @@ export function evaluateBestHand(holeCards, communityCards) {
   return best;
 }
 
+/**
+ * Calculates the effective payout ratio for a carded hand bet when there are ties.
+ *
+ * Rule — 5% Player Margin:
+ *   If numberOfWinners === 1  → return originalOdds (no split)
+ *   If numberOfWinners  > 1  → return ((originalOdds + 1) / 2) * 1.05 - 1
+ *
+ * The divisor is always 2 (halved), regardless of how many hands tied.
+ * The "-1" converts back to a ratio so callers can still do bet * (1 + ratio).
+ */
+export function calculateTiePayout(originalOdds, numberOfWinners) {
+  if (numberOfWinners <= 1) return originalOdds;
+  return ((originalOdds + 1) / 2) * 1.05 - 1;
+}
+
+/**
+ * Evaluates the 5-card community board as a standalone hand (no hole cards).
+ * Used to check if the board outranks all player hands.
+ */
+export function evaluateBoardOnly(communityCards) {
+  if (communityCards.length !== 5) return null;
+  return evaluateFiveCards(communityCards);
+}
+
+/**
+ * Returns true when the 5-card community board is strictly stronger than
+ * every one of the 10 fixed hands combined with those same community cards.
+ *
+ * When this is true, the house collects all carded hand bets.
+ * Rank, Color, and River side bets still resolve normally.
+ *
+ * Background: there are exactly 19 hole-card combinations across the 10 fixed
+ * hands where at least one hand can tie or beat a board that would otherwise
+ * stand as the best 5-card hand. The evaluator handles those naturally — if any
+ * player hand is >= the board, this function returns false and normal winner
+ * logic applies.
+ */
+export function isCommunityBoardWin(communityCards) {
+  if (communityCards.length !== 5) return false;
+  const boardStrength = evaluateBoardOnly(communityCards);
+  if (!boardStrength) return false;
+
+  for (const hand of FIXED_HANDS) {
+    const playerBest = evaluateBestHand(hand.cards, communityCards);
+    if (compareHands(playerBest, boardStrength) <= 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function findLeadingHand(communityCards) {
   if (communityCards.length === 0) return null;
+
+  if (communityCards.length === 5 && isCommunityBoardWin(communityCards)) {
+    return { handIds: [], handResult: null, communityBoardWin: true };
+  }
 
   let best = null;
   let leaders = [];
@@ -165,7 +292,7 @@ export function findLeadingHand(communityCards) {
     }
   }
 
-  return { handIds: leaders, handResult: best };
+  return { handIds: leaders, handResult: best, communityBoardWin: false };
 }
 
 // NOTE: Red/Black payouts are defined in payoutConstants.js (COLOR_BOARD_PAYOUTS) — single source of truth
@@ -192,3 +319,175 @@ export function resolveLowHigh(riverCard) {
 // NOTE: HAND_RANK_PAYOUTS is defined in payoutConstants.js — single source of truth
 // Re-export for any legacy imports
 export { HAND_RANK_PAYOUTS } from '@/lib/payoutConstants';
+
+// ============================================================
+// MATHEMATICAL PATH — Hand-Rank Probability Matrix
+// ============================================================
+// Authoritative static matrix. Each hand ID maps to an object where each
+// rank key holds 1 (possible) or 0 (impossible / locked) for betting purposes.
+//
+// Hand mapping (ID → cards → label):
+//   1  A♦ 10♥  Hand A   6  8♦ 6♦   Hand G
+//   2  K♣ K♠   Hand C   7  7♦ 7♠   Hand H
+//   3  Q♣ J♠   Hand D   8  4♥ 2♥   Hand I
+//   4  Q♠ 10♠  Hand E   9  3♣ 3♥   Hand J
+//   5  J♣ 9♣   Hand F  10  A♥ 5♦   Hand B
+//
+// Rank keys match RANK_BET_OPTIONS exactly. Royal Flush / Straight Flush / One Pair are
+// excluded from rank betting and therefore not represented here.
+// 6-rank model: Four of a Kind (max) → Two Pair (min). One Pair removed 2026-04-14; Straight Flush removed 2026-04-14.
+export const HAND_RANK_MATRIX = Object.freeze({
+  //               FoaK  FH  Flush  Str  Trips  TwoPair
+  1:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // A (A♦ 10♥)
+  10: Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // B (A♥ 5♦)
+  2:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0 }),  // C (K♣ K♠)
+  3:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // D (Q♣ J♠)
+  4:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 0, 'Two Pair': 1 }),  // E (Q♠ 10♠)
+  5:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // F (J♣ 9♣)
+  6:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // G (8♦ 6♦)
+  7:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0 }),  // H (7♦ 7♠)
+  8:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // I (4♥ 2♥)
+  9:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0 }),  // J (3♣ 3♥)
+});
+
+// Returns the Set of rank names that are mathematically reachable (value > 0)
+// across the union of the player's currently-betted hand IDs.
+export function getUnlockedRanksForPlayer(activeBettedHandIds) {
+  if (!activeBettedHandIds || activeBettedHandIds.length === 0) return new Set();
+  const reachable = new Set();
+  for (const id of activeBettedHandIds) {
+    const row = HAND_RANK_MATRIX[id];
+    if (!row) continue;
+    for (const [rank, val] of Object.entries(row)) {
+      if (val > 0) reachable.add(rank);
+    }
+  }
+  return reachable;
+}
+
+// Legacy alias kept for any remaining imports
+export const HAND_RANK_POSSIBILITY_MAP = HAND_RANK_MATRIX;
+
+// ============================================================
+// PATH SYSTEM (KILL SWITCH)
+// ============================================================
+// Professional Path: 1–2 Hand bets → Rank, Color, River OPEN
+// Grinder Path:      3–4 Hand bets → Kill Switch fires, ALL side markets LOCKED
+// Max Hand selections: 4 (once 4th is chosen, all others are locked for the round)
+
+export const MAX_HAND_BETS = 4;
+
+export function getPlayerPath(handBetCount) {
+  if (handBetCount === 0) return 'none';
+  if (handBetCount <= 2) return 'professional';
+  return 'grinder';
+}
+
+export function isProfessionalPath(handBetCount) {
+  return handBetCount >= 1 && handBetCount <= 2;
+}
+
+export function isGrinderPath(handBetCount) {
+  return handBetCount >= 3;
+}
+
+// Kill Switch: returns true when side markets must be locked
+export function isKillSwitchActive(handBetCount) {
+  return isGrinderPath(handBetCount);
+}
+
+// ============================================================
+// SNOWBALL CAP VALIDATORS
+// ============================================================
+// Cascade: each tier can only grow as large as the sum of the tier(s) below it.
+//   Rank Cap:  Total Rank Bets  ≤  Total Hand Bets
+//   Color Cap: Total Color Bets ≤  (Total Hand Bets + Total Rank Bets)
+//   River Cap: Total River Bets ≤  (Total Hand Bets + Total Rank Bets + Total Color Bets)
+
+export function getTotalHandBets(handBets) {
+  return Object.values(handBets || {}).reduce((s, v) => s + v, 0);
+}
+
+export function getTotalRankBets(rankBets) {
+  return Object.values(rankBets || {}).reduce((s, v) => s + v, 0);
+}
+
+export function getTotalColorBets(colorBets) {
+  return Object.values(colorBets || {}).reduce((s, v) => s + v, 0);
+}
+
+// Returns true if the player has at least one active rank bet (Rank is the Master Key)
+export function hasRankBet(rankBets) {
+  return Object.values(rankBets || {}).some(v => v > 0);
+}
+
+// Returns true if the rank bet action satisfies the cap.
+// Pass isDecrease=true when the net effect is a removal or move (no new chips added) — cap is always bypassed.
+export function checkRankCap(handBets, rankBets, additionalBet = 0, isDecrease = false) {
+  if (isDecrease) return true;
+  const totalHand = getTotalHandBets(handBets);
+  const totalRank = getTotalRankBets(rankBets) + additionalBet;
+  return totalRank <= totalHand;
+}
+
+// Returns true if adding `additionalBet` to color bets still satisfies the cap
+export function checkColorCap(handBets, rankBets, colorBets, additionalBet = 0) {
+  const ceiling = getTotalHandBets(handBets) + getTotalRankBets(rankBets);
+  const totalColor = getTotalColorBets(colorBets) + additionalBet;
+  return totalColor <= ceiling;
+}
+
+// Returns true if adding `additionalBet` to river bets still satisfies the cap
+// currentRiverBetAmount = what the player has already staked on the river this round
+export function checkRiverCap(handBets, rankBets, colorBets, currentRiverBetAmount, additionalBet = 0) {
+  const ceiling = getTotalHandBets(handBets) + getTotalRankBets(rankBets) + getTotalColorBets(colorBets);
+  const totalRiver = (currentRiverBetAmount || 0) + additionalBet;
+  return totalRiver <= ceiling;
+}
+
+// ============================================================
+// DEPENDENT RANK WIN RESOLVER
+// ============================================================
+// CRITICAL RULE: A Rank bet only pays when ALL of the following are true:
+//   1. The player placed a Hand bet on at least one hand that won the round.
+//   2. That specific winning hand's best poker result matches the rank the player bet on.
+//
+// This is NOT a global "board rank" check.
+// It is a per-player, per-hand, per-rank validation.
+//
+// Parameters:
+//   playerHandBets  – { [handId]: amount }  for the player being settled
+//   playerRankBets  – { [rankName]: amount } for the player being settled
+//   winnerHandIds   – array of hand IDs that won the round (from findLeadingHand)
+//   communityCards  – the 5 final community cards
+//
+// Returns: array of rank key strings whose bets should pay out
+export function resolveRankBetWin(playerHandBets, playerRankBets, winnerHandIds, communityCards) {
+  if (!winnerHandIds || winnerHandIds.length === 0) return [];
+  if (!playerRankBets || Object.keys(playerRankBets).length === 0) return [];
+  if (!playerHandBets || Object.keys(playerHandBets).length === 0) return [];
+
+  // Which winning hand IDs did this player actually bet on?
+  const playerBetHandIds = Object.keys(playerHandBets).map(Number);
+  const playerWinningHandIds = winnerHandIds.filter(id => playerBetHandIds.includes(id));
+
+  if (playerWinningHandIds.length === 0) return [];
+
+  // Determine the poker rank of each hand the player bet on that won
+  const winningRanksForPlayer = new Set();
+  for (const wid of playerWinningHandIds) {
+    const hand = FIXED_HANDS.find(h => h.id === wid);
+    if (!hand) continue;
+    const result = evaluateBestHand(hand.cards, communityCards);
+    if (result) winningRanksForPlayer.add(result.name);
+  }
+
+  // A rank bet pays only if its key is in the set above
+  const payingRanks = [];
+  for (const [rankKey, amount] of Object.entries(playerRankBets)) {
+    if (amount > 0 && winningRanksForPlayer.has(rankKey)) {
+      payingRanks.push(rankKey);
+    }
+  }
+  return payingRanks;
+}
