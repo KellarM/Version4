@@ -53,19 +53,20 @@ Deno.serve(async (req) => {
     ];
 
     const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
-    // All ranks are fixed-odds — no progressives. Royal Flush removed as a betting position.
+    // All ranks are fixed-odds — no progressives. Royal Flush and One Pair removed as betting positions.
     const RANK_PAYOUTS_MAP = {
-      'Straight Flush':255.42,'Four of a Kind':12.43,
+      'Four of a Kind':12.43,
       'Full House':2.53,'Flush':3.10,'Straight':5.02,
-      'Three of a Kind':3.95,'Two Pair':16.76,'One Pair':158.34,
+      'Three of a Kind':3.95,'Two Pair':16.76,
     };
     const COLOR_PAYOUTS = {'3R':0.93,'3B':0.93,'4R':4.81,'4B':4.81,'5R':43.36,'5B':43.46};
     const LH_PAYOUT = 0.93;
 
     // RANK_NAMES index matches hand evaluator output (0=OnePair … 8=RoyalFlush)
+    // One Pair (index 0) is no longer a valid bet position — Two Pair is minimum
     const RANK_NAMES = [
-      'One Pair','Two Pair','Three of a Kind','Straight','Flush',
-      'Full House','Four of a Kind','Straight Flush','Royal Flush'
+      'One Pair (no bet)','Two Pair','Three of a Kind','Straight','Flush',
+      'Full House','Four of a Kind','Straight Flush (no bet)','Royal Flush'
     ];
 
     // ── Fast 5-card evaluator (returns int: -1=HC,0=Pair,…,8=RF) ──────
