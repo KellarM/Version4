@@ -446,6 +446,54 @@ export function checkRiverCap(handBets, rankBets, colorBets, currentRiverBetAmou
 }
 
 // ============================================================
+// UNIFIED SIMULATION ENGINE (Phase 1)
+// ============================================================
+// Single-run engine: one board deal → evaluates ALL 10 hands simultaneously.
+// All downstream counters (Carded Hand Win, Rank Win, Color Win, River Win)
+// derive from the same shared community cards. No independent re-rolls.
+//
+// Returns:
+//   winnerHandIds  – hand IDs that won the round (tied hands both listed)
+//   isBoardWin     – true if community board beat all player hands
+//   handRanks      – { [handId]: { name, rank } } best rank for each hand
+//   winningRank    – the rank name of the winning hand(s) (or null)
+//   colorWinners   – array of color keys that won (e.g. ['3R', '4R'])
+//   riverResult    – 'LOW' | 'HIGH' | null
+//   boardStr       – human-readable community card string
+//
+// Usage:
+//   const result = runUnifiedRound(getSecureRandomBoard());
+export function runUnifiedRound(board) {
+  const leadResult = findLeadingHand(board);
+  const winnerHandIds = leadResult?.handIds ?? [];
+  const isBoardWin = leadResult?.communityBoardWin ?? false;
+  const winningRankResult = leadResult?.handResult ?? null;
+  const winningRank = winningRankResult?.name ?? null;
+
+  // Evaluate every hand's rank against the shared board (single pass)
+  const handRanks = {};
+  for (const hand of FIXED_HANDS) {
+    handRanks[hand.id] = evaluateBestHand(hand.cards, board);
+  }
+
+  const colorWinners = resolveRedBlack(board);
+  const riverCard = board[4] ?? null;
+  const riverResult = resolveLowHigh(riverCard);
+  const boardStr = board.map(cardDisplay).join(' ');
+
+  return {
+    board,
+    boardStr,
+    winnerHandIds,
+    isBoardWin,
+    handRanks,
+    winningRank,
+    colorWinners,
+    riverResult,
+  };
+}
+
+// ============================================================
 // DEPENDENT RANK WIN RESOLVER
 // ============================================================
 // CRITICAL RULE: A Rank bet only pays when ALL of the following are true:

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, X, RefreshCw, SkipForward, FileDown, FileText, Settings2, TrendingUp, TrendingDown
 } from 'lucide-react';
-import { getSecureRandomBoard, evaluateBestHand, FIXED_HANDS, findLeadingHand, resolveRedBlack, resolveLowHigh, cardDisplay } from '@/lib/gameEngine';
+import { getSecureRandomBoard, FIXED_HANDS, runUnifiedRound } from '@/lib/gameEngine';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS } from '@/lib/payoutConstants';
 import { jsPDF } from 'jspdf';
 
@@ -94,23 +94,17 @@ function runOneRound(board, config, playerBankrupt, roundNumber) {
   const { hand1, hand2, selectedRank, baseBet } = config;
   const rankPayout = RANK_OPTIONS.find(r => r.key === selectedRank);
 
-  const leadResult = findLeadingHand(board);
-  const winIds = leadResult?.handIds ?? [];
-  const isBoardWin = leadResult?.communityBoardWin ?? false;
+  // ── Unified engine: single board evaluation for all 10 hands ──
+  const { winnerHandIds: winIds, isBoardWin, handRanks, colorWinners, riverResult: hiLo, boardStr } = runUnifiedRound(board);
+
   const hand1Won = !isBoardWin && winIds.includes(hand1.id);
   const hand2Won = !isBoardWin && winIds.includes(hand2.id);
 
-  const fixedHand1 = FIXED_HANDS.find(h => h.id === hand1.id);
-  const fixedHand2 = FIXED_HANDS.find(h => h.id === hand2.id);
-  const rank1Result = (hand1Won && fixedHand1) ? evaluateBestHand(fixedHand1.cards, board) : null;
-  const rank2Result = (hand2Won && fixedHand2) ? evaluateBestHand(fixedHand2.cards, board) : null;
+  // Rank results pulled from the shared pre-computed handRanks map
+  const rank1Result = hand1Won ? (handRanks[hand1.id] ?? null) : null;
+  const rank2Result = hand2Won ? (handRanks[hand2.id] ?? null) : null;
   const rankWon = (rank1Result?.name === selectedRank) || (rank2Result?.name === selectedRank);
 
-  const colorWinners = resolveRedBlack(board);
-  const riverCard = board[4] ?? null;
-  const hiLo = resolveLowHigh(riverCard);
-
-  const boardStr = board.map(c => cardDisplay(c)).join(' ');
   const winHandLabel = isBoardWin ? 'Board wins' : (winIds.length > 0 ? `Hand(s) ${winIds.join(',')}` : 'None');
   const rankLabel = (rank1Result ?? rank2Result)?.name ?? '—';
   const colorLabel = colorWinners.length > 0 ? colorWinners.join('+') : 'None';

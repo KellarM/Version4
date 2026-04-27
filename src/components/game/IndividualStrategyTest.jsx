@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, X, RefreshCw, SkipForward, FileDown, FileText, Settings2, TrendingUp, TrendingDown
 } from 'lucide-react';
-import { getSecureRandomBoard, evaluateBestHand, FIXED_HANDS, findLeadingHand, resolveRedBlack, resolveLowHigh, cardDisplay } from '@/lib/gameEngine';
+import { getSecureRandomBoard, FIXED_HANDS, runUnifiedRound } from '@/lib/gameEngine';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS } from '@/lib/payoutConstants';
 import { jsPDF } from 'jspdf';
 
@@ -97,21 +97,13 @@ function runOneRound(board, config, playerBankrupt, roundNumber) {
   const handPayoutRatio = selectedHand.payout;
   const rankPayoutRatio = RANK_OPTIONS.find(r => r.key === selectedRank)?.payout ?? 0;
 
-  const leadResult = findLeadingHand(board);
-  const winIds = leadResult?.handIds ?? [];
-  const isBoardWin = leadResult?.communityBoardWin ?? false;
+  // ── Unified engine: single board evaluation for all 10 hands ──
+  const { winnerHandIds: winIds, isBoardWin, handRanks, colorWinners, riverResult: hiLo, boardStr } = runUnifiedRound(board);
 
   const handWon = !isBoardWin && winIds.includes(selectedHand.id);
-
-  const fixedHand = FIXED_HANDS.find(h => h.id === selectedHand.id);
-  const handRankResult = fixedHand ? evaluateBestHand(fixedHand.cards, board) : null;
+  const handRankResult = handRanks[selectedHand.id] ?? null;
   const rankWon = handWon && handRankResult && handRankResult.name === selectedRank;
 
-  const colorWinners = resolveRedBlack(board);
-  const riverCard = board[4] ?? null;
-  const hiLo = resolveLowHigh(riverCard);
-
-  const boardStr = board.map(c => cardDisplay(c)).join(' ');
   const winHandLabel = isBoardWin ? 'Board wins' : (winIds.length > 0 ? `Hand(s) ${winIds.join(',')}` : 'None');
   const rankLabel = handRankResult ? handRankResult.name : '—';
   const colorLabel = colorWinners.length > 0 ? colorWinners.join('+') : 'None';
