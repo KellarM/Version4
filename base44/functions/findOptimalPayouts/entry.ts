@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
       {
         name: 'Final Target 92%',
         cardedPayouts: [4.2, 2.1, 4.2, 3.3, 2.8, 2.1, 2.8, 3.3, 3.3, 4.2],
-        rankPayouts: { 'Four of a Kind': 10.2, 'Full House': 2.6, 'Flush': 3.5, 'Straight': 5.1, 'Three of a Kind': 2.6, 'Two Pair': 13, 'One Pair': 15.8 },
+        rankPayouts: { 'Four of a Kind': 10.2, 'Full House': 2.6, 'Flush': 3.5, 'Straight': 5.1, 'Three of a Kind': 2.6, 'Two Pair': 13, },
         colorPayouts: { '5R': 5.1, '5B': 5.1, '4R': 1.3, '4B': 1.3, '3R': 0.33, '3B': 0.33 },
         lowHighPayout: 0.88
       },
@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
       {
         name: 'Conservative 91%',
         cardedPayouts: [3.8, 1.9, 3.8, 3, 2.5, 1.9, 2.5, 3, 3, 3.8],
-        rankPayouts: { 'Four of a Kind': 9.5, 'Full House': 2.4, 'Flush': 3.2, 'Straight': 4.7, 'Three of a Kind': 2.4, 'Two Pair': 12, 'One Pair': 14.5 },
+        rankPayouts: { 'Four of a Kind': 9.5, 'Full House': 2.4, 'Flush': 3.2, 'Straight': 4.7, 'Three of a Kind': 2.4, 'Two Pair': 12, },
         colorPayouts: { '5R': 4.7, '5B': 4.7, '4R': 1.2, '4B': 1.2, '3R': 0.3, '3B': 0.3 },
         lowHighPayout: 0.85
       },
@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       {
         name: 'Premium 100%',
         cardedPayouts: [4.3, 2.2, 4.3, 3.4, 2.9, 2.2, 2.9, 3.4, 3.4, 4.3],
-        rankPayouts: { 'Four of a Kind': 10.5, 'Full House': 2.7, 'Flush': 3.6, 'Straight': 5.3, 'Three of a Kind': 2.7, 'Two Pair': 13.3, 'One Pair': 16.1 },
+        rankPayouts: { 'Four of a Kind': 10.5, 'Full House': 2.7, 'Flush': 3.6, 'Straight': 5.3, 'Three of a Kind': 2.7, 'Two Pair': 13.3, },
         colorPayouts: { '5R': 5.3, '5B': 5.3, '4R': 1.35, '4B': 1.35, '3R': 0.34, '3B': 0.34 },
         lowHighPayout: 0.92
       },
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       {
         name: 'Balanced 93%',
         cardedPayouts: [4.1, 2, 4.1, 3.2, 2.7, 2, 2.7, 3.2, 3.2, 4.1],
-        rankPayouts: { 'Four of a Kind': 9.8, 'Full House': 2.5, 'Flush': 3.3, 'Straight': 4.9, 'Three of a Kind': 2.5, 'Two Pair': 12.5, 'One Pair': 15.2 },
+        rankPayouts: { 'Four of a Kind': 9.8, 'Full House': 2.5, 'Flush': 3.3, 'Straight': 4.9, 'Three of a Kind': 2.5, 'Two Pair': 12.5, },
         colorPayouts: { '5R': 4.9, '5B': 4.9, '4R': 1.25, '4B': 1.25, '3R': 0.32, '3B': 0.32 },
         lowHighPayout: 0.87
       },
@@ -126,7 +126,7 @@ function runSimulation(handsToSimulate, config) {
 
     // 2. Hand Rank (approximate frequency)
     const rankKeys = Object.keys(rankPayoutMap);
-    const rankFreqs = { 'Four of a Kind': 0.0005, 'Full House': 0.00075, 'Flush': 0.001, 'Straight': 0.0008, 'Three of a Kind': 0.0015, 'Two Pair': 0.003, 'One Pair': 0.04 };
+    const rankFreqs = { 'Four of a Kind': 0.0005, 'Full House': 0.00075, 'Flush': 0.001, 'Straight': 0.0008, 'Three of a Kind': 0.0015, 'Two Pair': 0.003 };
     const winningRank = rankKeys[Math.floor(Math.random() * rankKeys.length)];
     if (Math.random() < rankFreqs[winningRank]) {
       const rankMult = rankPayoutMap[winningRank];
