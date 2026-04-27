@@ -1,41 +1,97 @@
 import PlayingCard from './PlayingCard';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
-export default function CommunityCards({ cards, phase }) {
-  const slots = [0, 1, 2, 3, 4];
+const CARD_W = 56;
+const CARD_H = 80;
+const GAP = 6;
+const GROUP_GAP = 14;
+const LABEL_H = 18;
+const LABEL_TOP_GAP = 6;
 
+function CardSlot({ card, index, active }) {
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="text-yellow-400/70 text-xs font-semibold tracking-widest uppercase">Community Cards</div>
-      <div className="flex gap-1.5 items-center">
-        {slots.map((i) => {
-          const card = cards[i];
-          const label = i < 3 ? 'Flop' : i === 3 ? 'Turn' : 'River';
-          const isActive = i === cards.length - 1 && cards.length > 0;
+    <div style={{ width: CARD_W, height: CARD_H, flexShrink: 0, position: 'relative' }}>
+      {card ? (
+        <motion.div
+          key={`card-${index}-${card.rank}${card.suit}`}
+          initial={{ rotateY: 90, opacity: 0 }}
+          animate={{ rotateY: 0, opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.05 * index }}
+          style={{ width: CARD_W, height: CARD_H }}
+        >
+          <PlayingCard card={card} size="md" glow={active} />
+        </motion.div>
+      ) : (
+        <div style={{ width: CARD_W, height: CARD_H, opacity: 0.45 }}>
+          <PlayingCard faceDown size="md" />
+        </div>
+      )}
+    </div>
+  );
+}
 
-          return (
-            <div key={i} className="flex flex-col items-center gap-0.5">
-              <AnimatePresence mode="wait">
-                {card ? (
-                  <motion.div
-                    key={`card-${i}`}
-                    initial={{ rotateY: 90, opacity: 0 }}
-                    animate={{ rotateY: 0, opacity: 1 }}
-                    transition={{ duration: 0.4, delay: 0.05 * i }}
-                  >
-                    <PlayingCard card={card} size="md" glow={isActive} />
-                  </motion.div>
-                ) : (
-                  <motion.div key={`empty-${i}`} initial={{ opacity: 0.6 }} animate={{ opacity: 0.6 }}>
-                    <PlayingCard faceDown size="md" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <span className="text-xs text-green-400/50">{label}</span>
-            </div>
-          );
-        })}
+function CardGroup({ cards, indices, label, hasCards }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: GAP }}>
+        {indices.map((i) => (
+          <CardSlot
+            key={i}
+            card={cards[i]}
+            index={i}
+            active={i === cards.length - 1 && cards.length > 0}
+          />
+        ))}
       </div>
+      <div style={{
+        height: LABEL_H,
+        marginTop: LABEL_TOP_GAP,
+        fontSize: '0.65rem',
+        fontWeight: 700,
+        fontFamily: 'Oswald, sans-serif',
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+        color: hasCards ? 'rgba(250,204,21,0.85)' : 'rgba(250,204,21,0.3)',
+        userSelect: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        whiteSpace: 'nowrap',
+      }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+export default function CommunityCards({ cards = [] }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: GROUP_GAP,
+        flexShrink: 0,
+      }}
+    >
+      <CardGroup
+        cards={cards}
+        indices={[0, 1, 2]}
+        label="Flop"
+        hasCards={cards.length >= 3}
+      />
+      <CardGroup
+        cards={cards}
+        indices={[3]}
+        label="Turn"
+        hasCards={cards.length >= 4}
+      />
+      <CardGroup
+        cards={cards}
+        indices={[4]}
+        label="River"
+        hasCards={cards.length >= 5}
+      />
     </div>
   );
 }
