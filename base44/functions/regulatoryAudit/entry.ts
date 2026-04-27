@@ -22,19 +22,16 @@ Deno.serve(async (req) => {
     ];
 
     const RANK_FREQS = {
-      'One Pair': 0.42256,
       'Two Pair': 0.04754,
       'Three of a Kind': 0.02113,
       'Straight': 0.00462,
       'Flush': 0.00327,
       'Full House': 0.00261,
       'Four of a Kind': 0.00168,
-      'Straight Flush': 0.00139,
       'Royal Flush': 0.000154,
     };
 
     const RANK_PAYOUTS = {
-      'One Pair': 5.87,
       'Two Pair': 4.83,
       'Three of a Kind': 0.98,
       'Straight': 1.90,
@@ -68,7 +65,7 @@ Deno.serve(async (req) => {
     function rollRank() {
       const r = Math.random();
       for (let i = 0; i < RANK_CUM.length; i++) { if (r < RANK_CUM[i]) return RANK_KEYS[i]; }
-      return 'One Pair';
+      return 'Two Pair';
     }
 
     function getWinningColors(redCount) {
@@ -83,15 +80,15 @@ Deno.serve(async (req) => {
     const STRATEGIES = {
       ST1_Original: () => ({ hands: [2, 5, 6, 7, 8, 9], ranks: [], colors: [], description: 'Fixed hands 2,5,6,7,8,9' }),
       ConservativeHedger: () => ({ hands: [3, 6, 8, 10], ranks: [], colors: ['3R', '3B', '4R', '4B'], description: '4 hands + color board' }),
-      RankStacker: () => ({ hands: [6, 8], ranks: ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Full House'], colors: [], description: '2 hands + 5 ranks' }),
+      RankStacker: () => ({ hands: [6, 8], ranks: ['Two Pair', 'Three of a Kind', 'Straight', 'Full House'], colors: [], description: '2 hands + 4 ranks' }),
       FlushHunter: () => ({ hands: [3, 4, 5], ranks: ['Flush'], colors: [], description: '3 hands + Flush rank' }),
       StraightHunter: () => ({ hands: [1, 5, 10], ranks: ['Straight'], colors: [], description: '3 hands + Straight rank' }),
       ColorBoardSpecialist: () => ({ hands: [1, 4], ranks: [], colors: ['3R', '3B', '4R', '4B', '5R', '5B'], description: '2 hands + all colors' }),
       HighPayoutFocus: () => ({ hands: [6, 8], ranks: ['Three of a Kind', 'Full House', 'Four of a Kind'], colors: [], description: '2 high-payout hands + premium ranks' }),
       RiverFocused: () => ({ hands: [8], ranks: [], colors: [], description: '1 hand (8 only)' }),
-      BalancedSpread: () => ({ hands: [2, 6, 8], ranks: ['One Pair', 'Flush', 'Straight'], colors: ['3R', '4R'], description: 'Mixed balanced approach' }),
-      DiversifiedHedge: () => ({ hands: [1, 3, 5, 7, 9, 10], ranks: ['One Pair', 'Two Pair'], colors: ['3R', '3B'], description: '6 hands + 2 ranks + 2 colors' }),
-      AdaptiveHybrid: () => ({ hands: [2, 5, 6, 8], ranks: ['One Pair', 'Two Pair'], colors: ['3R', '3B'], description: 'Adaptive mixed strategy' }),
+      BalancedSpread: () => ({ hands: [2, 6, 8], ranks: ['Flush', 'Straight'], colors: ['3R', '4R'], description: 'Mixed balanced approach' }),
+      DiversifiedHedge: () => ({ hands: [1, 3, 5, 7, 9, 10], ranks: ['Two Pair'], colors: ['3R', '3B'], description: '6 hands + 1 rank + 2 colors' }),
+      AdaptiveHybrid: () => ({ hands: [2, 5, 6, 8], ranks: ['Two Pair'], colors: ['3R', '3B'], description: 'Adaptive mixed strategy' }),
     };
 
     const results = [];
