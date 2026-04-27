@@ -24,19 +24,16 @@ Deno.serve(async (req) => {
     ];
 
     const RANK_FREQS = {
-      'One Pair': 0.42256,
       'Two Pair': 0.04754,
       'Three of a Kind': 0.02113,
       'Straight': 0.00462,
       'Flush': 0.00327,
       'Full House': 0.00261,
       'Four of a Kind': 0.00168,
-      'Straight Flush': 0.00139,
       'Royal Flush': 0.000154,
     };
 
     const RANK_PAYOUTS = {
-      'One Pair': 5.87,
       'Two Pair': 4.83,
       'Three of a Kind': 0.98,
       'Straight': 1.90,
@@ -70,7 +67,7 @@ Deno.serve(async (req) => {
         cum += RANK_FREQS[rank];
         if (r < cum) return rank;
       }
-      return 'One Pair';
+      return 'Two Pair';
     }
 
     function getWinningColors(redCount) {
@@ -87,7 +84,7 @@ Deno.serve(async (req) => {
       const bet = balance < 200 ? Math.floor(balance / 7) : 30;
       if (balance < bet * 7) return null; // Can't afford bets
       [6, 8].forEach(id => { bets[`h${id}`] = bet; });
-      ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Full House'].forEach(r => {
+      ['Two Pair', 'Three of a Kind', 'Straight', 'Full House'].forEach(r => {
         bets[`r${r}`] = bet;
       });
       return bets;
