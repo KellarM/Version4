@@ -139,7 +139,7 @@ const STRATEGIES = [
   // Progressive
   ...Array.from({length: 40}, (_, i) => {
     const n = i + 1;
-    const rankLabel = n <= 20 ? 'One Pair' : 'One Pair, Straight Flush';
+    const rankLabel = n <= 20 ? 'Two Pair' : 'Four of a Kind';
     const colorOpts = ['None','None','None','None','3R 4R 5R 3B 4B 5B','3R 4R 5R 3B 4B 5B','3R 4R 5R 3B 4B 5B','3R 4R 5R 3B 4B 5B','3R 4R 3B 4B','3R 4R 3B 4B','3R 4R 3B 4B','3R 4R 3B 4B','3R','3R','3R','3R','3B','3B','3B','3B'];
     const riverIdx = [3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2][i % 20];
     const riverLabel = ['Bet when 4 Low/High','Bet when 3+ showing','50/50 random','None'][riverIdx];
