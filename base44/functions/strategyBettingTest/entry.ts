@@ -30,7 +30,6 @@ Deno.serve(async (req) => {
       'Straight': 1.90,
       'Three of a Kind': 0.98,
       'Two Pair': 4.83,
-      'One Pair': 5.87,
     };
 
     const COLOR_PAYOUTS = { '3R': 0.78, '3B': 0.78, '4R': 5.04, '4B': 5.04, '5R': 19.74, '5B': 19.74 };
@@ -40,11 +39,11 @@ Deno.serve(async (req) => {
     let rcCum = 0;
     for (const p of RED_COUNT_PROBS) { rcCum += p; RED_COUNT_CUM.push(rcCum); }
 
-    const RANK_FREQ = [0.000154, 0.00139, 0.00168, 0.02596, 0.00327, 0.04619, 0.02113, 0.04754, 0.42257];
+    const RANK_FREQ = [0.000154, 0.00168, 0.02596, 0.00327, 0.04619, 0.02113, 0.04754];
     const RANK_CUM = [];
     let cum = 0;
     for (const f of RANK_FREQ) { cum += f; RANK_CUM.push(cum); }
-    const RANKS = ['Royal Flush','Straight Flush','Four of a Kind','Full House','Flush','Straight','Three of a Kind','Two Pair','One Pair'];
+    const RANKS = ['Royal Flush','Four of a Kind','Full House','Flush','Straight','Three of a Kind','Two Pair'];
 
     // Strategy constants
     const BETTING_HANDS = [2, 5, 6, 7, 8, 9]; // Hand IDs to always bet on
