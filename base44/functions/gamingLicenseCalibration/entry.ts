@@ -14,19 +14,18 @@ Deno.serve(async (req) => {
     // ── Payout Tables ────────────────────────────────────────────────
     const HAND_PAYOUTS = [14.50, 4.25, 11.00, 6.75, 5.75, 4.50, 4.50, 4.75, 4.25, 9.50];
 
-    const RANK_KEYS = ['One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush'];
-    const RANK_PAYOUTS = [158.0, 16.50, 4.00, 5.00, 3.25, 2.50, 12.25, 255.00];
+    const RANK_KEYS = ['Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind'];
+    const RANK_PAYOUTS = [16.50, 4.00, 5.00, 3.25, 2.50, 12.25];
 
     // Probability of each rank occurring in a 32-card deck (Used for Theo RTP calculation)
+    // 6-rank model — One Pair removed 2026-04-14, Straight Flush removed 2026-04-14, FoaK is max qualifying rank
     const RANK_PROBS = [
-      0.413,   // One Pair
-      0.047,   // Two Pair
+      0.047,   // Two Pair (minimum qualifying rank)
       0.022,   // Three of a Kind
       0.005,   // Straight
       0.004,   // Flush
       0.003,   // Full House
-      0.0006,  // Four of a Kind
-      0.0001   // Straight Flush
+      0.0006,  // Four of a Kind (maximum qualifying rank)
     ];
 
     const COLOR_KEYS = ['3R','3B','4R','4B','5R','5B'];
@@ -109,15 +108,15 @@ Deno.serve(async (req) => {
 
     // Strategies Pool
     const STRAT_POOL = [
-      { hands:[1,6], ranks:[2,6], colors:[], river:'strict4' },
+      { hands:[1,6], ranks:[2,5], colors:[], river:'strict4' },
       { hands:[0,2,3,1], ranks:[0], colors:[], river:'strict4' },
       { hands:[0,1], ranks:[0,1], colors:[], river:'strict4' },
-      { hands:[1,6], ranks:[2,6], colors:['3R','4R','3B','4B'], river:'strict4' },
+      { hands:[1,6], ranks:[2,5], colors:['3R','4R','3B','4B'], river:'strict4' },
       { hands:[0,2,3,1], ranks:[0], colors:['3R','4R','3B','4B'], river:'strict4' },
       { hands:[0,1], ranks:[0,1], colors:['3R','4R','3B','4B'], river:'strict4' },
-      { hands:[1,6], ranks:[2,6], colors:['3R','4R'], river:'strict4' },
+      { hands:[1,6], ranks:[2,5], colors:['3R','4R'], river:'strict4' },
       { hands:[0,1], ranks:[0,1], colors:['3B','4B'], river:'none' },
-      { hands:[1,6], ranks:[2,6], colors:['3B'], river:'none' },
+      { hands:[1,6], ranks:[2,5], colors:['3B'], river:'none' },
       { hands:[0,1], ranks:[0,1], colors:['3R'], river:'none' },
       { hands:[3,4], ranks:[4], colors:['3B','4B','5B'], river:'when3' },
       { hands:[3,4], ranks:[4], colors:['3B','4B'], river:'when3' },
@@ -184,13 +183,13 @@ Deno.serve(async (req) => {
       { hands:[0,2,3,4], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
       { hands:[0,2,3,4], ranks:[], colors:['3R','3B'], river:'when3' },
       { hands:[0,5,7,9], ranks:[], colors:['3R','4R','3B','4B'], river:'random' },
-      { hands:[], ranks:[1,6], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
-      { hands:[], ranks:[1,6], colors:['3R','4R','3B','4B'], river:'when3' },
-      { hands:[], ranks:[1,6], colors:['3R','3B'], river:'random' },
-      { hands:[], ranks:[1,6], colors:['3R'], river:'none' },
-      { hands:[], ranks:[1,6], colors:['3B'], river:'strict4' },
-      { hands:[], ranks:[1,6], colors:[], river:'when3' },
-      { hands:[], ranks:[1,6], colors:[], river:'none' },
+      { hands:[], ranks:[1,5], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { hands:[], ranks:[1,5], colors:['3R','4R','3B','4B'], river:'when3' },
+      { hands:[], ranks:[1,5], colors:['3R','3B'], river:'random' },
+      { hands:[], ranks:[1,5], colors:['3R'], river:'none' },
+      { hands:[], ranks:[1,5], colors:['3B'], river:'strict4' },
+      { hands:[], ranks:[1,5], colors:[], river:'when3' },
+      { hands:[], ranks:[1,5], colors:[], river:'none' },
       { hands:[], ranks:[], colors:['3R','4R','5R','3B','4B','5B'], river:'none' },
       { hands:[], ranks:[], colors:['3R','4R','3B','4B'], river:'none' },
       { hands:[], ranks:[], colors:['3R','3B'], river:'none' },
@@ -203,15 +202,15 @@ Deno.serve(async (req) => {
       { hands:[], ranks:[0], colors:['3R','4R','3B','4B'], river:'random' },
       { hands:[], ranks:[0], colors:['3R'], river:'none' },
       { hands:[], ranks:[0], colors:['3B'], river:'strict4' },
-      { hands:[], ranks:[0,7], colors:[], river:'none' },
-      { hands:[], ranks:[0,7], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
-      { hands:[], ranks:[0,7], colors:['3R','4R','3B','4B'], river:'when3' },
-      { hands:[], ranks:[0,7], colors:['3R'], river:'random' },
-      { hands:[], ranks:[6,5,2,1], colors:[], river:'none' },
-      { hands:[], ranks:[6,5,2,1], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
-      { hands:[], ranks:[6,5,2,1], colors:['3R','4R','3B','4B'], river:'when3' },
-      { hands:[], ranks:[6,5,2,1], colors:['3R'], river:'random' },
-      { hands:[], ranks:[6,5,2,1], colors:['3B'], river:'none' },
+      { hands:[], ranks:[0,5], colors:[], river:'none' },
+      { hands:[], ranks:[0,5], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { hands:[], ranks:[0,5], colors:['3R','4R','3B','4B'], river:'when3' },
+      { hands:[], ranks:[0,5], colors:['3R'], river:'random' },
+      { hands:[], ranks:[5,4,1,0], colors:[], river:'none' },
+      { hands:[], ranks:[5,4,1,0], colors:['3R','4R','5R','3B','4B','5B'], river:'strict4' },
+      { hands:[], ranks:[5,4,1,0], colors:['3R','4R','3B','4B'], river:'when3' },
+      { hands:[], ranks:[5,4,1,0], colors:['3R'], river:'random' },
+      { hands:[], ranks:[5,4,1,0], colors:['3B'], river:'none' },
     ];
 
     const N = BATCH_SIZE;
