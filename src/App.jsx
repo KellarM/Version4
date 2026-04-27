@@ -6,17 +6,13 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
-import PromoSequence from './pages/PromoSequence';
 import RapidFireGame from './pages/RapidFireGame';
 import SimulationMode from './pages/SimulationMode';
 import DetailedSimulation from './pages/DetailedSimulation';
 import HandByHandAnalysis from './pages/HandByHandAnalysis';
-import PayoutCalibration from './pages/PayoutCalibration';
-import StrategyTest from './pages/StrategyTest';
-import RegulatoryCompliance from './pages/RegulatoryCompliance';
-import FrequencyProfiler from './pages/FrequencyProfiler';
 import GamingLicenseCalibration from './pages/GamingLicenseCalibration';
 import GameStats from './pages/GameStats';
+import DeckInspector from './pages/DeckInspector';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -48,13 +44,9 @@ const AuthenticatedApp = () => {
       <Route path="/simulation" element={<SimulationMode />} />
       <Route path="/detailed-simulation" element={<DetailedSimulation />} />
       <Route path="/analysis" element={<HandByHandAnalysis />} />
-      <Route path="/calibration" element={<PayoutCalibration />} />
-      <Route path="/strategy-test" element={<StrategyTest />} />
-      <Route path="/regulatory" element={<RegulatoryCompliance />} />
-      <Route path="/frequency-profiler" element={<FrequencyProfiler />} />
       <Route path="/gaming-license" element={<GamingLicenseCalibration />} />
       <Route path="/game-stats" element={<GameStats />} />
-      <Route path="/promo" element={<PromoSequence />} />
+      <Route path="/deck-inspector" element={<DeckInspector />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
