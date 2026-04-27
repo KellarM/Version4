@@ -162,29 +162,26 @@ Deno.serve(async (req) => {
 
     const STARTING_BALANCE = 1000;
 
-    // Poker hand rank frequencies (from Texas Hold'em)
+    // Poker hand rank frequencies (from Texas Hold'em) — One Pair removed 2026-04-14
     const RANK_FREQS = {
-      'One Pair': 0.42256,
       'Two Pair': 0.04754,
       'Three of a Kind': 0.02113,
       'Straight': 0.00462,
       'Flush': 0.00327,
       'Full House': 0.00261,
       'Four of a Kind': 0.00168,
-      'Straight Flush': 0.00139,
       'Royal Flush': 0.000154,
     };
 
     // Rank payouts — calibrated from 10M real engine run (32-card deck empirical frequencies)
+    // One Pair removed — Two Pair is minimum qualifying rank
     const RANK_PAYOUTS = {
-      'One Pair':        null,   // Progressive jackpot
       'Two Pair':        16.76,
       'Three of a Kind': 3.95,
       'Straight':        5.02,
       'Flush':           3.10,
       'Full House':      2.53,
       'Four of a Kind':  12.43,
-      'Straight Flush':  null,   // Progressive jackpot
       'Royal Flush':     null,   // Progressive jackpot
     };
 
@@ -213,7 +210,7 @@ Deno.serve(async (req) => {
         cum += RANK_FREQS[rank];
         if (r < cum) return rank;
       }
-      return 'One Pair';
+      return 'Two Pair';
     }
 
     function getWinningColors(redCount) {
@@ -265,7 +262,7 @@ Deno.serve(async (req) => {
           if (balance < totalBetsNeeded) return null;
           
           [6, 8].forEach(id => { bets[`h${id}`] = handBet; });
-          ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Full House'].forEach(r => {
+          ['Two Pair', 'Three of a Kind', 'Straight', 'Full House'].forEach(r => {
             bets[`r${r}`] = handBet;
           });
           return { bets, balance };
@@ -359,7 +356,7 @@ Deno.serve(async (req) => {
           if (balance < totalBetsNeeded) return null;
           
           [2, 6, 8].forEach(id => { bets[`h${id}`] = smallBet; });
-          ['One Pair', 'Flush', 'Straight'].forEach(r => { bets[`r${r}`] = smallBet; });
+          ['Flush', 'Straight'].forEach(r => { bets[`r${r}`] = smallBet; });
           ['3R', '4R'].forEach(c => { bets[`c${c}`] = smallBet; });
           bets.riverHedge = smallBet; // actual dollar amount
           return { bets, balance };
@@ -376,7 +373,7 @@ Deno.serve(async (req) => {
           if (balance < totalBetsNeeded) return null;
           
           [1, 3, 5, 7, 9, 10].forEach(id => { bets[`h${id}`] = microBet; });
-          ['One Pair', 'Two Pair'].forEach(r => { bets[`r${r}`] = microBet; });
+          ['Two Pair'].forEach(r => { bets[`r${r}`] = microBet; });
           ['3R', '3B'].forEach(c => { bets[`c${c}`] = microBet; });
           return { bets, balance };
         },
@@ -400,7 +397,7 @@ Deno.serve(async (req) => {
             const bet = Math.floor(balance / 8);
             if (bet < 1 || balance < bet * 8) return null;
             [1, 4, 6, 9].forEach(id => { bets[`h${id}`] = bet; });
-            ['One Pair', 'Two Pair'].forEach(r => { bets[`r${r}`] = bet; });
+            ['Two Pair'].forEach(r => { bets[`r${r}`] = bet; });
             bets.strategy = 'Cold Streak - Diversify';
           }
           // Balanced: mix of hands and colors
@@ -514,13 +511,13 @@ Deno.serve(async (req) => {
             bets['rFlush'] = Math.floor(baseBet * mixCoeff);
           } else if (baseStrategy === 'RankStacker') {
             [6, 8].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff); });
-            ['One Pair', 'Two Pair', 'Flush'].forEach(r => { bets[`r${r}`] = Math.floor(baseBet * mixCoeff); });
+            ['Two Pair', 'Flush'].forEach(r => { bets[`r${r}`] = Math.floor(baseBet * mixCoeff); });
           } else if (baseStrategy === 'BalancedSpread') {
             [2, 6, 8].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff); });
-            ['One Pair', 'Flush'].forEach(r => { bets[`r${r}`] = Math.floor(baseBet * mixCoeff); });
+            ['Flush'].forEach(r => { bets[`r${r}`] = Math.floor(baseBet * mixCoeff); });
           } else if (baseStrategy === 'DiversifiedHedge') {
             [1, 3, 5, 7, 9].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff * 0.6); });
-            ['One Pair', 'Two Pair'].forEach(r => { bets[`r${r}`] = Math.floor(baseBet * mixCoeff * 0.6); });
+            ['Two Pair'].forEach(r => { bets[`r${r}`] = Math.floor(baseBet * mixCoeff * 0.6); });
           } else if (baseStrategy === 'ConservativeHedger') {
             [3, 6, 8, 10].forEach(id => { bets[`h${id}`] = Math.floor(baseBet * mixCoeff); });
             ['3R', '3B'].forEach(c => { bets[`c${c}`] = Math.floor(baseBet * mixCoeff * 0.7); });
@@ -538,7 +535,7 @@ Deno.serve(async (req) => {
             [3, 6].forEach(id => { bets[`h${id}`] = (bets[`h${id}`] || 0) + secondBet; });
             ['3R', '3B'].forEach(c => { bets[`c${c}`] = (bets[`c${c}`] || 0) + Math.floor(secondBet * 0.7); });
           } else if (secondaryStrategy === 'RankStacker') {
-            ['One Pair', 'Two Pair'].forEach(r => { bets[`r${r}`] = (bets[`r${r}`] || 0) + secondBet; });
+            ['Two Pair'].forEach(r => { bets[`r${r}`] = (bets[`r${r}`] || 0) + secondBet; });
           } else if (secondaryStrategy === 'ColorBoardSpecialist') {
             ['3R', '3B'].forEach(c => { bets[`c${c}`] = (bets[`c${c}`] || 0) + Math.floor(secondBet * 0.6); });
           } else if (secondaryStrategy === 'RiverFocused') {
@@ -605,7 +602,7 @@ Deno.serve(async (req) => {
       const leader = findLeadingHand(communityCards);
       const winningHand = leader ? leader.handIds[0] : 1;
       const winningHand_ = FIXED_HANDS.find(h => h.id === winningHand);
-      const gameRank = leader ? leader.handResult.name : 'One Pair';
+      const gameRank = leader ? leader.handResult.name : 'Two Pair';
       
       // Count actual reds/blacks from community cards
       const redCount = communityCards.filter(c => cardColor(c) === 'red').length;
