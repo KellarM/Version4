@@ -1,0 +1,1 @@
+export default function GreedEngine() { return null; }

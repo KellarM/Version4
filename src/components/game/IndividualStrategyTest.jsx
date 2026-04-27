@@ -1,0 +1,1 @@
+export default function IndividualStrategyTest() { return null; }

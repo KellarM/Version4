@@ -1,0 +1,1 @@
+export default function AutoTrimToast() { return null; }
