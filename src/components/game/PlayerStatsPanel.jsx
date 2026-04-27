@@ -45,10 +45,11 @@ export default function PlayerStatsPanel({ isOpen, onClose, playerStats, playerC
             {/* Stats Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {Array.from({ length: playerCount }, (_, i) => {
-                const stats = playerStats[i] || { totalBets: 0, totalWins: 0, roundsPlayed: 0, roundsWon: 0, highestMultiplier: 0 };
+                const stats = playerStats[i] || { totalBets: 0, totalWins: 0, roundsPlayed: 0, roundsWon: 0, highestMultiplier: 0, highestBalance: null, highestBalanceRound: null, lowestBalance: null, lowestBalanceRound: null };
                 const color = PLAYER_CHIP_COLORS[i % PLAYER_CHIP_COLORS.length];
                 const roi = stats.totalBets > 0 ? (((stats.totalWins - stats.totalBets) / stats.totalBets) * 100).toFixed(1) : 0;
                 const winRate = stats.roundsPlayed > 0 ? ((stats.roundsWon / stats.roundsPlayed) * 100).toFixed(0) : 0;
+                const avgBetPerRound = stats.roundsPlayed > 0 ? (stats.totalBets / stats.roundsPlayed).toFixed(2) : '0.00';
 
                 return (
                   <motion.div
@@ -96,6 +97,24 @@ export default function PlayerStatsPanel({ isOpen, onClose, playerStats, playerC
                       <div className="flex justify-between">
                         <span className="opacity-80">Winning Rounds</span>
                         <span className="font-bold">{stats.roundsWon}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-current border-opacity-30 pt-2">
+                        <span className="opacity-80">Highest Balance</span>
+                        <span className="font-bold text-green-200">
+                          {stats.highestBalance !== null ? `$${stats.highestBalance.toFixed(2)}` : '—'}
+                          {stats.highestBalanceRound !== null && <span className="opacity-70 font-normal ml-1 text-xs">(Rnd {stats.highestBalanceRound})</span>}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="opacity-80">Lowest Balance</span>
+                        <span className="font-bold text-red-200">
+                          {stats.lowestBalance !== null ? `$${stats.lowestBalance.toFixed(2)}` : '—'}
+                          {stats.lowestBalanceRound !== null && <span className="opacity-70 font-normal ml-1 text-xs">(Rnd {stats.lowestBalanceRound})</span>}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="opacity-80">Avg Bet / Round</span>
+                        <span className="font-bold">${avgBetPerRound}</span>
                       </div>
                     </div>
                   </motion.div>
