@@ -25,7 +25,6 @@ Deno.serve(async (req) => {
     ];
 
     const RANK_FREQS = {
-      'One Pair': 0.42256,
       'Two Pair': 0.04754,
       'Three of a Kind': 0.02113,
       'Straight': 0.00462,
@@ -35,7 +34,6 @@ Deno.serve(async (req) => {
     };
 
     const RANK_PAYOUTS = {
-      'One Pair': 5.87,
       'Two Pair': 4.83,
       'Three of a Kind': 0.98,
       'Straight': 1.90,
@@ -69,7 +67,7 @@ Deno.serve(async (req) => {
     function rollRank() {
       const r = Math.random();
       for (let i = 0; i < RANK_CUM.length; i++) { if (r < RANK_CUM[i]) return RANK_KEYS[i]; }
-      return 'One Pair';
+      return 'Two Pair';
     }
 
     // Simulate game with current payouts, measuring RTP by category
