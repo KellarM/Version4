@@ -22,27 +22,23 @@ Deno.serve(async (req) => {
     // RANK PAYOUTS (excluding progressive)
     const rankPayoutMap = {
       'Royal Flush': 100,     // Placeholder (progressive)
-      'Straight Flush': 50,   // Placeholder (progressive)
       'Four of a Kind': 5.8,
       'Full House': 1.5,
       'Flush': 2.0,
       'Straight': 2.9,
       'Three of a Kind': 1.5,
       'Two Pair': 7.4,
-      'One Pair': 9.0,
     };
 
     // Approximate real hand frequencies in Texas Hold'em
     const rankFrequencies = {
       'Royal Flush': 0.000154,
-      'Straight Flush': 0.00139,
       'Four of a Kind': 0.00168,
       'Full House': 0.00261,
       'Flush': 0.00327,
       'Straight': 0.00462,
       'Three of a Kind': 0.02113,
       'Two Pair': 0.04754,
-      'One Pair': 0.42256,
     };
 
     // COLOR BOARD PAYOUTS
@@ -65,7 +61,7 @@ Deno.serve(async (req) => {
       roundDetails: [],
     };
 
-    // Initialize rank tracking
+    // Initialize rank tracking (6-rank model, Two Pair is minimum)
     Object.keys(rankPayoutMap).forEach(rank => {
       stats.categories.rankBets.byRank[rank] = { bets: 0, payouts: 0, wins: 0, losses: 0 };
     });
