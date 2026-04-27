@@ -1,1 +1,252 @@
-// VerificationLog
+import { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
+const SUIT_COLOR = {
+  '♦': 'text-red-400',
+  '♥': 'text-red-400',
+  '♣': 'text-slate-200',
+  '♠': 'text-slate-200',
+};
+
+function CardPip({ label, highlight }) {
+  const sym = label?.slice(-1) || '';
+  const color = SUIT_COLOR[sym] || 'text-white';
+  return (
+    <span className={`inline-flex items-center justify-center font-bold text-xs px-1.5 py-0.5 rounded border ${
+      highlight
+        ? `bg-yellow-900/40 border-yellow-500/60 ${color}`
+        : `bg-white/10 border-white/15 ${color}`
+    }`}>
+      {label}
+    </span>
+  );
+}
+
+function WinBadge() {
+  return (
+    <span className="inline-flex items-center gap-0.5 text-xs font-bold px-2 py-0.5 rounded bg-green-600 text-white border border-green-400 shadow-sm shadow-green-900/60">
+      WIN
+    </span>
+  );
+}
+
+function ColorBadge({ tag }) {
+  const isRed = tag?.endsWith('R');
+  return (
+    <span className={`inline-block text-xs font-bold px-1.5 py-0.5 rounded border ${
+      isRed
+        ? 'bg-red-900/50 text-red-300 border-red-700/50'
+        : 'bg-slate-700 text-slate-300 border-slate-600'
+    }`}>
+      {tag}
+    </span>
+  );
+}
+
+function RankBadge({ rank }) {
+  const premium = ['Royal Flush','Four of a Kind','Full House','Flush','Straight'];
+  const mid = ['Three of a Kind','Two Pair'];
+  const cls = premium.includes(rank)
+    ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50'
+    : mid.includes(rank)
+    ? 'bg-blue-900/30 text-blue-300 border-blue-700/40'
+    : 'bg-slate-700/50 text-slate-400 border-slate-600/50';
+  return (
+    <span className={`inline-block text-xs font-semibold px-1.5 py-0.5 rounded border ${cls}`}>
+      {rank}
+    </span>
+  );
+}
+
+function RiverBadge({ result }) {
+  const isHigh = result?.startsWith('HIGH');
+  return (
+    <span className={`inline-block text-xs font-bold px-1.5 py-0.5 rounded border ${
+      isHigh
+        ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700/40'
+        : 'bg-slate-700/50 text-slate-300 border-slate-600/40'
+    }`}>
+      {result}
+    </span>
+  );
+}
+
+function SequenceCell({ row }) {
+  const hasHoleCards = row.holeCards && row.holeCards.length === 2;
+
+  // Use canonical flop/turn/river structure when available;
+  // fall back to legacy sequence[] for backward compatibility
+  const flop  = row.flop  ?? row.sequence?.slice(0, 3) ?? [];
+  const turn  = row.turn  ?? row.sequence?.[3];
+  const river = row.river ?? row.sequence?.[4];
+
+  return (
+    <div className="flex flex-col gap-1 min-w-[190px]">
+      {hasHoleCards && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-yellow-600 w-10 shrink-0 text-xs font-semibold">Hole</span>
+          {row.holeCards.map((c, ci) => <CardPip key={ci} label={c.label} highlight />)}
+          {row.isInspectedHandWinner && <WinBadge />}
+        </div>
+      )}
+      <div className="flex items-center gap-1">
+        <span className="text-gray-600 w-10 shrink-0 text-xs">Flop</span>
+        {flop.map((c, ci) => <CardPip key={ci} label={c.label} />)}
+      </div>
+      <div className="flex items-center gap-1">
+        <span className="text-gray-600 w-10 shrink-0 text-xs">Turn</span>
+        {turn && <CardPip label={turn.label} />}
+      </div>
+      <div className="flex items-center gap-1">
+        <span className="text-gray-600 w-10 shrink-0 text-xs">River</span>
+        {river && <CardPip label={river.label} />}
+      </div>
+    </div>
+  );
+}
+
+function HandResultCell({ row }) {
+  const winnerLabel = row.winnerHandName || row.winnerHandLabel || '—';
+  const isShared = row.winnerCount > 1;
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-start gap-1.5 flex-wrap">
+        <span className="text-gray-500 text-xs shrink-0 mt-0.5">
+          {isShared ? `Co-winners (${row.winnerCount}):` : 'Winner:'}
+        </span>
+        <span className={`inline-block text-xs font-bold px-1.5 py-0.5 rounded border leading-tight ${
+          row.isInspectedHandWinner
+            ? 'bg-green-900/40 text-green-300 border-green-700/50'
+            : 'bg-slate-700/50 text-slate-300 border-slate-600/50'
+        }`}>
+          {winnerLabel}
+        </span>
+      </div>
+      {row.bestRankName && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-gray-500 text-xs">at rank:</span>
+          <RankBadge rank={row.bestRankName} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RankResultCell({ row }) {
+  const isHandBet = row.holeCards !== null && row.holeCards !== undefined;
+  if (isHandBet) {
+    const rankMatch = row.thisHandRank === row.bestRankName && row.isInspectedHandWinner;
+    return (
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1.5">
+          <span className="text-gray-600 text-xs">This hand:</span>
+          <RankBadge rank={row.thisHandRank || 'High Card'} />
+          {rankMatch && (
+            <span className="text-green-500 text-xs font-bold">✓</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-gray-600 text-xs">Best all:</span>
+          <RankBadge rank={row.bestRankName || 'High Card'} />
+        </div>
+      </div>
+    );
+  }
+  return <RankBadge rank={row.bestRankName || 'High Card'} />;
+}
+
+export default function VerificationLog({ log, betLabel }) {
+  const [expanded, setExpanded] = useState(true);
+
+  if (!log || log.length === 0) return null;
+
+  const isHandBet = log[0]?.holeCards !== null && log[0]?.holeCards !== undefined;
+
+  return (
+    <div className="bg-slate-900/80 border border-slate-700 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex items-center justify-between px-5 py-3 hover:bg-slate-800/40 transition-colors border-b border-slate-700"
+      >
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="font-bold text-white text-sm">Microscope — Seq {log[0]?.sequenceId ?? 1}–{log[log.length-1]?.sequenceId ?? log.length}</span>
+          {betLabel && (
+            <span className="text-xs bg-slate-700/60 text-yellow-300 font-semibold px-2 py-0.5 rounded border border-slate-600">
+              {betLabel}
+            </span>
+          )}
+          <span className="text-xs text-gray-500">
+            32-card engine · 7-card evaluation · {isHandBet ? 'Hole + Board · WIN = table winner' : 'Board-state'}
+          </span>
+        </div>
+        {expanded
+          ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
+          : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
+      </button>
+
+      {expanded && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-slate-700 bg-slate-800/60 text-gray-400 uppercase tracking-wider">
+                <th className="px-3 py-2.5 text-center w-12" title="Sequence ID — matches Excel row number (Row 2 = Seq 1)">Seq</th>
+                <th className="px-3 py-2.5 text-left">Board (Flop / Turn / River)</th>
+                <th className="px-3 py-2.5 text-left min-w-[180px]">Hand Result</th>
+                <th className="px-3 py-2.5 text-left min-w-[180px]">Rank Result (7-card)</th>
+                <th className="px-3 py-2.5 text-left min-w-[160px]">Color Result</th>
+                <th className="px-3 py-2.5 text-left min-w-[120px]">River Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {log.map((row, i) => (
+                <tr
+                  key={row.sequenceId ?? i}
+                  className={`border-b border-slate-800/60 last:border-0 transition-colors ${
+                    i % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-800/20'
+                  } ${row.won ? 'ring-1 ring-inset ring-green-800/50' : ''}`}
+                >
+                  <td className="px-3 py-2.5 text-center">
+                    <span className={`font-mono text-xs font-bold ${row.won ? 'text-green-500' : 'text-gray-600'}`}>
+                      {row.sequenceId ?? row.round ?? (i + 1)}
+                    </span>
+                  </td>
+
+                  <td className="px-3 py-2.5">
+                    <SequenceCell row={row} />
+                  </td>
+
+                  <td className="px-3 py-2.5">
+                    <HandResultCell row={row} />
+                  </td>
+
+                  <td className="px-3 py-2.5">
+                    <RankResultCell row={row} />
+                  </td>
+
+                  <td className="px-3 py-2.5">
+                    {row.colorWins && row.colorWins.length > 0 ? (
+                      <div className="flex flex-wrap items-center gap-1">
+                        {row.colorWins.map((tag, ci) => <ColorBadge key={ci} tag={tag} />)}
+                        <span className="text-slate-500 text-xs">
+                          ({row.reds}R·{row.blacks}B)
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-500 text-xs">
+                        {row.reds}R · {row.blacks}B — no win
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="px-3 py-2.5">
+                    <RiverBadge result={row.riverResult} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
