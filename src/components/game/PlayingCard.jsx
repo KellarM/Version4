@@ -24,7 +24,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
               <span style={{ fontSize: '0.5em', lineHeight: 1 }}>🔥</span>
               <span className="font-black italic leading-none" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.5em', transform: 'skewX(-12deg)', background: 'linear-gradient(180deg, #fef08a 0%, #f97316 60%, #dc2626 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>FIRE</span>
             </div>
-            <span className="font-black italic leading-none text-green-400" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.45em', transform: 'skewX(-12deg)', marginTop: '2px', letterSpacing: '0.02em' }}>TEXAS 10</span>
+            <span className="font-black italic leading-none text-green-400" style={{ fontFamily: 'Oswald, sans-serif', fontSize: '0.45em', transform: 'skewX(-12deg)', marginTop: '2px', letterSpacing: '0.02em' }}>HOLD'EM</span>
           </div>
         </div>
         <div className="absolute top-1 left-1 z-20 leading-none" style={{ fontSize: '0.9em' }}>🔥</div>
@@ -41,7 +41,7 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
   const borderColor = isRed ? 'border-red-500/60' : 'border-gray-500/60';
 
   return (
-    <div className="bg-white rounded-lg w-[3.9rem] h-[5.5rem] border-2 flex flex-col shadow-lg select-none overflow-hidden relative border-red-500/60">
+    <div className="w-[3.9rem] h-[5.5rem] rounded-lg border-2 bg-white flex flex-col shadow-lg select-none overflow-hidden relative border-red-500/60 ">
       
       
       {/* Top-left: rank + suit below it */}
@@ -51,15 +51,15 @@ export default function PlayingCard({ card, size = 'md', faceDown = false, glow 
       </div>
 
       {/* Center: Large suit symbol (5x) - vertically centered with equal spacing */}
-      <div className="px-1 flex-1 flex items-center justify-center -my-1">
-        <div style={{ fontSize: '2.5em', color: isRed ? '#dc2626' : '#000', opacity: 0.7, lineHeight: 1 }} className="mx-1">
+      <div className="flex-1 flex items-center justify-center px-1 -my-1">
+        <div style={{ fontSize: '2.5em', color: isRed ? '#dc2626' : '#000', opacity: 0.7, lineHeight: 1 }} className="">
           {suitSymbol}
         </div>
       </div>
 
       {/* Bottom-right: rank + suit below it (right-side up) */}
       <div className={`flex flex-col items-end leading-none p-1 pb-0.5 ${textColor}`} style={{ fontWeight: 'bold' }}>
-        <div style={{ fontSize: '1.1em' }} className="pl-2">{card.rank}</div>
+        <div style={{ fontSize: '1.1em' }}>{card.rank}</div>
         <div style={{ fontSize: '0.55em' }}>{suitSymbol}</div>
       </div>
     </div>);
