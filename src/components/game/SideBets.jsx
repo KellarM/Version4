@@ -242,7 +242,7 @@ export default function SideBets({
         )}
 
         {/* Smoked Glass Vault — Rank Bet Required */}
-        {!killSwitchActive && !rankBetActive && gamePhase === 'betting' && (
+        {!killSwitchActive && !rankBetActive && (gamePhase === 'betting' || gamePhase === 'flop' || gamePhase === 'lowHighBetting') && (
           <div
             className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl"
             style={{
@@ -307,8 +307,8 @@ export default function SideBets({
           River — Low / High
         </div>
 
-        {/* Smoked Glass Vault — Rank Bet Required (river phase) */}
-        {!rankBetActive && gamePhase === 'lowHighBetting' && (
+        {/* Smoked Glass Vault — River locked before turn is dealt OR rank gate not met */}
+        {(gamePhase === 'betting' || gamePhase === 'flop' || (gamePhase === 'lowHighBetting' && !rankBetActive)) && (
           <div
             className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl"
             style={{
@@ -318,15 +318,29 @@ export default function SideBets({
               boxShadow: 'inset 0 0 20px rgba(251,191,36,0.05)',
             }}
           >
-            <div className="text-base mb-1" style={{ filter: 'drop-shadow(0 0 6px rgba(251,191,36,0.5))' }}>
-              🏆
-            </div>
-            <span className="text-yellow-400 font-black text-xs mb-1 text-center px-2 leading-tight">
-              UPGRADE YOUR WIN
-            </span>
-            <span className="text-yellow-300/60 text-xs text-center px-3 leading-snug">
-              Match your Rank bet total to your Hand bet total to unlock
-            </span>
+            {(gamePhase === 'betting' || gamePhase === 'flop') ? (
+              <>
+                <div className="text-base mb-1">🔒</div>
+                <span className="text-yellow-400 font-black text-xs mb-1 text-center px-2 leading-tight">
+                  OPENS AFTER TURN
+                </span>
+                <span className="text-yellow-300/60 text-xs text-center px-3 leading-snug">
+                  River bet available once the Turn card is dealt
+                </span>
+              </>
+            ) : (
+              <>
+                <div className="text-base mb-1" style={{ filter: 'drop-shadow(0 0 6px rgba(251,191,36,0.5))' }}>
+                  🏆
+                </div>
+                <span className="text-yellow-400 font-black text-xs mb-1 text-center px-2 leading-tight">
+                  UPGRADE YOUR WIN
+                </span>
+                <span className="text-yellow-300/60 text-xs text-center px-3 leading-snug">
+                  Match your Rank bet total to your Hand bet total to unlock
+                </span>
+              </>
+            )}
           </div>
         )}
 
