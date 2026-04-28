@@ -91,7 +91,7 @@ export default function RapidFireGame() {
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [showStrategyTest, setShowStrategyTest] = useState(false);
   const [showTwoHandTest, setShowTwoHandTest] = useState(false);
-  const [toolbarVisible, setToolbarVisible] = useState(true);
+  const [toolbarVisible, setToolbarVisible] = useState(false);
   const [showPlayerSelector, setShowPlayerSelector] = useState(true);
   const [roundId, setRoundId] = useState(1);
 
