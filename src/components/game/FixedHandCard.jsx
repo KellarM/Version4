@@ -145,13 +145,13 @@ export default function FixedHandCard({
           <>
             {/* Left column: Players 1–5 */}
             {leftBets.length > 0 && (
-              <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 flex flex-col items-center gap-0.5 z-10 pr-0.5">
+              <div className="absolute left-1 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5 z-10">
                 {leftBets.map(renderChip)}
               </div>
             )}
             {/* Right column: Players 6–10 */}
             {rightBets.length > 0 && (
-              <div className="absolute right-0 top-1/2 translate-x-full -translate-y-1/2 flex flex-col items-center gap-0.5 z-10 pl-0.5">
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5 z-10">
                 {rightBets.map(renderChip)}
               </div>
             )}
