@@ -1,15 +1,4 @@
-const PHASE_GRADIENT = {
-  betting:        'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
-  flop:           'linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%)',
-  turn:           'linear-gradient(90deg, #fb923c 0%, #f97316 100%)',
-  lowHighBetting: 'linear-gradient(90deg, #60a5fa 0%, #93c5fd 100%)',
-  river:          'linear-gradient(90deg, #fef08a 0%, #f97316 100%)',
-  settlement:     'linear-gradient(90deg, #a3a3a3 0%, #737373 100%)',
-  winner:         'linear-gradient(90deg, #fef08a 0%, #f97316 100%)',
-};
-
-export default function DealerAnnouncement({ message, phase }) {
-  const gradient = PHASE_GRADIENT[phase] || PHASE_GRADIENT.betting;
+export default function DealerAnnouncement({ message }) {
   const text = message || '';
 
   return (
@@ -35,9 +24,8 @@ export default function DealerAnnouncement({ message, phase }) {
             height: '32px',
             transform: 'skewX(-8deg)',
             display: 'block',
-            background: gradient,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: '#f6d860',
+            textShadow: '0 1px 2px rgba(0,0,0,0.8), 0 0 6px rgba(180,130,40,0.4)',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
