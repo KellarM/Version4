@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { cardColor } from '@/lib/gameEngine';
 import { COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
-import { TotalCollectDisplay, EnergyArcOverlay } from './GreedEngine';
+import { EnergyArcOverlay } from './GreedEngine';
 import Chip from './Chip';
 
 const RED_OPTIONS   = [
@@ -343,14 +343,6 @@ export default function SideBets({
             )}
           </div>
         )}
-
-        {/* Total Collect preview */}
-        <TotalCollectDisplay
-          totalInvestment={totalInvestment}
-          isHovering={!!hoveredRiverType}
-          isWinner={riverWinFlash}
-          lowHighPayout={LOW_HIGH_PAYOUT}
-        />
 
         <div className="grid grid-cols-2 gap-1 flex-1 min-h-0">
           {['LOW', 'HIGH'].map(type => {
