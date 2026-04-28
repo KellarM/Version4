@@ -387,6 +387,10 @@ function handleRun(payload) {
   const bufCap = Math.min(rounds, BUFFER_CAP);
 
   let totalWins = 0, totalPaid = 0;
+  // Phase 3: Cumulative independent win counters
+  let totalCardedHandWins = 0;
+  let totalRankNonExceptionWins = 0;
+  let totalLostToHouseWins = 0;
 
   for (let g = 0; g < rounds; g++) {
     if (g > 0 && g % PROGRESS_UPDATE_INTERVAL === 0) {
@@ -453,6 +457,15 @@ function handleRun(payload) {
     }
 
     if (won) { totalWins++; totalPaid += BET + profit; }
+
+    // Phase 3: Independent counters (bestRankCat already computed above)
+    if (betType === 'hand' && won) totalCardedHandWins++;
+    if (betType === 'rank' && won) {
+      // Rank exception: One Pair (cat 0), Straight Flush (cat 7), Royal Flush (cat 8)
+      const isRankException = (bestRankCat === 0 || bestRankCat === 7 || bestRankCat === 8);
+      if (!isRankException) totalRankNonExceptionWins++;
+    }
+    if (isBoardWin && !won) totalLostToHouseWins++;
   }
 
   globalAuditBufferSize = bufCap;
@@ -478,6 +491,10 @@ function handleRun(payload) {
       for95:    winFreq > 0 ? Math.round(((0.95/winFreq)-1)*100)/100 : null,
       for965:   winFreq > 0 ? Math.round(((0.965/winFreq)-1)*100)/100 : null,
       for98:    winFreq > 0 ? Math.round(((0.98/winFreq)-1)*100)/100 : null,
+      // Phase 3 counters
+      totalCardedHandWins,
+      totalRankNonExceptionWins,
+      totalLostToHouseWins,
       bufferSize: globalAuditBufferSize,
       bufferBetKey: globalAuditBufferBetKey,
     },
@@ -533,7 +550,7 @@ function handleMicroscope(payload) {
 // Column 1 = Seq (sequenceId), then the 19 board/outcome columns.
 // Guaranteed: Row 2 in Excel = sequenceId 1 = Microscope row 1.
 // NEVER re-sorts. Data order is deal order, no exceptions.
-const CSV_HEADER = 'Seq,Flop_C1_Rank,Flop_C1_Suit,Flop_C2_Rank,Flop_C2_Suit,Flop_C3_Rank,Flop_C3_Suit,Turn_C4_Rank,Turn_C4_Suit,River_C5_Rank,River_C5_Suit,Winning_Hand,Winning_Hand_2,Winning_Rank,Shared_Win,House_Win,Rank_Exception,3_Red,4_Red,5_Red,3_Black,4_Black,5_Black,Low,High,Audited_Bet_Won';
+const CSV_HEADER = 'Seq,Flop_C1_Rank,Flop_C1_Suit,Flop_C2_Rank,Flop_C2_Suit,Flop_C3_Rank,Flop_C3_Suit,Turn_C4_Rank,Turn_C4_Suit,River_C5_Rank,River_C5_Suit,Winning_Hand,Winning_Hand_2,Winning_Rank,Shared_Win,House_Win,Rank_Exception,3_Red,4_Red,5_Red,3_Black,4_Black,5_Black,Low,High,Audited_Bet_Won,Audited_Bet_Carded_Hand_Win,Audited_Bet_Rank_Non_Exception_Win,Audited_Bet_Lost_To_House_Win';
 const EXPORT_CHUNK_SIZE = 10_000;
 const EXPORT_PROGRESS_INTERVAL = 50_000;
 
@@ -612,13 +629,18 @@ function handleExport(payload) {
       const blacks = 5 - reds;
       const isLow = (b4 >> 2) <= 5;
 
-      const params = decodeBetParams(betType, betKey);
+      const exportParams = decodeBetParams(betType, betKey);
       const { won: auditedBetWon } = evalWinFromBoard(
-        b0, b1, b2, b3, b4, betType, betKey, params,
+        b0, b1, b2, b3, b4, betType, betKey, exportParams,
         handPayouts, rankPayouts, colorPayouts, lhPayout
       );
 
-      lines += `${seqId},${c0.rank},${c0.suit},${c1.rank},${c1.suit},${c2.rank},${c2.suit},${c3.rank},${c3.suit},${c4.rank},${c4.suit},${winnerLabel},${winnerLabel2},${rankName},${sharedWin},${houseWin},${rankException},${reds>=3?1:0},${reds>=4?1:0},${reds>=5?1:0},${blacks>=3?1:0},${blacks>=4?1:0},${blacks>=5?1:0},${isLow?1:0},${isLow?0:1},${auditedBetWon?1:0}\n`;
+      // Phase 3: Three independent per-round win flags for the audited bet
+      const auditedBetCardedHandWin = (betType === 'hand' && auditedBetWon) ? 1 : 0;
+      const auditedBetRankNonExceptionWin = (betType === 'rank' && auditedBetWon && rankException === 0) ? 1 : 0;
+      const auditedBetLostToHouseWin = (houseWin === 1 && !auditedBetWon) ? 1 : 0;
+
+      lines += `${seqId},${c0.rank},${c0.suit},${c1.rank},${c1.suit},${c2.rank},${c2.suit},${c3.rank},${c3.suit},${c4.rank},${c4.suit},${winnerLabel},${winnerLabel2},${rankName},${sharedWin},${houseWin},${rankException},${reds>=3?1:0},${reds>=4?1:0},${reds>=5?1:0},${blacks>=3?1:0},${blacks>=4?1:0},${blacks>=5?1:0},${isLow?1:0},${isLow?0:1},${auditedBetWon?1:0},${auditedBetCardedHandWin},${auditedBetRankNonExceptionWin},${auditedBetLostToHouseWin}\n`;
     }
 
     rowsDone += batch;
