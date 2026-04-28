@@ -9,6 +9,7 @@ import {
   getTotalHandBets, getTotalRankBets, getTotalColorBets, hasRankBet,
   calculateTiePayout,
   getUnlockedRanksForPlayer,
+  isSideBetGateOpen,
 } from '@/lib/gameEngine';
 import { HAND_RANK_PAYOUTS as RANK_PAYOUT_MAP, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } from '@/lib/payoutConstants';
 import FixedHandCard from '@/components/game/FixedHandCard';
@@ -183,8 +184,11 @@ export default function RapidFireGame() {
   const handBetCount = Object.keys(pHandBets).length;
   const rankBetCount = Object.keys(pRankBets).length;
 
-  // Kill switch: 3–4 hands locks all side markets
+  // Kill switch: 4 hands locks all side markets
   const killSwitchActive = isKillSwitchActive(handBetCount);
+
+  // Phase 4 gate: Color Board and River require total rank === total hand bets
+  const sideBetGateOpen = !killSwitchActive && isSideBetGateOpen(pHandBets, pRankBets);
 
   // Greed Engine: live total investment for active player
   const totalInvestment =
@@ -200,7 +204,7 @@ export default function RapidFireGame() {
 
   const luminosityClass = riverWinFlash
     ? 'lp-jackpot'
-    : isRankBetPlaced
+    : sideBetGateOpen
       ? 'lp-rank-placed'
       : isRankHovered
         ? 'lp-rank-hover'
@@ -365,17 +369,22 @@ export default function RapidFireGame() {
     const existing = (rankBets[pid] || {})[key] || 0;
 
     // If already bet and player cannot afford to add more, treat as removal — bypass all cap checks
-    // Rank is the master key: removing any rank bet cascades out all color and river bets
     if (existing > 0 && balance < selectedChip) {
       const remainingRankBets = { ...(rankBets[pid] || {}) };
       delete remainingRankBets[key];
-      const colorRefund = Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0);
-      const riverRefund = lowHighBets[pid]?.amount || 0;
-      setRankBets(prev => ({ ...prev, [pid]: remainingRankBets }));
-      setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
-      setLowHighBets(prev => ({ ...prev, [pid]: null }));
-      setBalances(b => { const n = [...b]; n[pid] += existing + colorRefund + riverRefund; return n; });
-      if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
+      const gateStillOpen = isSideBetGateOpen(handBets[pid] || {}, remainingRankBets);
+      if (!gateStillOpen) {
+        const colorRefund = Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0);
+        const riverRefund = lowHighBets[pid]?.amount || 0;
+        setRankBets(prev => ({ ...prev, [pid]: remainingRankBets }));
+        setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
+        setLowHighBets(prev => ({ ...prev, [pid]: null }));
+        setBalances(b => { const n = [...b]; n[pid] += existing + colorRefund + riverRefund; return n; });
+        if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
+      } else {
+        setRankBets(prev => ({ ...prev, [pid]: remainingRankBets }));
+        setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+      }
       return;
     }
 
@@ -442,7 +451,11 @@ export default function RapidFireGame() {
     delete remainingRankBets[key];
     const isLastRankBet = !hasRankBet(remainingRankBets);
 
-    if (isLastRankBet) {
+    // After removing this rank bet, check if the Phase 4 gate is still open
+    const gateStillOpen = isSideBetGateOpen(handBets[pid] || {}, remainingRankBets);
+
+    if (!gateStillOpen) {
+      // Gate closed: cascade out all color and river bets
       const colorRefund = Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0);
       const riverRefund = lowHighBets[pid]?.amount || 0;
       setRankBets(prev => ({ ...prev, [pid]: remainingRankBets }));
@@ -451,16 +464,9 @@ export default function RapidFireGame() {
       setBalances(b => { const n = [...b]; n[pid] += existing + colorRefund + riverRefund; return n; });
       if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
     } else {
-      // Rank is the master key for Color and River boards.
-      // Removing any rank bet (even when other rank bets remain) cascades out
-      // all color and river bets — they require rank presence to exist.
-      const colorRefund = Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0);
-      const riverRefund = lowHighBets[pid]?.amount || 0;
+      // Gate still open: just remove this rank bet, color/river stay
       setRankBets(prev => ({ ...prev, [pid]: remainingRankBets }));
-      setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
-      setLowHighBets(prev => ({ ...prev, [pid]: null }));
-      setBalances(b => { const n = [...b]; n[pid] += existing + colorRefund + riverRefund; return n; });
-      if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
+      setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
     }
   }, [gamePhase, pid, rankBets, handBets, redBlackBets, lowHighBets]);
 
@@ -505,8 +511,8 @@ export default function RapidFireGame() {
       return;
     }
 
-    // Rank is the Master Key: Color Board requires at least one Rank Bet
-    if (!hasRankBet(rankBets[pid] || {})) {
+    // Phase 4 Gate: Color Board requires rank total === hand total
+    if (!isSideBetGateOpen(handBets[pid] || {}, rankBets[pid] || {})) {
       setCapAlertType('color_needs_rank');
       setShowCapAlert(true);
       return;
@@ -545,8 +551,8 @@ export default function RapidFireGame() {
     if (gamePhase !== 'lowHighBetting') return;
     const currentRiverAmt = pLowHighBet?.amount || 0;
 
-    // Rank is the Master Key: River Window requires at least one Rank Bet
-    if (!hasRankBet(rankBets[pid] || {})) {
+    // Phase 4 Gate: River requires rank total === hand total
+    if (!isSideBetGateOpen(handBets[pid] || {}, rankBets[pid] || {})) {
       setCapAlertType('river_needs_rank');
       setShowCapAlert(true);
       return;
@@ -704,9 +710,9 @@ export default function RapidFireGame() {
     const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
     const flopHandCount = Object.values(handBets).reduce((t, ph) => t + Object.keys(ph || {}).length, 0);
     const pathMsg = flopHandCount === 0 ? '' :
-      Object.values(handBets).some((ph) => Object.keys(ph || {}).length >= 3)
-        ? ' 3+ hands selected — side markets closed.'
-        : ' 1–2 hands selected — side markets open.';
+      Object.values(handBets).some((ph) => Object.keys(ph || {}).length >= 4)
+        ? ' 4 hands selected — side markets closed.'
+        : ' 1–3 hands selected — match rank bet to hand bet to unlock Color & River.';
     setDealerMessage(
       leader
         ? `Phase 3 — Flop: ${flop.map(cardDisplay).join(', ')}. ${leaderCards} leads with ${leader.handResult.name}.${pathMsg}`
@@ -1516,7 +1522,7 @@ export default function RapidFireGame() {
               winningLowHigh={winningLowHigh}
               disabled={gamePhase === 'betting' ? balance < selectedChip : gamePhase === 'lowHighBetting' ? balance < selectedChip : true}
               killSwitchActive={killSwitchActive}
-              rankBetActive={hasRankBet(pRankBets)}
+              rankBetActive={sideBetGateOpen}
               playerCount={playerCount}
               totalInvestment={totalInvestment}
               hoveredRiverType={hoveredRiverType}

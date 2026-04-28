@@ -379,21 +379,29 @@ export const MAX_HAND_BETS = 4;
 
 export function getPlayerPath(handBetCount) {
   if (handBetCount === 0) return 'none';
-  if (handBetCount <= 2) return 'professional';
+  if (handBetCount <= 3) return 'professional';
   return 'grinder';
 }
 
 export function isProfessionalPath(handBetCount) {
-  return handBetCount >= 1 && handBetCount <= 2;
+  return handBetCount >= 1 && handBetCount <= 3;
 }
 
 export function isGrinderPath(handBetCount) {
-  return handBetCount >= 3;
+  return handBetCount >= 4;
 }
 
-// Kill Switch: returns true when side markets must be locked
+// Kill Switch: returns true when side markets must be locked (4 hands selected)
 export function isKillSwitchActive(handBetCount) {
   return isGrinderPath(handBetCount);
+}
+
+// Phase 4 Gate: Color Board and River are unlocked ONLY when
+// total rank bets === total hand bets (sum equivalence).
+export function isSideBetGateOpen(handBets, rankBets) {
+  const totalHand = Object.values(handBets || {}).reduce((s, v) => s + v, 0);
+  const totalRank = Object.values(rankBets || {}).reduce((s, v) => s + v, 0);
+  return totalHand > 0 && totalRank >= totalHand;
 }
 
 // ============================================================

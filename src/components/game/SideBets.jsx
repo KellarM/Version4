@@ -237,7 +237,7 @@ export default function SideBets({
         {killSwitchActive && gamePhase === 'betting' && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl bg-black/80 border-2 border-red-700/60 backdrop-blur-sm">
             <span className="text-red-400 font-black text-base mb-1">LOCKED</span>
-            <span className="text-red-300 text-xs font-semibold text-center px-2">3–4 Hands: Side Bets Disabled</span>
+            <span className="text-red-300 text-xs font-semibold text-center px-2">4 Hands: Side Bets Disabled</span>
           </div>
         )}
 
@@ -259,7 +259,7 @@ export default function SideBets({
               UPGRADE YOUR WIN
             </span>
             <span className="text-yellow-300/60 text-xs text-center px-3 leading-snug">
-              Place a Rank Bet to Unlock Color &amp; River Multipliers
+              Match your Rank bet total to your Hand bet total to unlock
             </span>
           </div>
         )}
@@ -325,7 +325,7 @@ export default function SideBets({
               UPGRADE YOUR WIN
             </span>
             <span className="text-yellow-300/60 text-xs text-center px-3 leading-snug">
-              Place a Rank Bet to Unlock Color &amp; River Multipliers
+              Match your Rank bet total to your Hand bet total to unlock
             </span>
           </div>
         )}
