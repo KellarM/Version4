@@ -28,7 +28,7 @@ import DetailedPayoutDisplay from '@/components/game/DetailedPayoutDisplay';
 import HandBetLimitAlert from '@/components/game/HandBetLimitAlert';
 import RankBetLimitAlert from '@/components/game/RankBetLimitAlert';
 import InsufficientFundsAlert from '@/components/game/InsufficientFundsAlert';
-import { useGreedEngineState, RiverWinCelebration } from '@/components/game/GreedEngine';
+import { useGreedEngineState } from '@/components/game/GreedEngine';
 import AutoTrimToast from '@/components/game/AutoTrimToast';
 import IndividualStrategyTest from '@/components/game/IndividualStrategyTest';
 import TwoHandRankTest from '@/components/game/TwoHandRankTest';
@@ -1156,11 +1156,7 @@ export default function RapidFireGame() {
         onHide={() => setShowAutoTrimToast(false)}
       />
 
-      {/* River Win Celebration */}
-      <RiverWinCelebration
-        active={riverWinFlash}
-        totalCollect={Math.round(totalInvestment * (LOW_HIGH_PAYOUT + 1))}
-      />
+
 
       {/* Player Stats Panel */}
       <PlayerStatsPanel
