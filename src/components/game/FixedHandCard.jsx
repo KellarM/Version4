@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PlayingCard from './PlayingCard';
 import { SUITS, evaluateBestHand } from '@/lib/gameEngine';
+import { getCardImageUrl } from '@/lib/cardImages';
 import { motion, AnimatePresence } from 'framer-motion';
 import Chip from './Chip';
 
@@ -97,9 +98,12 @@ export default function FixedHandCard({
 
       {/* Cards */}
       <div className="flex gap-0.5 justify-center mb-1 card-felt-shadow" style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
-        {hand.cards.map((card, i) =>
-        <PlayingCard key={i} card={card} size="sm" glow={isLeading || isWinner} />
-        )}
+        {hand.cards.map((card, i) => {
+          const imgUrl = getCardImageUrl(card);
+          return imgUrl
+            ? <img key={i} src={imgUrl} alt={`${card.rank} of ${card.suit}`} className="w-[3.9rem] h-[5.5rem] rounded-lg shadow-lg object-cover" />
+            : <PlayingCard key={i} card={card} size="sm" glow={isLeading || isWinner} />;
+        })}
       </div>
 
       {/* Card names */}
