@@ -15,7 +15,6 @@ const PLAYER_COLORS = [
 export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
 
-  // Reset to first winner when winInfo changes — must be before any early returns
   useEffect(() => {
     setCurrentPlayerIndex(0);
   }, [winInfo]);
@@ -23,8 +22,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
   if (!winInfo || !winInfo.playerPayouts) return null;
 
   const hasAnyWins = winInfo.playerPayouts?.some(p => p.wins.length > 0);
-  
-  // Find the next player with wins starting from currentPlayerIndex
+
   const getNextWinningPlayer = (startIdx) => {
     for (let i = startIdx; i < winInfo.playerPayouts.length; i++) {
       if (winInfo.playerPayouts[i]?.wins.length > 0) return i;
@@ -34,7 +32,6 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
 
   const nextWinnerIdx = getNextWinningPlayer(currentPlayerIndex);
 
-  // Helper to get hand symbol display
   const getHandSymbol = (label) => {
     const handMatch = label.match(/Hand (\d+)/);
     if (!handMatch) return label;
@@ -53,7 +50,6 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
     }
   };
 
-  // No wins at all — show a "no win" dismissal card so the game can proceed
   if (!hasAnyWins || (hasAnyWins && nextWinnerIdx === -1 && currentPlayerIndex !== -1)) {
     if (!hasAnyWins) {
       return (
@@ -66,7 +62,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 className="border-2 border-slate-500 rounded-2xl p-8 shadow-2xl min-w-[400px] pointer-events-auto relative text-center"
-                style={{ background: 'rgba(0, 0, 0, 0.15)' }}
+                style={{ background: 'transparent' }}
               >
                 <motion.button
                   onClick={() => setCurrentPlayerIndex(-1)}
@@ -103,7 +99,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] pointer-events-auto relative`}
-                style={{ background: 'rgba(0, 0, 0, 0.15)' }}
+                style={{ background: 'transparent' }}
               >
                 {/* Close Button */}
                 <motion.button
@@ -135,7 +131,8 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 + idx * 0.1 }}
-                        className="rounded-lg p-3 border border-gray-600/40 backdrop-blur-sm"
+                        className="rounded-lg p-3 border border-yellow-400/30"
+                        style={{ background: 'transparent' }}
                       >
                         <div className="flex justify-between items-start mb-2 gap-2">
                           <div className="font-black text-2xl text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>{getHandSymbol(win.label)}</div>
@@ -154,7 +151,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 </div>
 
                 {/* Totals */}
-                <div className="border-t border-gray-600/40 pt-3 space-y-2">
+                <div className="border-t border-yellow-400/30 pt-3 space-y-2">
                   <div className="flex justify-between text-2xl font-black gap-2">
                     <span className="text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>Total Wagered</span>
                     <span className="text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>${payout.totalBet.toFixed(2)}</span>
