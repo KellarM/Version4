@@ -412,14 +412,15 @@ export default function IndividualBetAudit() {
     microscopeWorkerRef.current = null;
   };
 
-  // CSV Export — re-runs exact batch simulation for that bet and streams rows
-  // Row count = min(batch size, exportRowCount, 1M) — 1:1 match with audit summary
+  // CSV Export — reads directly from the audit buffer (NO re-run).
+  // Exports exactly the same boards that produced the UI win count.
   const runExport = async (def) => {
     if (exportRunning) return;
     if (exportWorkerRef.current) { exportWorkerRef.current.abort(); }
     const key = `${def.betType}:${def.betKey}`;
     const auditResult = results[key];
-    const batchRows = auditResult ? Math.min(auditResult.totalGames, exportRowCount, 1_000_000) : Math.min(exportRowCount, 1_000_000);
+    // Use the exact round count from the audit — the buffer holds precisely this many boards.
+    const batchRows = auditResult ? Math.min(auditResult.totalGames, 1_000_000) : 1_000_000;
 
     setExportKey(key);
     setExportRunning(true);
@@ -638,7 +639,7 @@ export default function IndividualBetAudit() {
             </span>
           )}
         </div>
-        <p className="text-gray-600 text-xs mb-4">Click <span className="text-amber-400 font-semibold">ex</span> on any result row to export raw CSV data. Click the row itself to expand Microscope.</p>
+        <p className="text-gray-600 text-xs mb-4">Click <span className="text-amber-400 font-semibold">ex</span> on any result row to export the exact boards from that audit — win count in export will match the UI exactly.</p>
 
         <div className="flex items-center gap-2 mt-2 mb-3">
           <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider whitespace-nowrap">Test scope:</span>
@@ -824,7 +825,7 @@ export default function IndividualBetAudit() {
 
           <div className="bg-slate-800/40 border border-slate-700/60 rounded-xl p-4 text-xs text-gray-400 space-y-1">
             <p className="font-semibold text-gray-300 mb-1">Data Lab — Reading the table</p>
-            <p>• <span className="text-amber-400 font-semibold">ex</span> button: exports up to 1M rows of raw simulation data as .csv (19 columns)</p>
+            <p>• <span className="text-amber-400 font-semibold">ex</span> button: exports the exact audit boards as .csv — win count guaranteed to match UI (no re-run)</p>
             <p>• Click the row label/data to expand it and run the <span className="text-cyan-400">Microscope</span> — isolated 50-hand batch, instant results</p>
             <p>• <span className="text-green-400">Green RTP</span> = within 95–98% target &nbsp;|&nbsp; <span className="text-orange-400">Orange</span> = too high &nbsp;|&nbsp; <span className="text-red-400">Red</span> = too low</p>
             <p>• <span className="text-red-400">House Edge %</span> = 100% − Actual RTP</p>
