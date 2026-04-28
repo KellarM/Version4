@@ -122,7 +122,7 @@ export default function GameRulesModal() {
 
                 {/* Unlocking Side Bets */}
                 <Section title="Unlocking Side Bets">
-                  <Rule label="1 or 2 hands selected">Rank betting is unlocked. Match your total Rank bets to your total Hand bets to unlock the Color and River boards.</Rule>
+                  <Rule label="1 or 2 hands selected">Rank, Color, and River betting areas are unlocked. To unlock Color and River, your total Rank bets must match your total Hand bets.</Rule>
                   <Rule label="3 or 4 hands selected">Play is restricted to Hand bets only — Rank, Color, and River are locked.</Rule>
                   <Rule label="Rank Slots">1 hand = 1 Rank slot. 2 hands = 2 Rank slots.</Rule>
                 </Section>
@@ -130,7 +130,7 @@ export default function GameRulesModal() {
                 {/* Snowball Caps */}
                 <Section title="Snowball Caps">
                   <p className="text-gray-400 text-xs mb-3">Your previous bets determine the ceiling for each subsequent tier.</p>
-                  <Rule label="Rank total">cannot exceed your total Hand bets. To unlock the Color and River boards, your total Rank bets must equal your total Hand bets. If your Rank bets fall short of your Hand bets, your Rank bets still play — but Color and River boards remain locked.</Rule>
+                  <Rule label="Rank total">cannot exceed your total Hand bets.</Rule>
                   <Rule label="Color total">cannot exceed Hand + Rank bets combined.</Rule>
                   <Rule label="River total">cannot exceed Hand + Rank + Color bets combined.</Rule>
                 </Section>
@@ -154,11 +154,11 @@ export default function GameRulesModal() {
                 {/* Dependent Payouts */}
                 <Section title="Winning">
                   <Rule label="Hand bets">pay if the hand you backed has the highest 7-card rank at the table — it must beat all 9 other hands.</Rule>
-                  <Rule label="Rank bets">pay only if the Card Hand you backed wins the round AND that winning hand's best rank matches your rank bet. Both conditions must be met — winning hand and matching rank.</Rule>
-                  <Rule label="Color bets">pay based solely on the 5 community cards — if 3, 4, or 5 cards of a single color appear, the matching bets win (e.g. if 4 Red appear — 4R and 3R both win).</Rule>
+                  <Rule label="Rank bets">pay if the best 7-card hand rank at the table matches your bet — independent of which hand you backed.</Rule>
+                  <Rule label="Color bets">pay based solely on the 5 community cards — if 4 red cards appear, all 4R bets win, regardless of which hand wins.</Rule>
                   <Rule label="River (Low/High) bets">pay based solely on the 5th community card — Low wins if it is a 2–7, High wins if it is an 8–A, regardless of which hand wins.</Rule>
                   <Rule label="Community Board Win">If the 5-card Community Board is stronger than all 10 carded hands at showdown, all Hand bets lose. Rank Board, Color Board, and River bets remain active and pay based on the board's final composition.</Rule>
-                  <Rule label="Tied Hands">If two or more hands tie for the winning position, each tied hand receives a modified payout adjusted for the shared win.</Rule>
+                  <Rule label="Tie Bonus">If 2 or more hands tie for the winning position, the payout is calculated by dividing the hand's odds in half (1/2) + adding a 5% bonus in the player's favor.</Rule>
                 </Section>
 
                 {/* Card Hand Bets */}
