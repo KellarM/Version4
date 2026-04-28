@@ -182,33 +182,6 @@ export default function RapidFireGame() {
     localStorage.setItem('rapidFireGameState', JSON.stringify(gameState));
   }, [balances, roundId, casinoProfit, roundsPlayed]);
 
-  // Auto-progression: Flop → Turn
-  useEffect(() => {
-    if (gamePhase !== 'flop') return;
-    const timer = setTimeout(() => {
-      handleDealTurn();
-    }, timing.flopReveal * 1000);
-    return () => clearTimeout(timer);
-  }, [gamePhase, timing.flopReveal, handleDealTurn]);
-
-  // Auto-progression: Turn → River (after lowHighBetting window)
-  useEffect(() => {
-    if (gamePhase !== 'lowHighBetting') return;
-    const timer = setTimeout(() => {
-      handleDealRiver();
-    }, timing.riverBetting * 1000);
-    return () => clearTimeout(timer);
-  }, [gamePhase, timing.riverBetting, handleDealRiver]);
-
-  // Auto-progression: River → New Round
-  useEffect(() => {
-    if (gamePhase !== 'winner') return;
-    const timer = setTimeout(() => {
-      handleNewRound();
-    }, timing.endOfRound * 1000);
-    return () => clearTimeout(timer);
-  }, [gamePhase, timing.endOfRound, handleNewRound]);
-
   // Active player helpers
   const pid = activePlayer;
   const balance = balances[pid] ?? STARTING_BALANCE;
@@ -1181,7 +1154,32 @@ export default function RapidFireGame() {
     });
   };
 
+  // Auto-progression: Flop → Turn
+  useEffect(() => {
+    if (gamePhase !== 'flop') return;
+    const timer = setTimeout(() => {
+      handleDealTurn();
+    }, timing.flopReveal * 1000);
+    return () => clearTimeout(timer);
+  }, [gamePhase, timing.flopReveal, handleDealTurn]);
 
+  // Auto-progression: Turn → River (after lowHighBetting window)
+  useEffect(() => {
+    if (gamePhase !== 'lowHighBetting') return;
+    const timer = setTimeout(() => {
+      handleDealRiver();
+    }, timing.riverBetting * 1000);
+    return () => clearTimeout(timer);
+  }, [gamePhase, timing.riverBetting, handleDealRiver]);
+
+  // Auto-progression: River → New Round
+  useEffect(() => {
+    if (gamePhase !== 'winner') return;
+    const timer = setTimeout(() => {
+      handleNewRound();
+    }, timing.endOfRound * 1000);
+    return () => clearTimeout(timer);
+  }, [gamePhase, timing.endOfRound, handleNewRound]);
 
   return (
     <div className="velvet-board h-screen w-screen overflow-hidden text-white flex flex-col" style={{ paddingTop: '2.25rem' }}>
