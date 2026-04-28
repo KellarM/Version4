@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FIXED_HANDS, shuffleDeck, DEALER_DECK, getSecureRandomBoard, findLeadingHand,
@@ -33,6 +33,8 @@ import AutoTrimToast from '@/components/game/AutoTrimToast';
 import IndividualStrategyTest from '@/components/game/IndividualStrategyTest';
 import TwoHandRankTest from '@/components/game/TwoHandRankTest';
 import GameTimingModal from '@/components/game/GameTimingModal';
+import CountdownClock from '@/components/game/CountdownClock';
+import { useGameTiming } from '@/hooks/useGameTiming';
 
 
 const STARTING_BALANCE = 10000;
@@ -121,6 +123,12 @@ export default function RapidFireGame() {
     riverWinFlash, triggerRiverWin,
   } = useGreedEngineState();
   const [hoveredRankRow, setHoveredRankRow] = useState(null);
+
+  // Game timing
+  const { timing, startTimer, stopTimer } = useGameTiming();
+  const [countdownTime, setCountdownTime] = useState(0);
+  const [countdownActive, setCountdownActive] = useState(false);
+  const timerActiveRef = useRef(false);
 
   // Game progress persistence
   useEffect(() => {
@@ -297,7 +305,22 @@ export default function RapidFireGame() {
 
     setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid, handBets, pHandBets, pRankBets, pRedBlackBets, pLowHighBet]);
+
+    // Start countdown on first bet
+    if (Object.keys(pHandBets).length === 0 && !timerActiveRef.current) {
+      timerActiveRef.current = true;
+      setCountdownActive(true);
+      startTimer(
+        timing.bettingClose,
+        (remaining) => setCountdownTime(remaining),
+        () => {
+          timerActiveRef.current = false;
+          setCountdownActive(false);
+          setTimeout(() => handleDealFlop(), 100);
+        }
+      );
+    }
+  }, [gamePhase, balance, selectedChip, pid, handBets, pHandBets, pRankBets, pRedBlackBets, pLowHighBet, timing, startTimer]);
 
   const handleRemoveHandBet = useCallback((handId) => {
     if (gamePhase !== 'betting') return;
@@ -713,13 +736,15 @@ export default function RapidFireGame() {
   };
 
   // ---- GAME FLOW ----
-  const handleDealFlop = () => {
+  const handleDealFlop = useCallback(() => {
     if (gamePhase !== 'betting') return;
-    // getSecureRandomBoard: clones CONST.DEALER_DECK → Fisher-Yates → slice(0,5)
+    stopTimer();
+    setCountdownActive(false);
+    timerActiveRef.current = false;
+
     const board5 = getSecureRandomBoard();
     const flop = [board5[0], board5[1], board5[2]];
     setCommunityCards(flop);
-    // Store the full pre-dealt board so turn/river draw from the same shuffle
     setDeck(board5);
     setDeckIndex(3);
 
@@ -735,9 +760,17 @@ export default function RapidFireGame() {
         : `Flop: ${flop.map(cardDisplay).join(' ')}`
     );
     setGamePhase('flop');
-  };
 
-  const handleDealTurn = () => {
+    // Auto-progress to turn after flopReveal delay
+    timerActiveRef.current = true;
+    setCountdownActive(false);
+    setTimeout(() => {
+      timerActiveRef.current = false;
+      handleDealTurn();
+    }, timing.flopReveal * 1000);
+  }, [gamePhase, timing, stopTimer]);
+
+  const handleDealTurn = useCallback(() => {
     if (gamePhase !== 'flop') return;
     const turnCard = deck[deckIndex];
     const newComm = [...communityCards, turnCard];
@@ -750,17 +783,32 @@ export default function RapidFireGame() {
 
     const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
     const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
-    const lows = newComm.filter(c => isLowCard(c)).length;
-    const highs = newComm.length - lows;
 
     setDealerMessage(
       `Turn: ${cardDisplay(turnCard)}${leaderCards ? ` — ${leaderCards} leads (${leader.handResult.name})` : ''} — River bet now open!`
     );
     setGamePhase('lowHighBetting');
-  };
 
-  const handleDealRiver = () => {
+    // Auto-progress to river betting window after turnReveal delay
+    timerActiveRef.current = true;
+    setCountdownActive(true);
+    startTimer(
+      timing.riverBetting,
+      (remaining) => setCountdownTime(remaining),
+      () => {
+        timerActiveRef.current = false;
+        setCountdownActive(false);
+        handleDealRiver();
+      }
+    );
+  }, [gamePhase, deck, deckIndex, communityCards, timing, startTimer]);
+
+  const handleDealRiver = useCallback(() => {
     if (gamePhase !== 'lowHighBetting') return;
+    stopTimer();
+    setCountdownActive(false);
+    timerActiveRef.current = false;
+
     const riverCard = deck[deckIndex];
     const newComm = [...communityCards, riverCard];
     setCommunityCards(newComm);
@@ -792,13 +840,18 @@ export default function RapidFireGame() {
     setGamePhase('river');
 
     const leaderResult = leader?.handResult;
-    // Capture current bet snapshots for settlement
     const snapHandBets = { ...handBets };
     const snapRedBlackBets = { ...redBlackBets };
     const snapRankBets = { ...rankBets };
     const snapLowHighBets = { ...lowHighBets };
-    setTimeout(() => settle(newComm, leader, winRB, winLH, leaderHand, leaderResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets), 900);
-  };
+
+    // Settlement with reveal delay
+    timerActiveRef.current = true;
+    setCountdownActive(false);
+    setTimeout(() => {
+      settle(newComm, leader, winRB, winLH, leaderHand, leaderResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets);
+    }, timing.riverReveal * 1000);
+  }, [gamePhase, deck, deckIndex, communityCards, handBets, redBlackBets, rankBets, lowHighBets, timing, stopTimer]);
 
   const settle = (finalComm, leader, winRB, winLH, leaderHand, handResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets) => {
     // Use centralized payouts (imported at top of file)
@@ -1016,6 +1069,14 @@ export default function RapidFireGame() {
       colorWinners: winRB,
       lowHighResult: winLH || '-',
     }, ...prev].slice(0, 20));
+
+    // Auto-progress to new round after endOfRound delay
+    timerActiveRef.current = true;
+    setCountdownActive(false);
+    setTimeout(() => {
+      timerActiveRef.current = false;
+      handleNewRound();
+    }, timing.endOfRound * 1000);
   };
 
   const handleResetGame = () => {
@@ -1046,7 +1107,11 @@ export default function RapidFireGame() {
     setGamePhase('betting');
   };
 
-  const handleNewRound = () => {
+  const handleNewRound = useCallback(() => {
+    stopTimer();
+    setCountdownActive(false);
+    timerActiveRef.current = false;
+
     setHandBets({});
     setRedBlackBets({});
     setRankBets({});
@@ -1067,7 +1132,7 @@ export default function RapidFireGame() {
     setDealerMessage("Bets open — Place Hand, Rank & Color bets now.");
     setGamePhase('betting');
     setActivePlayer(0);
-  };
+  }, [stopTimer]);
 
   const handleRepeatBets = () => {
     if (!previousBets) return;
@@ -1125,6 +1190,9 @@ export default function RapidFireGame() {
 
   return (
     <div className="velvet-board h-screen w-screen overflow-hidden text-white flex flex-col" style={{ paddingTop: '2.25rem' }}>
+
+      {/* Countdown Clock */}
+      <CountdownClock timeRemaining={countdownTime} isActive={countdownActive} phase={gamePhase} />
 
       {/* Alerts */}
       <HandBetLimitAlert
