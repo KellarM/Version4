@@ -533,7 +533,7 @@ function handleMicroscope(payload) {
 // Column 1 = Seq (sequenceId), then the 19 board/outcome columns.
 // Guaranteed: Row 2 in Excel = sequenceId 1 = Microscope row 1.
 // NEVER re-sorts. Data order is deal order, no exceptions.
-const CSV_HEADER = 'Seq,Flop_C1_Rank,Flop_C1_Suit,Flop_C2_Rank,Flop_C2_Suit,Flop_C3_Rank,Flop_C3_Suit,Turn_C4_Rank,Turn_C4_Suit,River_C5_Rank,River_C5_Suit,Winning_Hand,Winning_Hand_2,Winning_Rank,Shared_Win,House_Win,Rank_Exception,3_Red,4_Red,5_Red,3_Black,4_Black,5_Black,Low,High';
+const CSV_HEADER = 'Seq,Flop_C1_Rank,Flop_C1_Suit,Flop_C2_Rank,Flop_C2_Suit,Flop_C3_Rank,Flop_C3_Suit,Turn_C4_Rank,Turn_C4_Suit,River_C5_Rank,River_C5_Suit,Winning_Hand,Winning_Hand_2,Winning_Rank,Shared_Win,House_Win,Rank_Exception,3_Red,4_Red,5_Red,3_Black,4_Black,5_Black,Low,High,Audited_Bet_Won';
 const EXPORT_CHUNK_SIZE = 10_000;
 const EXPORT_PROGRESS_INTERVAL = 50_000;
 
@@ -612,7 +612,13 @@ function handleExport(payload) {
       const blacks = 5 - reds;
       const isLow = (b4 >> 2) <= 5;
 
-      lines += `${seqId},${c0.rank},${c0.suit},${c1.rank},${c1.suit},${c2.rank},${c2.suit},${c3.rank},${c3.suit},${c4.rank},${c4.suit},${winnerLabel},${winnerLabel2},${rankName},${sharedWin},${houseWin},${rankException},${reds>=3?1:0},${reds>=4?1:0},${reds>=5?1:0},${blacks>=3?1:0},${blacks>=4?1:0},${blacks>=5?1:0},${isLow?1:0},${isLow?0:1}\n`;
+      const params = decodeBetParams(betType, betKey);
+      const { won: auditedBetWon } = evalWinFromBoard(
+        b0, b1, b2, b3, b4, betType, betKey, params,
+        handPayouts, rankPayouts, colorPayouts, lhPayout
+      );
+
+      lines += `${seqId},${c0.rank},${c0.suit},${c1.rank},${c1.suit},${c2.rank},${c2.suit},${c3.rank},${c3.suit},${c4.rank},${c4.suit},${winnerLabel},${winnerLabel2},${rankName},${sharedWin},${houseWin},${rankException},${reds>=3?1:0},${reds>=4?1:0},${reds>=5?1:0},${blacks>=3?1:0},${blacks>=4?1:0},${blacks>=5?1:0},${isLow?1:0},${isLow?0:1},${auditedBetWon?1:0}\n`;
     }
 
     rowsDone += batch;
