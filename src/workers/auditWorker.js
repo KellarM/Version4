@@ -328,13 +328,14 @@ function decodeBetParams(betType, betKey) {
 function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayouts, rankPayouts, colorPayouts, lhPayout) {
   const { targetHandIdx, targetRankCat, colorThreshold, colorIsRed, lhLow } = params;
   const evalResult = evalAllHands(b0, b1, b2, b3, b4);
-  const { strengths, winners } = evalResult;
+  const { strengths, winners, winnerCount } = evalResult;
+  const isBoardWinMic = winnerCount === 10;
 
   let won = false, oddsUsed = null;
 
   if (betType === 'hand') {
     oddsUsed = handPayouts[targetHandIdx];
-    if (winners[targetHandIdx] === 1) won = true;
+    if (!isBoardWinMic && winners[targetHandIdx] === 1) won = true;
   } else if (betType === 'rank') {
     // CORRECT RULE: rank bet wins only when the winning hand's rank matches.
     oddsUsed = rankPayouts[betKey] ?? null;
@@ -403,19 +404,24 @@ function handleRun(payload) {
     }
 
     // Step 3: Evaluate
-    const { strengths, bestStr, bestRankCat, winners } = evalAllHands(b0, b1, b2, b3, b4);
+    const { strengths, bestStr, bestRankCat, winners, winnerCount } = evalAllHands(b0, b1, b2, b3, b4);
+
+    // Community Board Win: all 10 hands show as winners → house collects all hand bets.
+    // Rank, Color, and River side bets still resolve normally.
+    const isBoardWin = winnerCount === 10;
 
     let won = false, profit = 0;
 
     if (betType === 'hand') {
-      if (winners[targetHandIdx] === 1) {
+      // Hand bet only wins if this specific hand won AND it is NOT a board win
+      if (!isBoardWin && winners[targetHandIdx] === 1) {
         won = true;
         profit = BET * handPayouts[targetHandIdx];
       }
     } else if (betType === 'rank') {
       // CORRECT RULE: Rank bet wins ONLY when the winning hand's rank matches.
       // A rank achieved by a NON-WINNING hand does not count.
-      // Find the winning hand(s) and check if any of their ranks match.
+      // Board wins are not excluded here — rank/color/river still pay on board wins.
       let rankWon = false;
       for (let h = 0; h < 10; h++) {
         if (winners[h] === 1) {
@@ -574,8 +580,11 @@ function handleExport(payload) {
       const c3 = decodeCard(b3); // Turn_C4 (matches handResult.turn)
       const c4 = decodeCard(b4); // River_C5 (matches handResult.river)
 
-      const { bestRankCat, winners } = evalAllHands(b0, b1, b2, b3, b4);
-      const winnerLabel = buildWinnerLabel(winners);
+      const { bestRankCat, winners, winnerCount } = evalAllHands(b0, b1, b2, b3, b4);
+      const isBoardWinExport = winnerCount === 10;
+      // Quote winner label so comma-separated hand names never split into extra columns
+      const winnerLabelRaw = isBoardWinExport ? 'Board Win' : buildWinnerLabel(winners);
+      const winnerLabel = `"${winnerLabelRaw}"`;
       const rankName = bestRankCat >= 0 ? RANK_NAMES[bestRankCat] : 'High Card';
 
       let reds = 0;
