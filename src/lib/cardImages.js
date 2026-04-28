@@ -28,8 +28,8 @@ export const CARD_IMAGES = {
   '6_diamonds':  'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/45c3f745e_6Diamonds.png',
 
   // Hand 7: 7♦ / 7♠
-  '7_diamonds':  'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/f6a7b8c9d_7Diamonds.PNG',
-  '7_spades':    'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/a7b8c9d0e_7Spades.PNG',
+  '7_diamonds':  'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/c216c62e6_SevenDiamonds.png',
+  '7_spades':    'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/19c0bcf83_7Spades.png',
 
   // Hand 8: 4♥ / 2♥
   '4_hearts':    'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/98cfa7eaa_4Hearts.png',
