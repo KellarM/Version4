@@ -182,6 +182,33 @@ export default function RapidFireGame() {
     localStorage.setItem('rapidFireGameState', JSON.stringify(gameState));
   }, [balances, roundId, casinoProfit, roundsPlayed]);
 
+  // Auto-progression: Flop → Turn
+  useEffect(() => {
+    if (gamePhase !== 'flop') return;
+    const timer = setTimeout(() => {
+      handleDealTurn();
+    }, timing.flopReveal * 1000);
+    return () => clearTimeout(timer);
+  }, [gamePhase, timing.flopReveal, handleDealTurn]);
+
+  // Auto-progression: Turn → River (after lowHighBetting window)
+  useEffect(() => {
+    if (gamePhase !== 'lowHighBetting') return;
+    const timer = setTimeout(() => {
+      handleDealRiver();
+    }, timing.riverBetting * 1000);
+    return () => clearTimeout(timer);
+  }, [gamePhase, timing.riverBetting, handleDealRiver]);
+
+  // Auto-progression: River → New Round
+  useEffect(() => {
+    if (gamePhase !== 'winner') return;
+    const timer = setTimeout(() => {
+      handleNewRound();
+    }, timing.endOfRound * 1000);
+    return () => clearTimeout(timer);
+  }, [gamePhase, timing.endOfRound, handleNewRound]);
+
   // Active player helpers
   const pid = activePlayer;
   const balance = balances[pid] ?? STARTING_BALANCE;
@@ -760,15 +787,7 @@ export default function RapidFireGame() {
         : `Flop: ${flop.map(cardDisplay).join(' ')}`
     );
     setGamePhase('flop');
-
-    // Auto-progress to turn after flopReveal delay
-    timerActiveRef.current = true;
-    setCountdownActive(false);
-    setTimeout(() => {
-      timerActiveRef.current = false;
-      handleDealTurn();
-    }, timing.flopReveal * 1000);
-  }, [gamePhase, timing, stopTimer]);
+  }, [gamePhase, stopTimer]);
 
   const handleDealTurn = useCallback(() => {
     if (gamePhase !== 'flop') return;
@@ -789,7 +808,7 @@ export default function RapidFireGame() {
     );
     setGamePhase('lowHighBetting');
 
-    // Auto-progress to river betting window after turnReveal delay
+    // Start countdown display for river betting window
     timerActiveRef.current = true;
     setCountdownActive(true);
     startTimer(
@@ -798,7 +817,6 @@ export default function RapidFireGame() {
       () => {
         timerActiveRef.current = false;
         setCountdownActive(false);
-        handleDealRiver();
       }
     );
   }, [gamePhase, deck, deckIndex, communityCards, timing, startTimer]);
@@ -1070,13 +1088,9 @@ export default function RapidFireGame() {
       lowHighResult: winLH || '-',
     }, ...prev].slice(0, 20));
 
-    // Auto-progress to new round after endOfRound delay
+    // Auto-progression to new round is handled by useEffect watching gamePhase
     timerActiveRef.current = true;
     setCountdownActive(false);
-    setTimeout(() => {
-      timerActiveRef.current = false;
-      handleNewRound();
-    }, timing.endOfRound * 1000);
   };
 
   const handleResetGame = () => {
