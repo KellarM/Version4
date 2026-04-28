@@ -274,9 +274,28 @@ export default function RapidFireGame() {
       return;
     }
     if (balance <= 0 || balance < selectedChip) return;
+
+    // Check if this new hand bet will close the side bet gate
+    const simulatedHandBets = { ...(handBets[pid] || {}), [handId]: existing + selectedChip };
+    const gateWasOpen = isSideBetGateOpen(pHandBets, pRankBets);
+    const gateWillClose = gateWasOpen && !isSideBetGateOpen(simulatedHandBets, pRankBets);
+
+    if (gateWillClose) {
+      const colorRefund = Object.values(pRedBlackBets).reduce((s, v) => s + v, 0);
+      const riverRefund = pLowHighBet?.amount || 0;
+      if (colorRefund > 0 || riverRefund > 0) {
+        setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
+        setLowHighBets(prev => ({ ...prev, [pid]: null }));
+        setBalances(b => { const n = [...b]; n[pid] += colorRefund + riverRefund - selectedChip; return n; });
+        setHandBets(prev => ({ ...prev, [pid]: simulatedHandBets }));
+        setShowAutoTrimToast(true);
+        return;
+      }
+    }
+
     setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
     setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
-  }, [gamePhase, balance, selectedChip, pid, handBets]);
+  }, [gamePhase, balance, selectedChip, pid, handBets, pHandBets, pRankBets, pRedBlackBets, pLowHighBet]);
 
   const handleRemoveHandBet = useCallback((handId) => {
     if (gamePhase !== 'betting') return;
