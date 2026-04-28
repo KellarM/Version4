@@ -66,7 +66,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 className="border-2 border-slate-500 rounded-2xl p-8 shadow-2xl min-w-[400px] pointer-events-auto relative text-center"
-                style={{ background: 'rgba(10, 10, 10, 0.82)' }}
+                style={{ background: 'rgba(0, 0, 0, 0.15)' }}
               >
                 <motion.button
                   onClick={() => setCurrentPlayerIndex(-1)}
@@ -103,7 +103,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] pointer-events-auto relative`}
-                style={{ background: 'rgba(10, 10, 10, 0.82)' }}
+                style={{ background: 'rgba(0, 0, 0, 0.15)' }}
               >
                 {/* Close Button */}
                 <motion.button
