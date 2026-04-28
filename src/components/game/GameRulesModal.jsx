@@ -130,7 +130,7 @@ export default function GameRulesModal() {
                 {/* Snowball Caps */}
                 <Section title="Snowball Caps">
                   <p className="text-gray-400 text-xs mb-3">Your previous bets determine the ceiling for each subsequent tier.</p>
-                  <Rule label="Rank total">cannot exceed your total Hand bets.</Rule>
+                  <Rule label="Rank total">your total Rank bets cannot exceed your total Hand bets. To unlock Color and River bets, your total Rank bets must exactly equal your total Hand bets. If Rank bets are less than Hand bets, Color and River bets will remain locked.</Rule>
                   <Rule label="Color total">cannot exceed Hand + Rank bets combined.</Rule>
                   <Rule label="River total">cannot exceed Hand + Rank + Color bets combined.</Rule>
                 </Section>
@@ -153,12 +153,12 @@ export default function GameRulesModal() {
 
                 {/* Dependent Payouts */}
                 <Section title="Winning">
-                  <Rule label="Hand bets">pay if the hand you backed has the highest 7-card rank at the table — it must beat all 9 other hands.</Rule>
-                  <Rule label="Rank bets">pay if the best 7-card hand rank at the table matches your bet — independent of which hand you backed.</Rule>
-                  <Rule label="Color bets">pay based solely on the 5 community cards — if 4 red cards appear, all 4R bets win, regardless of which hand wins.</Rule>
+                  <Rule label="Hand bets">pay if the hand you backed forms the highest 5-card poker rank from its 7 available cards (2 pocket + 5 community) and beats all 9 other hands at the table.</Rule>
+                  <Rule label="Rank bets">pay if the specific Card Hand you backed wins the round, AND that winning hand's highest 5-card poker rank (from its 7 available cards) matches your rank bet.</Rule>
+                  <Rule label="Color bets">pay based on the total number of Red or Black cards in the 5 community cards. If 5 Red appear — 5R, 4R, and 3R all win. If 4 Red appear — 4R and 3R win. If 3 Red appear — only 3R wins. The same rules apply for Black cards.</Rule>
                   <Rule label="River (Low/High) bets">pay based solely on the 5th community card — Low wins if it is a 2–7, High wins if it is an 8–A, regardless of which hand wins.</Rule>
                   <Rule label="Community Board Win">If the 5-card Community Board is stronger than all 10 carded hands at showdown, all Hand bets lose. Rank Board, Color Board, and River bets remain active and pay based on the board's final composition.</Rule>
-                  <Rule label="Tie Bonus">If 2 or more hands tie for the winning position, the payout is calculated by dividing the hand's odds in half (1/2) + adding a 5% bonus in the player's favor.</Rule>
+                  <Rule label="Tie payouts">If two or more hands tie for the winning position, each winning hand will receive a modified payout to reflect the shared win.</Rule>
                 </Section>
 
                 {/* Card Hand Bets */}
