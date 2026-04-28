@@ -9,8 +9,7 @@ export default function DealerAnnouncement({ message }) {
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
-        paddingLeft: '0.75rem',
-        paddingRight: '0.75rem',
+        justifyContent: 'center',
       }}
     >
       {text && (
