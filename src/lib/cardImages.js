@@ -20,8 +20,8 @@ export const CARD_IMAGES = {
   '10_spades':   'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/7947e0025_10Spades.png',
 
   // Hand 5: J♣ / 9♣
-  'J_clubs':     'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/b2c3d4e5f_JackClubs.PNG',
-  '9_clubs':     'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/c3d4e5f6a_9Clubs.PNG',
+  'J_clubs':     'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/af3dce297_JackClubs.png',
+  '9_clubs':     'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/a3551efc3_9Clubs.png',
 
   // Hand 6: 8♦ / 6♦
   '8_diamonds':  'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/d4e5f6a7b_8Diamonds.PNG',
