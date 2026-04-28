@@ -328,7 +328,7 @@ function decodeBetParams(betType, betKey) {
 function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayouts, rankPayouts, colorPayouts, lhPayout) {
   const { targetHandIdx, targetRankCat, colorThreshold, colorIsRed, lhLow } = params;
   const evalResult = evalAllHands(b0, b1, b2, b3, b4);
-  const { bestRankCat, winners } = evalResult;
+  const { strengths, winners } = evalResult;
 
   let won = false, oddsUsed = null;
 
@@ -336,8 +336,14 @@ function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayou
     oddsUsed = handPayouts[targetHandIdx];
     if (winners[targetHandIdx] === 1) won = true;
   } else if (betType === 'rank') {
+    // CORRECT RULE: rank bet wins only when the winning hand's rank matches.
     oddsUsed = rankPayouts[betKey] ?? null;
-    if (bestRankCat === targetRankCat) won = true;
+    for (let h = 0; h < 10; h++) {
+      if (winners[h] === 1) {
+        const winnerRankCat = rankCatFromStrength(strengths[h]);
+        if (winnerRankCat === targetRankCat) { won = true; break; }
+      }
+    }
   } else if (betType === 'color') {
     let reds = 0;
     if ((b0&3)===1||(b0&3)===2) reds++;
@@ -353,6 +359,12 @@ function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayou
   }
 
   return { won, oddsUsed, evalResult };
+}
+
+// ── Evaluate the rank of a specific hand (by index) against the board ──
+function evalHandRankCat(handIdx, b0, b1, b2, b3, b4) {
+  const s = best7strength(HANDS[handIdx][0], HANDS[handIdx][1], b0, b1, b2, b3, b4);
+  return rankCatFromStrength(s);
 }
 
 // ── Main RUN handler ──────────────────────────────────────────
@@ -391,7 +403,7 @@ function handleRun(payload) {
     }
 
     // Step 3: Evaluate
-    const { bestRankCat, winners } = evalAllHands(b0, b1, b2, b3, b4);
+    const { strengths, bestStr, bestRankCat, winners } = evalAllHands(b0, b1, b2, b3, b4);
 
     let won = false, profit = 0;
 
@@ -401,7 +413,17 @@ function handleRun(payload) {
         profit = BET * handPayouts[targetHandIdx];
       }
     } else if (betType === 'rank') {
-      if (bestRankCat === targetRankCat) {
+      // CORRECT RULE: Rank bet wins ONLY when the winning hand's rank matches.
+      // A rank achieved by a NON-WINNING hand does not count.
+      // Find the winning hand(s) and check if any of their ranks match.
+      let rankWon = false;
+      for (let h = 0; h < 10; h++) {
+        if (winners[h] === 1) {
+          const winnerRankCat = rankCatFromStrength(strengths[h]);
+          if (winnerRankCat === targetRankCat) { rankWon = true; break; }
+        }
+      }
+      if (rankWon) {
         won = true;
         profit = BET * (rankPayouts[betKey] ?? 0);
       }
