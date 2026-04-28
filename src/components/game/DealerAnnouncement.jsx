@@ -11,7 +11,6 @@ const PHASE_GRADIENT = {
 export default function DealerAnnouncement({ message, phase }) {
   const gradient = PHASE_GRADIENT[phase] || PHASE_GRADIENT.betting;
   const text = message || '';
-  const duration = Math.max(7, text.length * 0.15);
 
   return (
     <div
@@ -19,18 +18,15 @@ export default function DealerAnnouncement({ message, phase }) {
         width: '100%',
         height: '32px',
         overflow: 'hidden',
-        whiteSpace: 'nowrap',
         display: 'flex',
         alignItems: 'center',
-        position: 'relative',
+        paddingLeft: '0.75rem',
+        paddingRight: '0.75rem',
       }}
     >
       {text && (
         <span
-          key={text}
           style={{
-            display: 'inline-block',
-            whiteSpace: 'nowrap',
             fontFamily: 'Oswald, sans-serif',
             fontSize: '0.8rem',
             fontWeight: 700,
@@ -38,12 +34,13 @@ export default function DealerAnnouncement({ message, phase }) {
             lineHeight: '32px',
             height: '32px',
             transform: 'skewX(-8deg)',
+            display: 'block',
             background: gradient,
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            animation: `dealer-marquee ${duration}s linear infinite`,
-            willChange: 'transform',
-            paddingLeft: '0.75rem',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
           {text}

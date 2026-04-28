@@ -727,15 +727,10 @@ export default function RapidFireGame() {
 
     const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
     const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
-    const flopHandCount = Object.values(handBets).reduce((t, ph) => t + Object.keys(ph || {}).length, 0);
-    const pathMsg = flopHandCount === 0 ? '' :
-      Object.values(handBets).some((ph) => Object.keys(ph || {}).length >= 4)
-        ? ' 4 hands selected — side markets closed.'
-        : ' 1–3 hands selected — match rank bet to hand bet to unlock Color & River.';
     setDealerMessage(
       leader
-        ? `Phase 3 — Flop: ${flop.map(cardDisplay).join(', ')}. ${leaderCards} leads with ${leader.handResult.name}.${pathMsg}`
-        : `Phase 3 — Flop: ${flop.map(cardDisplay).join(', ')}.${pathMsg}`
+        ? `Flop: ${flop.map(cardDisplay).join(' ')} — ${leaderCards} leads (${leader.handResult.name})`
+        : `Flop: ${flop.map(cardDisplay).join(' ')}`
     );
     setGamePhase('flop');
   };
@@ -757,7 +752,7 @@ export default function RapidFireGame() {
     const highs = newComm.length - lows;
 
     setDealerMessage(
-      `Phase 4 — Turn: ${cardDisplay(turnCard)}. ${leaderCards ? leaderCards + ' leads with ' + leader.handResult.name + '. ' : ''}${lows} Low / ${highs} High showing. Phase 5 — River bet now open!`
+      `Turn: ${cardDisplay(turnCard)}${leaderCards ? ` — ${leaderCards} leads (${leader.handResult.name})` : ''} — River bet now open!`
     );
     setGamePhase('lowHighBetting');
   };
@@ -787,10 +782,10 @@ export default function RapidFireGame() {
 
     setDealerMessage(
       leader?.communityBoardWin
-        ? `Phase 6 — Community Board Wins! The board stands as the best hand. All Hand bets lose. Board: ${reds}R / ${blacks}B. River is ${winLH}.`
+        ? `Board Wins! All Hand bets lose. Board: ${reds}R / ${blacks}B — River: ${winLH}`
         : leader
-          ? `Phase 6 — Winner! ${leaderCards} wins with ${leader.handResult.name}! Board: ${reds}R / ${blacks}B. River is ${winLH}.`
-          : `Phase 6 — River: ${cardDisplay(riverCard)}.`
+          ? `Winner: ${leaderCards} — ${leader.handResult.name}! Board: ${reds}R / ${blacks}B — River: ${winLH}`
+          : `River: ${cardDisplay(riverCard)}`
     );
     setGamePhase('river');
 
@@ -1045,7 +1040,7 @@ export default function RapidFireGame() {
     setActivePlayer(0);
     setPlayerCount(1);
     setShowPlayerSelector(true);
-    setDealerMessage("Phase 1 — Texas Hold'em is open for play. Phase 2 — Place Hand, Rank, and Color bets now.");
+    setDealerMessage("Bets open — Place Hand, Rank & Color bets now.");
     setGamePhase('betting');
   };
 
@@ -1067,7 +1062,7 @@ export default function RapidFireGame() {
     setDeck(getSecureRandomBoard());
     setDeckIndex(0);
     setRoundId(r => r + 1);
-    setDealerMessage("Phase 1 — Texas Hold'em is open for play. Phase 2 — Place Hand, Rank, and Color bets now.");
+    setDealerMessage("Bets open — Place Hand, Rank & Color bets now.");
     setGamePhase('betting');
     setActivePlayer(0);
   };
