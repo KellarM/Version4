@@ -4,8 +4,8 @@
  */
 export const CARD_IMAGES = {
   // Hand 1: A♦ / 10♥
-  'A_diamonds':  'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/f83e25e37_AceDiamonds.PNG',
-  '10_hearts':   'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/2e4a4d49c_10Hearts.PNG',
+  'A_diamonds':  'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/3949426d1_image.png',
+  '10_hearts':   'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/14779e178_image.png',
 
   // Hand 2: K♣ / K♠
   'K_clubs':     'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/29c07cd4f_KingClubs.PNG',
