@@ -106,9 +106,9 @@ export default function FixedHandCard({
         })}
       </div>
 
-      {/* Card names — hidden when rank is showing to avoid redundancy */}
+      {/* Card names — always hidden, space reserved to prevent layout shift */}
       <div className="text-center text-xs text-yellow-200/70 truncate leading-none text-halo">
-        {currentEval && currentEval.name !== 'No Hand' && currentEval.name !== 'High Card' ? '\u00A0' : cardDisplayName}
+        {'\u00A0'}
       </div>
 
       {/* Current eval — always occupies the same space to prevent layout shift */}
