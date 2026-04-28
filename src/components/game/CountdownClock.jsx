@@ -11,7 +11,7 @@ export default function CountdownClock({ timeRemaining, isActive, phase }) {
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
-      className="fixed bottom-32 right-8 z-40"
+      className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40"
     >
       <div className="relative w-24 h-24 flex items-center justify-center">
         {/* Outer circle */}

@@ -1167,26 +1167,7 @@ export default function RapidFireGame() {
     });
   };
 
-  // Check if repeat button should show
-  const canRepeat = previousBets && gamePhase === 'betting' && roundId > 1 && !repeatUsedThisRound &&
-    Array.from({ length: playerCount }, (_, i) => {
-      const playerBet = 
-        Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
-        Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
-        Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
-      return (balances[i] || STARTING_BALANCE) >= playerBet;
-    }).every(v => v);
 
-  const actionButton = () => {
-    if (gamePhase === 'betting') return { label: '🃏 Deal Flop', action: handleDealFlop, disabled: false };
-    if (gamePhase === 'flop') return { label: '🃏 Deal Turn', action: handleDealTurn, disabled: false };
-    if (gamePhase === 'lowHighBetting') return { label: '🃏 Deal River', action: handleDealRiver, disabled: false };
-    if (gamePhase === 'river' || gamePhase === 'settlement') return { label: '⏳ Settling...', action: null, disabled: true };
-    if (gamePhase === 'winner') return { label: '🔄 New Round', action: handleNewRound, disabled: !displayWindowVisible };
-    return null;
-  };
-
-  const btn = actionButton();
 
   return (
     <div className="velvet-board h-screen w-screen overflow-hidden text-white flex flex-col" style={{ paddingTop: '2.25rem' }}>
@@ -1490,7 +1471,7 @@ export default function RapidFireGame() {
             {/* Spacer */}
             <div className="flex-1" />
 
-            {/* Action buttons — center-right */}
+            {/* Clear button only */}
             <div className="flex items-center gap-2 flex-shrink-0">
               {gamePhase === 'betting' && totalBet > 0 && (
                 <button
@@ -1499,27 +1480,6 @@ export default function RapidFireGame() {
                 >
                   Clear
                 </button>
-              )}
-              {btn && (
-                <motion.button
-                  whileTap={btn.disabled ? {} : { scale: 0.97 }}
-                  onClick={!btn.disabled && btn.action ? btn.action : undefined}
-                  className={`px-5 py-2 rounded-xl font-black text-sm tracking-wider transition-all
-                    ${btn.disabled
-                      ? 'border border-gray-600 bg-gray-800 text-gray-500 cursor-not-allowed'
-                      : 'border-2 border-yellow-500 bg-yellow-600 hover:bg-yellow-500 text-black shadow-yellow-500/40 shadow-lg cursor-pointer'}`}
-                >
-                  {btn.label}
-                </motion.button>
-              )}
-              {canRepeat && (
-                <motion.button
-                  onClick={handleRepeatBets}
-                  whileTap={{ scale: 0.97 }}
-                  className="px-4 py-2 rounded-xl border-2 border-yellow-600 bg-yellow-700 hover:bg-yellow-600 text-black font-black text-sm tracking-wider transition-all"
-                >
-                  🔄 Repeat
-                </motion.button>
               )}
             </div>
 
