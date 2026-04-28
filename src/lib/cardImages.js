@@ -8,8 +8,8 @@ export const CARD_IMAGES = {
   '10_hearts':   'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/14779e178_image.png',
 
   // Hand 2: K♣ / K♠
-  'K_clubs':     'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/29c07cd4f_KingClubs.PNG',
-  'K_spades':    'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/e8db95bb4_KingSpades.PNG',
+  'K_clubs':     'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/1ae5118f8_KingClubs.png',
+  'K_spades':    'https://media.base44.com/images/public/69eff22784cd2fbeba98f9be/4360c2a3e_KingSpades.png',
 
   // Hand 3: Q♣ / J♠
   'Q_clubs':     'https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/7c2f0eda5_QueenClubs.PNG',
