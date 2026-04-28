@@ -97,7 +97,7 @@ export default function FixedHandCard({
       </div>
 
       {/* Cards */}
-      <div className="flex gap-0.5 justify-center mb-1 card-felt-shadow" style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
+      <div className="flex gap-0.5 justify-center card-felt-shadow flex-1 items-center" style={{ transform: 'scale(0.9)', transformOrigin: 'center center' }}>
         {hand.cards.map((card, i) => {
           const imgUrl = getCardImageUrl(card);
           return imgUrl
