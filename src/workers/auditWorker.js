@@ -533,7 +533,7 @@ function handleMicroscope(payload) {
 // Column 1 = Seq (sequenceId), then the 19 board/outcome columns.
 // Guaranteed: Row 2 in Excel = sequenceId 1 = Microscope row 1.
 // NEVER re-sorts. Data order is deal order, no exceptions.
-const CSV_HEADER = 'Seq,Flop_C1_Rank,Flop_C1_Suit,Flop_C2_Rank,Flop_C2_Suit,Flop_C3_Rank,Flop_C3_Suit,Turn_C4_Rank,Turn_C4_Suit,River_C5_Rank,River_C5_Suit,Winning_Hand,Winning_Rank,3_Red,4_Red,5_Red,3_Black,4_Black,5_Black,Low,High';
+const CSV_HEADER = 'Seq,Flop_C1_Rank,Flop_C1_Suit,Flop_C2_Rank,Flop_C2_Suit,Flop_C3_Rank,Flop_C3_Suit,Turn_C4_Rank,Turn_C4_Suit,River_C5_Rank,River_C5_Suit,Winning_Hand,Winning_Hand_2,Winning_Rank,Shared_Win,House_Win,Rank_Exception,3_Red,4_Red,5_Red,3_Black,4_Black,5_Black,Low,High';
 const EXPORT_CHUNK_SIZE = 10_000;
 const EXPORT_PROGRESS_INTERVAL = 50_000;
 
@@ -580,11 +580,27 @@ function handleExport(payload) {
       const c3 = decodeCard(b3); // Turn_C4 (matches handResult.turn)
       const c4 = decodeCard(b4); // River_C5 (matches handResult.river)
 
-      const { bestRankCat, winners, winnerCount } = evalAllHands(b0, b1, b2, b3, b4);
+      const { bestRankCat, winners, winnerCount, strengths } = evalAllHands(b0, b1, b2, b3, b4);
       const isBoardWinExport = winnerCount === 10;
-      // Quote winner label so comma-separated hand names never split into extra columns
-      const winnerLabelRaw = isBoardWinExport ? 'Board Win' : buildWinnerLabel(winners);
+
+      // House_Win: community board beats all player hands (winnerCount === 10)
+      const houseWin = isBoardWinExport ? 1 : 0;
+
+      // Shared_Win: more than one hand tied for the win (but not a board win)
+      const sharedWin = (!isBoardWinExport && winnerCount > 1) ? 1 : 0;
+
+      // Winning_Hand (first winner label) and Winning_Hand_2 (second winner if shared)
+      const winnerIndices = [];
+      for (let h = 0; h < 10; h++) { if (winners[h] === 1) winnerIndices.push(h); }
+      const winnerLabelRaw = isBoardWinExport ? 'House Win' : (winnerIndices.length > 0 ? HAND_LABELS[winnerIndices[0]] : 'None');
       const winnerLabel = `"${winnerLabelRaw}"`;
+      const winnerLabel2Raw = (!isBoardWinExport && winnerIndices.length > 1) ? HAND_LABELS[winnerIndices[1]] : '';
+      const winnerLabel2 = `"${winnerLabel2Raw}"`;
+
+      // Rank_Exception: winning rank is One Pair (rank cat 0), Straight Flush (rank cat 7), or Royal Flush (rank cat 8)
+      // When true, no rank bets pay out
+      const rankException = (bestRankCat === 0 || bestRankCat === 7 || bestRankCat === 8) ? 1 : 0;
+
       const rankName = bestRankCat >= 0 ? RANK_NAMES[bestRankCat] : 'High Card';
 
       let reds = 0;
@@ -596,7 +612,7 @@ function handleExport(payload) {
       const blacks = 5 - reds;
       const isLow = (b4 >> 2) <= 5;
 
-      lines += `${seqId},${c0.rank},${c0.suit},${c1.rank},${c1.suit},${c2.rank},${c2.suit},${c3.rank},${c3.suit},${c4.rank},${c4.suit},${winnerLabel},${rankName},${reds>=3?1:0},${reds>=4?1:0},${reds>=5?1:0},${blacks>=3?1:0},${blacks>=4?1:0},${blacks>=5?1:0},${isLow?1:0},${isLow?0:1}\n`;
+      lines += `${seqId},${c0.rank},${c0.suit},${c1.rank},${c1.suit},${c2.rank},${c2.suit},${c3.rank},${c3.suit},${c4.rank},${c4.suit},${winnerLabel},${winnerLabel2},${rankName},${sharedWin},${houseWin},${rankException},${reds>=3?1:0},${reds>=4?1:0},${reds>=5?1:0},${blacks>=3?1:0},${blacks>=4?1:0},${blacks>=5?1:0},${isLow?1:0},${isLow?0:1}\n`;
     }
 
     rowsDone += batch;
