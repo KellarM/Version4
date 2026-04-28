@@ -120,16 +120,16 @@ export default function FixedHandCard({
       </div>
 
 
-      {/* Bet chips — 2 rows of 5, centred above card */}
+      {/* Bet chips — left side (P1–P5) and right side (P6–P10), stacked vertically */}
       {allBets && allBets.length > 0 && (() => {
-        const row1 = allBets.filter(b => b.pid < 5);
-        const row2 = allBets.filter(b => b.pid >= 5);
+        const leftBets = allBets.filter(b => b.pid < 5);
+        const rightBets = allBets.filter(b => b.pid >= 5);
         const renderChip = ({ pid, amt }, idx) => (
           <Chip
             key={pid}
             playerId={pid}
             amount={amt}
-            scale={0.9}
+            scale={0.75}
             draggable={isBettingPhase && pid === activePlayerId}
             onDragStart={(e) => {
               e.stopPropagation();
@@ -142,10 +142,20 @@ export default function FixedHandCard({
           />
         );
         return (
-          <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 z-10">
-            {row1.length > 0 && <div className="flex gap-0.5">{row1.map(renderChip)}</div>}
-            {row2.length > 0 && <div className="flex gap-0.5">{row2.map(renderChip)}</div>}
-          </div>
+          <>
+            {/* Left column: Players 1–5 */}
+            {leftBets.length > 0 && (
+              <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 flex flex-col items-center gap-0.5 z-10 pr-0.5">
+                {leftBets.map(renderChip)}
+              </div>
+            )}
+            {/* Right column: Players 6–10 */}
+            {rightBets.length > 0 && (
+              <div className="absolute right-0 top-1/2 translate-x-full -translate-y-1/2 flex flex-col items-center gap-0.5 z-10 pl-0.5">
+                {rightBets.map(renderChip)}
+              </div>
+            )}
+          </>
         );
       })()}
 
