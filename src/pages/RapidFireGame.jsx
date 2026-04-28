@@ -125,7 +125,16 @@ export default function RapidFireGame() {
   const [hoveredRankRow, setHoveredRankRow] = useState(null);
 
   // Game timing
-  const { timing, startTimer, stopTimer } = useGameTiming();
+  const { timing, startTimer, stopTimer, reloadTiming } = useGameTiming();
+
+  // Listen for timing updates from GameTimingModal
+  useEffect(() => {
+    const handleTimingUpdate = () => {
+      reloadTiming();
+    };
+    window.addEventListener('gameTiming:updated', handleTimingUpdate);
+    return () => window.removeEventListener('gameTiming:updated', handleTimingUpdate);
+  }, [reloadTiming]);
   const [countdownTime, setCountdownTime] = useState(0);
   const [countdownActive, setCountdownActive] = useState(false);
   const timerActiveRef = useRef(false);

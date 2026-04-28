@@ -96,6 +96,8 @@ export default function GameTimingModal({ isOpen, onClose }) {
 
   const handleSave = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+    // Force parent component to reload timing from localStorage
+    window.dispatchEvent(new CustomEvent('gameTiming:updated', { detail: values }));
     onClose();
   };
 

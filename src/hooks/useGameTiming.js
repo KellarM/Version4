@@ -54,10 +54,15 @@ export function useGameTiming() {
     }
   }, []);
 
+  const reloadTiming = useCallback(() => {
+    timingRef.current = loadTiming();
+  }, [loadTiming]);
+
   return {
     timing: timingRef.current || DEFAULT_TIMING,
     startTimer,
     stopTimer,
     loadTiming,
+    reloadTiming,
   };
 }
