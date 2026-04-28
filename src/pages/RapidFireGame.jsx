@@ -32,6 +32,7 @@ import { useGreedEngineState } from '@/components/game/GreedEngine';
 import AutoTrimToast from '@/components/game/AutoTrimToast';
 import IndividualStrategyTest from '@/components/game/IndividualStrategyTest';
 import TwoHandRankTest from '@/components/game/TwoHandRankTest';
+import GameTimingModal from '@/components/game/GameTimingModal';
 
 
 const STARTING_BALANCE = 10000;
@@ -91,6 +92,7 @@ export default function RapidFireGame() {
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [showStrategyTest, setShowStrategyTest] = useState(false);
   const [showTwoHandTest, setShowTwoHandTest] = useState(false);
+  const [showGameTiming, setShowGameTiming] = useState(false);
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [showPlayerSelector, setShowPlayerSelector] = useState(true);
   const [roundId, setRoundId] = useState(1);
@@ -1175,6 +1177,9 @@ export default function RapidFireGame() {
         )}
       </AnimatePresence>
 
+      {/* Game Timing Modal */}
+      <GameTimingModal isOpen={showGameTiming} onClose={() => setShowGameTiming(false)} />
+
       {/* Header — slim single row, always visible and fixed so the board never shifts */}
       <div
         className="fixed top-0 left-0 right-0 z-40 w-full bg-black/70 border-b border-yellow-800/50 px-2 py-1 flex items-center gap-2 h-9"
@@ -1235,7 +1240,7 @@ export default function RapidFireGame() {
               </div>
             )}
           </div>
-          <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenStrategyTest={() => setShowStrategyTest(true)} onOpenTwoHandTest={() => setShowTwoHandTest(true)} toolsVisible={toolbarVisible} />
+          <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenStrategyTest={() => setShowStrategyTest(true)} onOpenTwoHandTest={() => setShowTwoHandTest(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
           <button
             onClick={handleResetGame}
             className="px-1.5 py-0.5 rounded border border-red-700/60 bg-red-900/30 text-red-300 text-[10px] font-bold hover:bg-red-800/50 transition-all"
@@ -1246,28 +1251,7 @@ export default function RapidFireGame() {
           </button>
         </div>
 
-        {/* # Of Players dropdown — absolute far right */}
-        {showPlayerSelector && (
-          <select
-            defaultValue=""
-            onChange={e => {
-              const n = Number(e.target.value);
-              if (!n) return;
-              setPlayerCount(prev => Math.max(prev, n));
-              setActivePlayer(0);
-              setShowPlayerSelector(false);
-            }}
-            className="text-[10px] font-bold rounded border border-yellow-600/60 bg-slate-900/90 text-yellow-300 px-1.5 py-0.5 cursor-pointer focus:outline-none focus:border-yellow-400 transition-colors flex-shrink-0"
-            style={{ minWidth: '7.5rem' }}
-          >
-            <option value="" disabled># Of Players</option>
-            {PLAYER_COUNT_OPTIONS.map(n => (
-              <option key={n} value={n}>
-                {n === 1 ? '1 Player' : `${n} Players`}
-              </option>
-            ))}
-          </select>
-        )}
+
 
       </div>
 
@@ -1433,15 +1417,6 @@ export default function RapidFireGame() {
                   ${v}
                 </button>
               ))}
-            </div>
-
-            {/* New Player button — immediately right of chips */}
-            <div className="border-l border-yellow-700/20 pl-2 flex-shrink-0">
-              <NewPlayerButton
-                playerCount={playerCount}
-                onShowPlayerSelector={() => setShowPlayerSelector(true)}
-                gamePhase={gamePhase}
-              />
             </div>
 
             {/* Spacer */}

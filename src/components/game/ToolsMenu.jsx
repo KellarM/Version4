@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Wrench, BarChart2, Search, Award, PieChart, Layers, FlaskConical, GitMerge } from 'lucide-react';
+import { Wrench, BarChart2, Search, Award, PieChart, Layers, FlaskConical, GitMerge, Timer } from 'lucide-react';
 
 const TOOLS = [
   { icon: BarChart2,     label: 'Player Stats',               type: 'stats' },
@@ -10,6 +10,7 @@ const TOOLS = [
   { icon: Award,         label: 'Gaming License Calibration', href: '/gaming-license' },
   { icon: PieChart,      label: 'Game Stats',                 href: '/game-stats' },
   { icon: Layers,        label: 'Deck Inspector',             href: '/deck-inspector' },
+  { icon: Timer,         label: 'Game Timing',                type: 'gameTiming' },
 ];
 
 // Updated betting rules (as of 2026-04-01)
@@ -36,7 +37,7 @@ LOW/HIGH BETS:
 • Max bet = total board bets (hand + rank + color bets combined)
 `;
 
-export default function ToolsMenu({ onOpenStats, onOpenStrategyTest, onOpenTwoHandTest, toolsVisible = true }) {
+export default function ToolsMenu({ onOpenStats, onOpenStrategyTest, onOpenTwoHandTest, onOpenGameTiming, toolsVisible = true }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -103,6 +104,18 @@ export default function ToolsMenu({ onOpenStats, onOpenStrategyTest, onOpenTwoHa
                   <Icon className="w-4 h-4 text-blue-400/70 flex-shrink-0" />
                   <span>{label}</span>
                   <span className="ml-auto text-[9px] px-1 py-0.5 rounded bg-blue-900/40 text-blue-300 border border-blue-700/30 font-bold">ADV</span>
+                </button>
+              );
+            }
+            if (type === 'gameTiming') {
+              return (
+                <button
+                  key={label}
+                  onClick={() => { onOpenGameTiming?.(); setOpen(false); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-300 hover:bg-yellow-900/20 hover:text-yellow-200 transition-colors text-left"
+                >
+                  <Icon className="w-4 h-4 text-yellow-400/70 flex-shrink-0" />
+                  {label}
                 </button>
               );
             }
