@@ -106,16 +106,18 @@ export default function FixedHandCard({
         })}
       </div>
 
-      {/* Card names */}
-      <div className="text-center text-xs text-yellow-200/70 truncate leading-none text-halo">{cardDisplayName}</div>
+      {/* Card names — hidden when rank is showing to avoid redundancy */}
+      <div className="text-center text-xs text-yellow-200/70 truncate leading-none text-halo">
+        {currentEval && currentEval.name !== 'No Hand' && currentEval.name !== 'High Card' ? '\u00A0' : cardDisplayName}
+      </div>
 
-      {/* Current eval */}
-      {currentEval && currentEval.name !== 'No Hand' && currentEval.name !== 'High Card' &&
+      {/* Current eval — always occupies the same space to prevent layout shift */}
       <div className={`text-center text-xs font-semibold leading-none mt-0.5 truncate
           ${isLeading || isWinner ? 'text-yellow-300' : 'text-yellow-100/60'}`}>
-          {currentEval.name}
-        </div>
-      }
+        {currentEval && currentEval.name !== 'No Hand' && currentEval.name !== 'High Card'
+          ? currentEval.name
+          : '\u00A0'}
+      </div>
 
 
       {/* Bet chips — 2 rows of 5, centred above card */}
