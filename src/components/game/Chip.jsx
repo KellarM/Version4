@@ -32,6 +32,7 @@ export default function Chip({ playerId = 0, amount, scale = 1, draggable = fals
       draggable={draggable}
       onDragStart={onDragStart}
       title={title}
+      data-chip="true"
       className={`relative inline-flex select-none flex-shrink-0 ${className}`}
       style={{
         width: diameter,

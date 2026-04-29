@@ -57,6 +57,8 @@ export default function FixedHandCard({
       transition={{ duration: 0.5, repeat: isLeading && !isWinner ? Infinity : 0, repeatDelay: 1.5 }}
       onMouseDown={(e) => {
         if (e.button !== 0) return;
+        // Ignore mousedown that originates from a draggable chip — it's a drag, not a bet
+        if (e.target.closest('[data-chip]')) return;
         if (isBettingPhase) {
           if (disabledByConstraint) {
             onAttemptLockedBet?.();
