@@ -388,7 +388,7 @@ export function isProfessionalPath(handBetCount) {
 }
 
 export function isGrinderPath(handBetCount) {
-  return handBetCount >= 4;
+  return handBetCount >= 3;
 }
 
 // Kill Switch: returns true when side markets must be locked (4 hands selected)
