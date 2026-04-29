@@ -123,6 +123,8 @@ function RankSlot({
     <motion.button
       onMouseDown={(e) => {
         if (e.button !== 0) return;
+        // Ignore mousedown from a draggable chip — it's a drag, not a new bet
+        if (e.target.closest('[data-chip]')) return;
         if (gamePhase === 'betting' && !fullyLocked) onRankBet(opt.key);
       }}
       onContextMenu={(e) => {
