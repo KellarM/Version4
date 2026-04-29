@@ -126,7 +126,7 @@ function RankSlot({
       }}
       onContextMenu={(e) => {
         e.preventDefault();
-        if (gamePhase === 'betting' && (bet > 0 || !fullyLocked)) onRemoveRankBet(opt.key);
+        if (gamePhase === 'betting' && bet > 0) onRemoveRankBet(opt.key);
       }}
       onDragOver={(e) => {
         if (gamePhase === 'betting' && !fullyLocked) { e.preventDefault(); e.stopPropagation(); }
@@ -138,15 +138,15 @@ function RankSlot({
         const data = e.dataTransfer.getData('text/plain');
         if (!data) return;
         try {
-          const { from, type } = JSON.parse(data);
+          const { from, type, pid: dragPid } = JSON.parse(data);
           if (type === 'rank' && from !== opt.key) {
-            const amt = rankBets[from] || 0;
+            const amt = (allRankBets?.[dragPid] || {})[from] || 0;
             if (amt > 0 && onMoveRankBet) { onMoveRankBet(from, opt.key); }
           }
         } catch (_) {}
       }}
       whileTap={canBet && !fullyLocked ? { scale: 0.96 } : {}}
-      style={{ ...buttonStyle, pointerEvents: (fullyLocked && !bet) ? 'none' : 'auto', overflow: 'visible' }}
+      style={{ ...buttonStyle, pointerEvents: (fullyLocked && bet === 0) ? 'none' : 'auto', overflow: 'visible' }}
       className={`relative w-full h-full rounded-lg border transition-all duration-300
         ${slotCls}
         ${canBet && !fullyLocked ? 'lp-magnetic' : ''}
