@@ -6,9 +6,9 @@ function getChipDef(amount) {
   } else if (amount <= 45) {
     return { outer: '#92400E', mid: '#B45309', edge: '#78350F', rim: '#451A03', shine: '#D97706' }; // Brown
   } else if (amount <= 95) {
-    return { outer: '#C2410C', mid: '#EA580C', edge: '#9A3412', rim: '#7C2D12', shine: '#FDBA74' }; // Orange
+    return { outer: '#B8860B', mid: '#DAA520', edge: '#8B6914', rim: '#6B4F10', shine: '#FFD700' }; // Gold
   } else {
-    return { outer: '#B45309', mid: '#D97706', edge: '#92400E', rim: '#78350F', shine: '#FDE68A' }; // Yellow
+    return { outer: '#BE185D', mid: '#EC4899', edge: '#9D174D', rim: '#831843', shine: '#F9A8D4' }; // Bright Pink
   }
 }
 
