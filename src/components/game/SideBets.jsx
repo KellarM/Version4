@@ -105,7 +105,7 @@ export default function SideBets({
     return (
       <motion.button
         key={opt.key}
-        onMouseDown={() => gamePhase === 'betting' && onRedBlackBet(opt.key)}
+        onMouseDown={(e) => { if (e.button !== 0) return; if (gamePhase === 'betting') onRedBlackBet(opt.key); }}
         onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'betting') onRemoveRedBlackBet(opt.key); }}
         onDragOver={(e) => { if (gamePhase === 'betting') { e.preventDefault(); e.stopPropagation(); } }}
         onDrop={(e) => {
@@ -376,7 +376,7 @@ export default function SideBets({
                 key={type}
                 onMouseEnter={() => onHoverRiver && onHoverRiver(type)}
                 onMouseLeave={() => onHoverRiver && onHoverRiver(null)}
-                onMouseDown={() => gamePhase === 'lowHighBetting' && onLowHighBet(type)}
+                onMouseDown={(e) => { if (e.button !== 0) return; if (gamePhase === 'lowHighBetting') onLowHighBet(type); }}
                 onContextMenu={(e) => { e.preventDefault(); if (gamePhase === 'lowHighBetting' && lowHighBet && lowHighBet.type === type && lowHighBet.amount > 0) onRemoveLowHighBet(); }}
                 whileTap={canBetLH ? { scale: 0.95 } : {}}
                 style={{ ...riverBlockStyle, position: 'relative', overflow: 'visible' }}

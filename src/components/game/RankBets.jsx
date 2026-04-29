@@ -121,7 +121,8 @@ function RankSlot({
 
   return (
     <motion.button
-      onMouseDown={() => {
+      onMouseDown={(e) => {
+        if (e.button !== 0) return;
         if (gamePhase === 'betting' && !fullyLocked) onRankBet(opt.key);
       }}
       onContextMenu={(e) => {
