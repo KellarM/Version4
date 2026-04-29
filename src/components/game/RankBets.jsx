@@ -132,12 +132,13 @@ function RankSlot({
         if (gamePhase === 'betting' && bet > 0) onRemoveRankBet(opt.key);
       }}
       onDragOver={(e) => {
-        if (gamePhase === 'betting' && !fullyLocked) { e.preventDefault(); e.stopPropagation(); }
+        // Allow drop if: not kill-locked, not math-locked, and either slot is free OR already has a bet here
+        if (gamePhase === 'betting' && !hardLocked && !isMathLocked) { e.preventDefault(); e.stopPropagation(); }
       }}
       onDrop={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (gamePhase !== 'betting' || fullyLocked) return;
+        if (gamePhase !== 'betting' || hardLocked || isMathLocked) return;
         const data = e.dataTransfer.getData('text/plain');
         if (!data) return;
         try {

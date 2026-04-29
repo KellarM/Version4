@@ -575,9 +575,6 @@ export default function RapidFireGame() {
     const fromAmt = currentRankBets[fromKey] || 0;
     if (fromAmt <= 0) return;
 
-    // Block if destination rank is mathematically impossible
-    if (unlockedRanks.size > 0 && !unlockedRanks.has(toKey)) return;
-
     const currentHandCount = Object.keys(handBets[pid] || {}).length;
     const slotsAllowed = currentHandCount === 1 ? 1 : 2;
     const toAmt = currentRankBets[toKey] || 0;
@@ -587,17 +584,17 @@ export default function RapidFireGame() {
     delete updated[fromKey];
     updated[toKey] = toAmt + fromAmt;
 
-    // Check slot count — if destination was empty, this opens a new slot; ensure within limit
+    // Check slot count — moving to an empty slot must stay within limit
     const newSlotCount = Object.keys(updated).length;
     if (newSlotCount > slotsAllowed) return;
 
-    // Enforce total rank bets <= total hand bets
+    // Enforce total rank bets <= total hand bets (amounts don't change on a move, so this always passes)
     const totalHandAmt = getTotalHandBets(handBets[pid] || {});
     const totalRankAmt = Object.values(updated).reduce((s, v) => s + v, 0);
     if (totalRankAmt > totalHandAmt) return;
 
     setRankBets(prev => ({ ...prev, [pid]: updated }));
-  }, [gamePhase, pid, rankBets, handBets, unlockedRanks]);
+  }, [gamePhase, pid, rankBets, handBets]);
 
   const handleRedBlackBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
