@@ -337,51 +337,93 @@ export default function RapidFireGame() {
     const existing = (handBets[pid] || {})[handId] || 0;
     if (existing <= 0) return;
 
-    const remainingHandBets = { ...(handBets[pid] || {}) };
-    delete remainingHandBets[handId];
-    const isLastHandBet = Object.keys(remainingHandBets).length === 0;
+    // Subtract selectedChip (or entire amount if less than chip)
+    const removeAmount = Math.min(selectedChip, existing);
+    const newHandBetAmount = existing - removeAmount;
+
+    // Build updated hand bets (remove slot entirely if zeroed out)
+    const updatedHandBets = { ...(handBets[pid] || {}) };
+    if (newHandBetAmount <= 0) {
+      delete updatedHandBets[handId];
+    } else {
+      updatedHandBets[handId] = newHandBetAmount;
+    }
+
+    const isLastHandBet = Object.keys(updatedHandBets).length === 0;
 
     if (isLastHandBet) {
+      // No hand bets left — refund everything
       const rankRefund = Object.values(rankBets[pid] || {}).reduce((s, v) => s + v, 0);
       const colorRefund = Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0);
       const riverRefund = lowHighBets[pid]?.amount || 0;
-      setHandBets(prev => ({ ...prev, [pid]: remainingHandBets }));
+      setHandBets(prev => ({ ...prev, [pid]: updatedHandBets }));
       setRankBets(prev => ({ ...prev, [pid]: {} }));
       setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
       setLowHighBets(prev => ({ ...prev, [pid]: null }));
-      setBalances(b => { const n = [...b]; n[pid] += existing + rankRefund + colorRefund + riverRefund; return n; });
+      setBalances(b => { const n = [...b]; n[pid] += removeAmount + rankRefund + colorRefund + riverRefund; return n; });
       if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
+      return;
+    }
+
+    // --- Hand bets still remain. Cascade-trim rank/color/river to fit new totals. ---
+
+    // Step 1: enforce rank slot limits and mathematical possibility
+    const remainingHandCount = Object.keys(updatedHandBets).length;
+    const slotsAllowed = remainingHandCount === 1 ? 1 : 2;
+    let rankRefund = 0;
+    let updatedRankBets = { ...(rankBets[pid] || {}) };
+
+    // Remove ranks that are now mathematically impossible
+    const remainingHandIds = Object.keys(updatedHandBets).map(Number);
+    const nowUnlocked = getUnlockedRanksForPlayer(remainingHandIds);
+    for (const rankKey of Object.keys(updatedRankBets)) {
+      if (!nowUnlocked.has(rankKey)) {
+        rankRefund += updatedRankBets[rankKey];
+        delete updatedRankBets[rankKey];
+      }
+    }
+
+    // Remove excess rank slots
+    while (Object.keys(updatedRankBets).length > slotsAllowed) {
+      const keyToRemove = Object.keys(updatedRankBets)[Object.keys(updatedRankBets).length - 1];
+      rankRefund += updatedRankBets[keyToRemove];
+      delete updatedRankBets[keyToRemove];
+    }
+
+    // Step 2: trim rank bet amounts so total rank ≤ total hand
+    const newHandTotal = Object.values(updatedHandBets).reduce((s, v) => s + v, 0);
+    let newRankTotal = Object.values(updatedRankBets).reduce((s, v) => s + v, 0);
+    if (newRankTotal > newHandTotal) {
+      let excess = newRankTotal - newHandTotal;
+      const rankKeys = Object.keys(updatedRankBets);
+      for (let i = rankKeys.length - 1; i >= 0 && excess > 0; i--) {
+        const k = rankKeys[i];
+        const trim = Math.min(updatedRankBets[k], excess);
+        updatedRankBets[k] -= trim;
+        if (updatedRankBets[k] <= 0) delete updatedRankBets[k];
+        rankRefund += trim;
+        excess -= trim;
+      }
+      newRankTotal = newHandTotal;
+    }
+
+    // Step 3: if rank total no longer equals hand total, gate closes → refund all color/river
+    const gateStillOpen = isSideBetGateOpen(updatedHandBets, updatedRankBets);
+    let colorRefund = 0;
+    let riverRefund = 0;
+    let updatedColorBets = { ...(redBlackBets[pid] || {}) };
+    let updatedRiver = lowHighBets[pid] ? { ...lowHighBets[pid] } : null;
+
+    if (!gateStillOpen) {
+      // Gate closed — refund all color and river bets
+      colorRefund = Object.values(updatedColorBets).reduce((s, v) => s + v, 0);
+      riverRefund = updatedRiver?.amount || 0;
+      updatedColorBets = {};
+      updatedRiver = null;
     } else {
-      // Going from 2 hands → 1 hand: max rank slots drops to 1, auto-remove excess rank bets
-      const remainingHandCount = Object.keys(remainingHandBets).length;
-      const slotsAllowed = remainingHandCount === 1 ? 1 : 2;
-      let rankRefund = 0;
-      let updatedRankBets = { ...(rankBets[pid] || {}) };
-
-      // Mathematical Path: retract any rank bets that are now impossible given remaining hands
-      const remainingHandIds = Object.keys(remainingHandBets).map(Number);
-      const nowUnlocked = getUnlockedRanksForPlayer(remainingHandIds);
-      for (const rankKey of Object.keys(updatedRankBets)) {
-        if (!nowUnlocked.has(rankKey)) {
-          rankRefund += updatedRankBets[rankKey];
-          delete updatedRankBets[rankKey];
-        }
-      }
-
-      while (Object.keys(updatedRankBets).length > slotsAllowed) {
-        const keyToRemove = Object.keys(updatedRankBets)[Object.keys(updatedRankBets).length - 1];
-        rankRefund += updatedRankBets[keyToRemove];
-        delete updatedRankBets[keyToRemove];
-      }
-
-      // Compute new foundation total after removing this hand and any excess rank bets
-      const newHandTotal = Object.values(remainingHandBets).reduce((s, v) => s + v, 0);
-      const newRankTotal = Object.values(updatedRankBets).reduce((s, v) => s + v, 0);
+      // Gate still open — trim color/river to snowball caps
       const newFoundation = newHandTotal + newRankTotal;
 
-      // Auto-trim color bets if they exceed the new foundation
-      let colorRefund = 0;
-      let updatedColorBets = { ...(redBlackBets[pid] || {}) };
       const colorTotal = Object.values(updatedColorBets).reduce((s, v) => s + v, 0);
       if (colorTotal > newFoundation) {
         let excess = colorTotal - newFoundation;
@@ -396,9 +438,6 @@ export default function RapidFireGame() {
         }
       }
 
-      // Auto-trim river bet if it exceeds the new foundation
-      let riverRefund = 0;
-      let updatedRiver = lowHighBets[pid] ? { ...lowHighBets[pid] } : null;
       const riverAmt = updatedRiver?.amount || 0;
       if (riverAmt > newFoundation) {
         riverRefund = riverAmt - newFoundation;
@@ -408,15 +447,15 @@ export default function RapidFireGame() {
           updatedRiver = { ...updatedRiver, amount: newFoundation };
         }
       }
-
-      setHandBets(prev => ({ ...prev, [pid]: remainingHandBets }));
-      setRankBets(prev => ({ ...prev, [pid]: updatedRankBets }));
-      setRedBlackBets(prev => ({ ...prev, [pid]: updatedColorBets }));
-      setLowHighBets(prev => ({ ...prev, [pid]: updatedRiver }));
-      setBalances(b => { const n = [...b]; n[pid] += existing + rankRefund + colorRefund + riverRefund; return n; });
-      if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
     }
-  }, [gamePhase, pid, handBets, rankBets, redBlackBets, lowHighBets]);
+
+    setHandBets(prev => ({ ...prev, [pid]: updatedHandBets }));
+    setRankBets(prev => ({ ...prev, [pid]: updatedRankBets }));
+    setRedBlackBets(prev => ({ ...prev, [pid]: updatedColorBets }));
+    setLowHighBets(prev => ({ ...prev, [pid]: updatedRiver }));
+    setBalances(b => { const n = [...b]; n[pid] += removeAmount + rankRefund + colorRefund + riverRefund; return n; });
+    if (rankRefund > 0 || colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
+  }, [gamePhase, pid, selectedChip, handBets, rankBets, redBlackBets, lowHighBets]);
 
   const handleRankBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
