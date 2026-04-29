@@ -337,8 +337,8 @@ export default function RapidFireGame() {
     const existing = (handBets[pid] || {})[handId] || 0;
     if (existing <= 0) return;
 
-    // Subtract selectedChip (or entire amount if less than chip)
-    const removeAmount = Math.min(selectedChip, existing);
+    // Remove the entire bet on right-click
+    const removeAmount = existing;
     const newHandBetAmount = existing - removeAmount;
 
     // Build updated hand bets (remove slot entirely if zeroed out)
@@ -760,12 +760,10 @@ export default function RapidFireGame() {
         if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
       }
     } else {
-      // Move entire bet from fromHandId to toHandId
-      // After move, recalculate rank slot limits
+      // Move entire bet from fromHandId to toHandId — do NOT add to existing, just relocate
       const updatedHandBets = { ...(handBets[dragPid] || {}) };
-      const toAmt = updatedHandBets[toHandId] || 0;
       delete updatedHandBets[fromHandId];
-      updatedHandBets[toHandId] = toAmt + fromAmt;
+      updatedHandBets[toHandId] = fromAmt;
 
       const remainingHandCount = Object.keys(updatedHandBets).length;
       const slotsAllowed = remainingHandCount === 1 ? 1 : remainingHandCount === 2 ? 2 : 0;
