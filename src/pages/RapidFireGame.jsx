@@ -138,6 +138,7 @@ export default function RapidFireGame() {
   const [countdownTime, setCountdownTime] = useState(0);
   const [countdownActive, setCountdownActive] = useState(false);
   const timerActiveRef = useRef(false);
+  const handleDealRiverRef = useRef(null);
 
   // Game progress persistence
   useEffect(() => {
@@ -799,10 +800,10 @@ export default function RapidFireGame() {
       () => {
         timerActiveRef.current = false;
         setCountdownActive(false);
-        setTimeout(() => handleDealRiver(), 100);
+        setTimeout(() => handleDealRiverRef.current?.(), 100);
       }
     );
-  }, [gamePhase, deck, deckIndex, communityCards, timing, startTimer, handleDealRiver]);
+  }, [gamePhase, deck, deckIndex, communityCards, timing, startTimer]);
 
   const handleDealRiver = useCallback(() => {
     if (gamePhase !== 'lowHighBetting') return;
@@ -853,6 +854,9 @@ export default function RapidFireGame() {
       settle(newComm, leader, winRB, winLH, leaderHand, leaderResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets);
     }, timing.riverReveal * 1000);
   }, [gamePhase, deck, deckIndex, communityCards, handBets, redBlackBets, rankBets, lowHighBets, timing, stopTimer]);
+
+  // Keep ref in sync so handleDealTurn can call the latest version without circular dependency
+  handleDealRiverRef.current = handleDealRiver;
 
   const settle = (finalComm, leader, winRB, winLH, leaderHand, handResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets) => {
     // Use centralized payouts (imported at top of file)
