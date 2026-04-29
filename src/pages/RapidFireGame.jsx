@@ -799,9 +799,10 @@ export default function RapidFireGame() {
       () => {
         timerActiveRef.current = false;
         setCountdownActive(false);
+        setTimeout(() => handleDealRiver(), 100);
       }
     );
-  }, [gamePhase, deck, deckIndex, communityCards, timing, startTimer]);
+  }, [gamePhase, deck, deckIndex, communityCards, timing, startTimer, handleDealRiver]);
 
   const handleDealRiver = useCallback(() => {
     if (gamePhase !== 'lowHighBetting') return;
@@ -1171,15 +1172,6 @@ export default function RapidFireGame() {
     }, timing.flopReveal * 1000);
     return () => clearTimeout(timer);
   }, [gamePhase, timing.flopReveal, handleDealTurn]);
-
-  // Auto-progression: Turn → River (after lowHighBetting window)
-  useEffect(() => {
-    if (gamePhase !== 'lowHighBetting') return;
-    const timer = setTimeout(() => {
-      handleDealRiver();
-    }, timing.riverBetting * 1000);
-    return () => clearTimeout(timer);
-  }, [gamePhase, timing.riverBetting, handleDealRiver]);
 
   // Auto-progression: River → New Round
   useEffect(() => {
