@@ -1,31 +1,31 @@
-const PLAYER_CHIP_DEFS = [
-  { body: '#eab308', edge: '#92400e', rim: '#78350f', shine: '#fef9c3', text: '#000' },  // P1 yellow
-  { body: '#3b82f6', edge: '#1e3a8a', rim: '#172554', shine: '#bfdbfe', text: '#fff' },  // P2 blue
-  { body: '#ec4899', edge: '#9d174d', rim: '#831843', shine: '#fce7f3', text: '#fff' },  // P3 pink
-  { body: '#22c55e', edge: '#14532d', rim: '#052e16', shine: '#bbf7d0', text: '#000' },  // P4 green
-  { body: '#f97316', edge: '#7c2d12', rim: '#431407', shine: '#ffedd5', text: '#000' },  // P5 orange
-  { body: '#06b6d4', edge: '#164e63', rim: '#083344', shine: '#cffafe', text: '#000' },  // P6 cyan
-  { body: '#ef4444', edge: '#7f1d1d', rim: '#450a0a', shine: '#fee2e2', text: '#fff' },  // P7 red
-  { body: '#84cc16', edge: '#365314', rim: '#1a2e05', shine: '#ecfccb', text: '#000' },  // P8 lime
-  { body: '#8b5cf6', edge: '#3b0764', rim: '#2e1065', shine: '#ede9fe', text: '#fff' },  // P9 violet
-  { body: '#f59e0b', edge: '#78350f', rim: '#451a03', shine: '#fef3c7', text: '#000' },  // P10 amber
-];
-
-export function getPlayerChipDef(playerId) {
-  return PLAYER_CHIP_DEFS[playerId % PLAYER_CHIP_DEFS.length];
+function getChipDef(amount) {
+  if (amount <= 5) {
+    return { outer: '#1D4ED8', mid: '#2563EB', edge: '#1E3A8A', rim: '#172554', shine: '#93C5FD' }; // Blue
+  } else if (amount <= 20) {
+    return { outer: '#15803D', mid: '#16A34A', edge: '#166534', rim: '#14532D', shine: '#86EFAC' }; // Green
+  } else if (amount <= 45) {
+    return { outer: '#92400E', mid: '#B45309', edge: '#78350F', rim: '#451A03', shine: '#D97706' }; // Brown
+  } else if (amount <= 95) {
+    return { outer: '#C2410C', mid: '#EA580C', edge: '#9A3412', rim: '#7C2D12', shine: '#FDBA74' }; // Orange
+  } else {
+    return { outer: '#B45309', mid: '#D97706', edge: '#92400E', rim: '#78350F', shine: '#FDE68A' }; // Yellow
+  }
 }
 
-export default function Chip({ playerId = 0, amount, scale = 1, draggable = false, onDragStart, title, style, className = '' }) {
-  const def = getPlayerChipDef(playerId);
-  const diameter = Math.round(24 * scale);
-  const wallH = Math.max(4, Math.round(7 * scale));
-  const totalH = diameter + wallH;
-  const fontSize = Math.max(7, Math.round(9 * scale));
-  const borderW = Math.max(1, Math.round(2 * scale));
-  const notchInset = Math.max(3, Math.round(5 * scale));
-  const notchBorderW = Math.max(1, Math.round(1.5 * scale));
+export default function Chip({ amount, scale = 1, draggable = false, onDragStart, title, style, className = '', playerId }) {
+  const def = getChipDef(amount ?? 5);
 
-  const label = amount === undefined ? null : (amount >= 100 ? '99+' : String(amount));
+  // Sizes
+  const d = Math.round(36 * scale);         // outer diameter
+  const centerD = Math.round(d * 0.52);     // white center circle diameter
+  const wallH = Math.max(4, Math.round(6 * scale));
+  const totalH = d + wallH;
+
+  // Font size — scale down for large numbers to always fit
+  const label = amount !== undefined ? String(amount) : null;
+  const charCount = label ? label.length : 1;
+  const baseFontSize = Math.round(10 * scale);
+  const fontSize = charCount >= 4 ? Math.max(6, Math.round(baseFontSize * 0.7)) : charCount === 3 ? Math.max(7, Math.round(baseFontSize * 0.82)) : baseFontSize;
 
   return (
     <span
@@ -34,150 +34,104 @@ export default function Chip({ playerId = 0, amount, scale = 1, draggable = fals
       title={title}
       data-chip="true"
       className={`relative inline-flex select-none flex-shrink-0 ${className}`}
-      style={{
-        width: diameter,
-        height: totalH,
-        cursor: draggable ? 'grab' : 'default',
-        overflow: 'visible',
-        ...style,
-      }}
+      style={{ width: d, height: totalH, cursor: draggable ? 'grab' : 'default', overflow: 'visible', ...style }}
     >
       {/* Ground shadow */}
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          bottom: -Math.round(2 * scale),
-          left: Math.round(2 * scale),
-          width: diameter - Math.round(4 * scale),
-          height: Math.round(4 * scale),
-          borderRadius: '50%',
-          background: 'rgba(0,0,0,0.55)',
-          filter: `blur(${Math.round(3 * scale)}px)`,
-          pointerEvents: 'none',
-        }}
-      />
-      {/* Bottom rim — darkest layer, gives "thickness" */}
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: diameter,
-          height: diameter,
-          borderRadius: '50%',
-          background: def.rim,
-          boxShadow: `0 ${Math.round(4 * scale)}px ${Math.round(10 * scale)}px rgba(0,0,0,0.75), 0 ${Math.round(1 * scale)}px ${Math.round(3 * scale)}px rgba(0,0,0,0.9)`,
-        }}
-      />
-      {/* Side wall band — shows chip depth/thickness */}
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          bottom: Math.round(2 * scale),
-          left: 0,
-          width: diameter,
-          height: diameter,
-          borderRadius: '50%',
-          background: `radial-gradient(ellipse at 50% 75%, ${def.edge} 0%, ${def.body} 55%, ${def.edge} 100%)`,
-          boxShadow: [
-            `inset 0 -${Math.round(3 * scale)}px ${Math.round(4 * scale)}px rgba(0,0,0,0.45)`,
-            `inset 0 ${Math.round(1 * scale)}px ${Math.round(2 * scale)}px rgba(255,255,255,0.15)`,
-          ].join(', '),
-        }}
-      />
-      {/* Top face */}
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: diameter,
-          height: diameter,
-          borderRadius: '50%',
-          background: `radial-gradient(ellipse at 36% 28%, ${def.shine} 0%, ${def.body} 42%, ${def.edge} 100%)`,
-          border: `${borderW}px solid ${def.rim}`,
-          boxShadow: [
-            `inset 0 ${Math.round(3 * scale)}px ${Math.round(7 * scale)}px rgba(255,255,255,0.4)`,
-            `inset 0 -${Math.round(2 * scale)}px ${Math.round(5 * scale)}px rgba(0,0,0,0.45)`,
-            `0 0 0 ${Math.round(1.5 * scale)}px ${def.edge}`,
-            `0 ${Math.round(1 * scale)}px ${Math.round(3 * scale)}px rgba(0,0,0,0.6)`,
-          ].join(', '),
-        }}
-      />
-      {/* Edge stripe detail — decorative notch segments on rim */}
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          top: Math.round(2 * scale),
-          left: Math.round(2 * scale),
-          width: diameter - Math.round(4 * scale),
-          height: diameter - Math.round(4 * scale),
-          borderRadius: '50%',
-          border: `${notchBorderW}px solid rgba(255,255,255,0.18)`,
-          pointerEvents: 'none',
-        }}
-      />
-      {/* Inner notch ring — dashed texture */}
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          top: notchInset,
-          left: notchInset,
-          width: diameter - notchInset * 2,
-          height: diameter - notchInset * 2,
-          borderRadius: '50%',
-          border: `${notchBorderW}px dashed rgba(255,255,255,0.28)`,
-          pointerEvents: 'none',
-        }}
-      />
-      {/* Specular highlight — top-left glint */}
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          top: Math.round(2 * scale),
-          left: Math.round(3 * scale),
-          width: Math.round(8 * scale),
-          height: Math.round(5 * scale),
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.45)',
-          filter: `blur(${Math.round(1.5 * scale)}px)`,
-          pointerEvents: 'none',
-          transform: 'rotate(-20deg)',
-        }}
-      />
-      {/* Label */}
-      {label !== null && (
-        <span
-          style={{
+      <span aria-hidden style={{
+        position: 'absolute', bottom: -2, left: Math.round(2 * scale),
+        width: d - Math.round(4 * scale), height: Math.round(4 * scale),
+        borderRadius: '50%', background: 'rgba(0,0,0,0.6)',
+        filter: `blur(${Math.round(3 * scale)}px)`, pointerEvents: 'none',
+      }} />
+
+      {/* Bottom rim (thickness) */}
+      <span aria-hidden style={{
+        position: 'absolute', bottom: 0, left: 0, width: d, height: d,
+        borderRadius: '50%', background: def.rim,
+        boxShadow: `0 ${Math.round(4*scale)}px ${Math.round(10*scale)}px rgba(0,0,0,0.8)`,
+      }} />
+
+      {/* Side wall */}
+      <span aria-hidden style={{
+        position: 'absolute', bottom: Math.round(2 * scale), left: 0, width: d, height: d,
+        borderRadius: '50%',
+        background: `radial-gradient(ellipse at 50% 80%, ${def.edge} 0%, ${def.mid} 55%, ${def.edge} 100%)`,
+        boxShadow: `inset 0 -${Math.round(3*scale)}px ${Math.round(5*scale)}px rgba(0,0,0,0.5), inset 0 ${Math.round(1*scale)}px ${Math.round(2*scale)}px rgba(255,255,255,0.15)`,
+      }} />
+
+      {/* Top face — colored outer ring */}
+      <span aria-hidden style={{
+        position: 'absolute', top: 0, left: 0, width: d, height: d,
+        borderRadius: '50%',
+        background: `radial-gradient(ellipse at 38% 30%, ${def.shine} 0%, ${def.mid} 38%, ${def.outer} 100%)`,
+        border: `${Math.max(1, Math.round(2 * scale))}px solid ${def.rim}`,
+        boxShadow: [
+          `inset 0 ${Math.round(3*scale)}px ${Math.round(7*scale)}px rgba(255,255,255,0.35)`,
+          `inset 0 -${Math.round(2*scale)}px ${Math.round(5*scale)}px rgba(0,0,0,0.5)`,
+          `0 0 0 ${Math.max(1, Math.round(1.5*scale))}px ${def.edge}`,
+        ].join(', '),
+      }} />
+
+      {/* Decorative segmented edge ring (notch marks) */}
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+        const rad = (deg * Math.PI) / 180;
+        const r = d / 2 - Math.round(3 * scale);
+        const cx = d / 2 + r * Math.cos(rad);
+        const cy = d / 2 + r * Math.sin(rad);
+        const notchW = Math.max(3, Math.round(4 * scale));
+        const notchH = Math.max(2, Math.round(3 * scale));
+        return (
+          <span key={deg} aria-hidden style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            width: diameter,
-            height: diameter,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: def.text,
-            fontSize,
-            fontWeight: 900,
-            lineHeight: 1,
-            letterSpacing: '-0.03em',
-            textShadow: def.text === '#fff'
-              ? '0 1px 3px rgba(0,0,0,0.8), 0 0 6px rgba(0,0,0,0.5)'
-              : '0 1px 2px rgba(255,255,255,0.5)',
+            top: cy - notchH / 2,
+            left: cx - notchW / 2,
+            width: notchW, height: notchH,
+            borderRadius: Math.round(1 * scale),
+            background: 'rgba(255,255,255,0.55)',
             pointerEvents: 'none',
-            userSelect: 'none',
-            zIndex: 2,
-          }}
-        >
-          {label}
+            transform: `rotate(${deg}deg)`,
+          }} />
+        );
+      })}
+
+      {/* White center circle */}
+      <span aria-hidden style={{
+        position: 'absolute',
+        top: (d - centerD) / 2,
+        left: (d - centerD) / 2,
+        width: centerD, height: centerD,
+        borderRadius: '50%',
+        background: 'radial-gradient(ellipse at 38% 32%, #ffffff 0%, #f0f0f0 70%, #e0e0e0 100%)',
+        border: `${Math.max(1, Math.round(1.5 * scale))}px solid rgba(0,0,0,0.25)`,
+        boxShadow: `inset 0 ${Math.round(1*scale)}px ${Math.round(3*scale)}px rgba(0,0,0,0.15)`,
+        pointerEvents: 'none',
+      }} />
+
+      {/* Specular glint on top */}
+      <span aria-hidden style={{
+        position: 'absolute',
+        top: Math.round(3 * scale), left: Math.round(4 * scale),
+        width: Math.round(9 * scale), height: Math.round(5 * scale),
+        borderRadius: '50%', background: 'rgba(255,255,255,0.5)',
+        filter: `blur(${Math.round(1.5 * scale)}px)`,
+        pointerEvents: 'none', transform: 'rotate(-20deg)',
+      }} />
+
+      {/* Dollar value label — always full value, bold black on white center */}
+      {label !== null && (
+        <span style={{
+          position: 'absolute',
+          top: 0, left: 0, width: d, height: d,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#000000',
+          fontSize,
+          fontWeight: 900,
+          lineHeight: 1,
+          letterSpacing: '-0.04em',
+          textShadow: 'none',
+          pointerEvents: 'none', userSelect: 'none', zIndex: 2,
+        }}>
+          ${label}
         </span>
       )}
     </span>
