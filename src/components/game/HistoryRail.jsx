@@ -49,7 +49,7 @@ export default function HistoryRail({ history }) {
           <span className="text-yellow-400/60 text-xs font-semibold text-right" style={{ width: 18, flexShrink: 0 }}>L/H</span>
         </div>
 
-        <div className="flex flex-col overflow-y-auto flex-1">
+        <div className="flex flex-col overflow-hidden flex-1">
           <AnimatePresence>
             {history.length === 0 && (
               <div className="text-green-400/30 text-xs text-center py-4">No hands yet</div>

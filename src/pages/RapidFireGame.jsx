@@ -1216,7 +1216,7 @@ export default function RapidFireGame() {
       colorResult,
       colorWinners: winRB,
       lowHighResult: winLH || '-',
-    }, ...prev].slice(0, 20));
+    }, ...prev]);
 
     // Auto-progression to new round is handled by useEffect watching gamePhase
     timerActiveRef.current = true;
