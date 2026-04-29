@@ -150,7 +150,7 @@ function RankSlot({
         } catch (_) {}
       }}
       whileTap={canBet && !fullyLocked ? { scale: 0.96 } : {}}
-      style={{ ...buttonStyle, pointerEvents: (fullyLocked && bet === 0) ? 'none' : 'auto', overflow: 'visible' }}
+      style={{ ...buttonStyle, pointerEvents: (hardLocked || (isMathLocked && bet === 0)) ? 'none' : 'auto', overflow: 'visible' }}
       className={`relative w-full h-full rounded-lg border transition-all duration-300
         ${slotCls}
         ${canBet && !fullyLocked ? 'lp-magnetic' : ''}
