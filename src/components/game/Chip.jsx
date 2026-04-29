@@ -16,7 +16,7 @@ export default function Chip({ amount, scale = 1, draggable = false, onDragStart
   const def = getChipDef(amount ?? 5);
 
   // Sizes
-  const d = Math.round(72 * scale);         // outer diameter
+  const d = Math.round(54 * scale);         // outer diameter
   const centerD = Math.round(d * 0.52);     // white center circle diameter
   const wallH = Math.max(4, Math.round(6 * scale));
   const totalH = d + wallH;
@@ -24,8 +24,8 @@ export default function Chip({ amount, scale = 1, draggable = false, onDragStart
   // Font size — scale down for large numbers to always fit
   const label = amount !== undefined ? String(amount) : null;
   const charCount = label ? label.length : 1;
-  const baseFontSize = Math.round(10 * scale);
-  const fontSize = charCount >= 4 ? Math.max(6, Math.round(baseFontSize * 0.7)) : charCount === 3 ? Math.max(7, Math.round(baseFontSize * 0.82)) : baseFontSize;
+  const baseFontSize = Math.round(16 * scale);
+  const fontSize = charCount >= 4 ? Math.max(9, Math.round(baseFontSize * 0.7)) : charCount === 3 ? Math.max(11, Math.round(baseFontSize * 0.82)) : baseFontSize;
 
   return (
     <span
