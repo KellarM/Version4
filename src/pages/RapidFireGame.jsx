@@ -356,12 +356,17 @@ export default function RapidFireGame() {
       const rankRefund = Object.values(rankBets[pid] || {}).reduce((s, v) => s + v, 0);
       const colorRefund = Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0);
       const riverRefund = lowHighBets[pid]?.amount || 0;
-      setHandBets(prev => ({ ...prev, [pid]: updatedHandBets }));
-      setRankBets(prev => ({ ...prev, [pid]: {} }));
-      setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
-      setLowHighBets(prev => ({ ...prev, [pid]: null }));
+      const newHandBets = { ...handBets, [pid]: updatedHandBets };
+      const newRedBlackBets = { ...redBlackBets, [pid]: {} };
+      const newRankBets = { ...rankBets, [pid]: {} };
+      const newLowHighBets = { ...lowHighBets, [pid]: null };
+      setHandBets(newHandBets);
+      setRankBets(newRankBets);
+      setRedBlackBets(newRedBlackBets);
+      setLowHighBets(newLowHighBets);
       setBalances(b => { const n = [...b]; n[pid] += removeAmount + rankRefund + colorRefund + riverRefund; return n; });
       if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
+      checkAndResetIfNoBets(newHandBets, newRedBlackBets, newRankBets, newLowHighBets);
       return;
     }
 
@@ -840,6 +845,34 @@ export default function RapidFireGame() {
     }
   }, [gamePhase, handBets, rankBets, redBlackBets, lowHighBets]);
 
+  // Helper: check if ALL players have zero bets and reset board if timer is active
+  const checkAndResetIfNoBets = (updatedHandBets, updatedRedBlackBets, updatedRankBets, updatedLowHighBets) => {
+    const anyBetsRemain = Array.from({ length: playerCount }, (_, i) => i).some(i => {
+      return (
+        Object.keys(updatedHandBets[i] || {}).length > 0 ||
+        Object.keys(updatedRedBlackBets[i] || {}).length > 0 ||
+        Object.keys(updatedRankBets[i] || {}).length > 0 ||
+        (updatedLowHighBets[i]?.amount || 0) > 0
+      );
+    });
+    if (!anyBetsRemain && timerActiveRef.current) {
+      stopTimer();
+      timerActiveRef.current = false;
+      setCountdownActive(false);
+      setCountdownTime(0);
+      setDeck(getSecureRandomBoard());
+      setDeckIndex(0);
+      setCommunityCards([]);
+      setLeadingHandIds([]);
+      setWinnerHandIds([]);
+      setWinningRedBlack([]);
+      setWinningLowHigh(null);
+      setWinningRank(null);
+      setLeadingRank(null);
+      setDealerMessage("Phase 1 — Texas Hold'em is open for play. Phase 2 — Place Hand, Rank, and Color bets now.");
+    }
+  };
+
   const clearBets = () => {
     const riverRefund = pLowHighBet?.amount || 0;
     const refund = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
@@ -847,10 +880,15 @@ export default function RapidFireGame() {
       Object.values(pRankBets).reduce((s, v) => s + v, 0) +
       riverRefund;
     setBalances(b => { const n = [...b]; n[pid] += refund; return n; });
-    setHandBets(prev => ({ ...prev, [pid]: {} }));
-    setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
-    setRankBets(prev => ({ ...prev, [pid]: {} }));
-    setLowHighBets(prev => ({ ...prev, [pid]: null }));
+    const newHandBets = { ...handBets, [pid]: {} };
+    const newRedBlackBets = { ...redBlackBets, [pid]: {} };
+    const newRankBets = { ...rankBets, [pid]: {} };
+    const newLowHighBets = { ...lowHighBets, [pid]: null };
+    setHandBets(newHandBets);
+    setRedBlackBets(newRedBlackBets);
+    setRankBets(newRankBets);
+    setLowHighBets(newLowHighBets);
+    checkAndResetIfNoBets(newHandBets, newRedBlackBets, newRankBets, newLowHighBets);
   };
 
   // ---- GAME FLOW ----
