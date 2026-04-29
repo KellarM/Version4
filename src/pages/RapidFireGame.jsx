@@ -1414,6 +1414,19 @@ export default function RapidFireGame() {
               </div>
             )}
           </div>
+          {/* Reset Player Bank — player-accessible button */}
+          <button
+            onClick={() => {
+              setBalances(Array(10).fill(STARTING_BALANCE));
+              setRoundId(1);
+              setCasinoProfit(0);
+              setRoundsPlayed(0);
+            }}
+            title="Reset all player banks to $10,000 and clear P/L"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-700/50 bg-emerald-900/20 text-emerald-300 text-xs font-bold hover:border-emerald-500 hover:bg-emerald-900/40 transition-all flex-shrink-0"
+          >
+            ↺ Reset Bank
+          </button>
           <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenStrategyTest={() => setShowStrategyTest(true)} onOpenTwoHandTest={() => setShowTwoHandTest(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
         </div>
 
