@@ -16,7 +16,7 @@ export default function Chip({ amount, scale = 1, draggable = false, onDragStart
   const def = getChipDef(amount ?? 5);
 
   // Sizes
-  const d = Math.round(36 * scale);         // outer diameter
+  const d = Math.round(72 * scale);         // outer diameter
   const centerD = Math.round(d * 0.52);     // white center circle diameter
   const wallH = Math.max(4, Math.round(6 * scale));
   const totalH = d + wallH;
