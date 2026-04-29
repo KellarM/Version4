@@ -761,13 +761,74 @@ export default function RapidFireGame() {
       }
     } else {
       // Move entire bet from fromHandId to toHandId
-      setHandBets(prev => {
-        const pb = { ...(prev[dragPid] || {}) };
-        const toAmt = pb[toHandId] || 0;
-        delete pb[fromHandId];
-        pb[toHandId] = toAmt + fromAmt;
-        return { ...prev, [dragPid]: pb };
-      });
+      // After move, recalculate rank slot limits
+      const updatedHandBets = { ...(handBets[dragPid] || {}) };
+      const toAmt = updatedHandBets[toHandId] || 0;
+      delete updatedHandBets[fromHandId];
+      updatedHandBets[toHandId] = toAmt + fromAmt;
+
+      const remainingHandCount = Object.keys(updatedHandBets).length;
+      const slotsAllowed = remainingHandCount === 1 ? 1 : remainingHandCount === 2 ? 2 : 0;
+
+      let rankRefund = 0;
+      let updatedRankBets = { ...(rankBets[dragPid] || {}) };
+
+      // Remove ranks that are mathematically impossible with new hand set
+      const remainingHandIds = Object.keys(updatedHandBets).map(Number);
+      const nowUnlocked = getUnlockedRanksForPlayer(remainingHandIds);
+      for (const rankKey of Object.keys(updatedRankBets)) {
+        if (nowUnlocked.size > 0 && !nowUnlocked.has(rankKey)) {
+          rankRefund += updatedRankBets[rankKey];
+          delete updatedRankBets[rankKey];
+        }
+      }
+
+      // Trim excess rank slots (e.g. moved 2 hands onto 1, now only 1 slot allowed)
+      while (Object.keys(updatedRankBets).length > slotsAllowed) {
+        const keyToRemove = Object.keys(updatedRankBets)[Object.keys(updatedRankBets).length - 1];
+        rankRefund += updatedRankBets[keyToRemove];
+        delete updatedRankBets[keyToRemove];
+      }
+
+      // Trim rank amounts so total rank ≤ total hand
+      const newHandTotal = Object.values(updatedHandBets).reduce((s, v) => s + v, 0);
+      let newRankTotal = Object.values(updatedRankBets).reduce((s, v) => s + v, 0);
+      if (newRankTotal > newHandTotal) {
+        let excess = newRankTotal - newHandTotal;
+        const rankKeys = Object.keys(updatedRankBets);
+        for (let i = rankKeys.length - 1; i >= 0 && excess > 0; i--) {
+          const k = rankKeys[i];
+          const trim = Math.min(updatedRankBets[k], excess);
+          updatedRankBets[k] -= trim;
+          if (updatedRankBets[k] <= 0) delete updatedRankBets[k];
+          rankRefund += trim;
+          excess -= trim;
+        }
+        newRankTotal = newHandTotal;
+      }
+
+      // Check if gate still open after move; if not, refund color/river
+      const gateStillOpen = isSideBetGateOpen(updatedHandBets, updatedRankBets);
+      let colorRefund = 0;
+      let riverRefund = 0;
+      let updatedColorBets = { ...(redBlackBets[dragPid] || {}) };
+      let updatedRiver = lowHighBets[dragPid] ? { ...lowHighBets[dragPid] } : null;
+
+      if (!gateStillOpen) {
+        colorRefund = Object.values(updatedColorBets).reduce((s, v) => s + v, 0);
+        riverRefund = updatedRiver?.amount || 0;
+        updatedColorBets = {};
+        updatedRiver = null;
+      }
+
+      setHandBets(prev => ({ ...prev, [dragPid]: updatedHandBets }));
+      setRankBets(prev => ({ ...prev, [dragPid]: updatedRankBets }));
+      setRedBlackBets(prev => ({ ...prev, [dragPid]: updatedColorBets }));
+      setLowHighBets(prev => ({ ...prev, [dragPid]: updatedRiver }));
+      if (rankRefund > 0 || colorRefund > 0 || riverRefund > 0) {
+        setBalances(b => { const n = [...b]; n[dragPid] += rankRefund + colorRefund + riverRefund; return n; });
+        setShowAutoTrimToast(true);
+      }
     }
   }, [gamePhase, handBets, rankBets, redBlackBets, lowHighBets]);
 
@@ -1346,14 +1407,6 @@ export default function RapidFireGame() {
             )}
           </div>
           <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenStrategyTest={() => setShowStrategyTest(true)} onOpenTwoHandTest={() => setShowTwoHandTest(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
-          <button
-            onClick={handleResetGame}
-            className="px-1.5 py-0.5 rounded border border-red-700/60 bg-red-900/30 text-red-300 text-[10px] font-bold hover:bg-red-800/50 transition-all"
-            title="Reset entire game"
-            style={{ visibility: 'visible' }}
-          >
-            ↺
-          </button>
         </div>
 
 
