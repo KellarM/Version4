@@ -570,17 +570,27 @@ export default function RapidFireGame() {
     const fromAmt = currentRankBets[fromKey] || 0;
     if (fromAmt <= 0) return;
 
+    // Block if destination rank is mathematically impossible
+    if (unlockedRanks.size > 0 && !unlockedRanks.has(toKey)) return;
+
     const currentHandCount = Object.keys(handBets[pid] || {}).length;
     const slotsAllowed = currentHandCount === 1 ? 1 : 2;
     const toAmt = currentRankBets[toKey] || 0;
-    const newSlots = Object.keys(currentRankBets).filter(k => k !== fromKey && k !== toKey).length + (toAmt > 0 ? 1 : 1);
-    if (toAmt === 0 && newSlots > slotsAllowed) return;
 
-    if (unlockedRanks.size > 0 && !unlockedRanks.has(toKey)) return;
-
+    // Build the updated rank bets after the move
     const updated = { ...currentRankBets };
     delete updated[fromKey];
-    updated[toKey] = (updated[toKey] || 0) + fromAmt;
+    updated[toKey] = toAmt + fromAmt;
+
+    // Check slot count — if destination was empty, this opens a new slot; ensure within limit
+    const newSlotCount = Object.keys(updated).length;
+    if (newSlotCount > slotsAllowed) return;
+
+    // Enforce total rank bets <= total hand bets
+    const totalHandAmt = getTotalHandBets(handBets[pid] || {});
+    const totalRankAmt = Object.values(updated).reduce((s, v) => s + v, 0);
+    if (totalRankAmt > totalHandAmt) return;
+
     setRankBets(prev => ({ ...prev, [pid]: updated }));
   }, [gamePhase, pid, rankBets, handBets, unlockedRanks]);
 
