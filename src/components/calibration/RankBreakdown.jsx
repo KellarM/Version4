@@ -68,15 +68,21 @@ export default function RankBreakdown({ rankBreakdown, totalHandWins, totalGames
               const pctOfHandWins = totalHandWins > 0 ? ((wins / totalHandWins) * 100).toFixed(2) : '0.00';
               const winPct = (winFreq * 100).toFixed(4);
 
-              // Computed metrics (using rank-level payout where available)
-              const rtp = (payout !== null && winFreq > 0)
-                ? (winFreq * (1 + payout) * 100)
+              // Conditional probability: rank frequency given that this carded hand won.
+              // Odds are computed off totalHandWins (NOT totalGames), so they reflect
+              // "how often does this rank occur per win of this hand" — not per round.
+              const condFreq = totalHandWins > 0 ? wins / totalHandWins : 0;
+
+              // RTP / house edge use the conditional frequency too, since the rank-level
+              // payout is only realized within the subset of rounds where this hand wins.
+              const rtp = (payout !== null && condFreq > 0)
+                ? (condFreq * (1 + payout) * 100)
                 : null;
               const houseEdge = rtp !== null ? (100 - rtp) : null;
-              const fairOdds = winFreq > 0 ? Math.round(((1 / winFreq) - 1) * 100) / 100 : null;
-              const for95    = winFreq > 0 ? Math.round(((0.95  / winFreq) - 1) * 100) / 100 : null;
-              const for965   = winFreq > 0 ? Math.round(((0.965 / winFreq) - 1) * 100) / 100 : null;
-              const for98    = winFreq > 0 ? Math.round(((0.98  / winFreq) - 1) * 100) / 100 : null;
+              const fairOdds = condFreq > 0 ? Math.round(((1 / condFreq) - 1) * 100) / 100 : null;
+              const for95    = condFreq > 0 ? Math.round(((0.95  / condFreq) - 1) * 100) / 100 : null;
+              const for965   = condFreq > 0 ? Math.round(((0.965 / condFreq) - 1) * 100) / 100 : null;
+              const for98    = condFreq > 0 ? Math.round(((0.98  / condFreq) - 1) * 100) / 100 : null;
 
               return (
                 <tr key={rank} className="border-b border-slate-700/30 hover:bg-slate-700/10">
