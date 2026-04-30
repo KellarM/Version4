@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { runBetAuditWithAbort, runMicroscopeWithAbort, runExportWithAbort, resetPersistentWorker } from '@/lib/workerBridge';
 import { motion } from 'framer-motion';
-import { Play, RefreshCw, Trash2, FileDown, FileText, SkipForward, Microscope, ChevronDown, ChevronRight, Download, X } from 'lucide-react';
+import { Play, RefreshCw, Trash2, FileDown, FileText, SkipForward, Microscope, ChevronDown, ChevronRight, Download, X, BarChart2 } from 'lucide-react';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 import { jsPDF } from 'jspdf';
 import VerificationLog from './VerificationLog';
+import RankBreakdown from './RankBreakdown';
 
 const STORAGE_KEY = 'individualBetAudit_results';
 const PROGRESS_KEY = 'individualBetAudit_progress';
@@ -119,9 +120,11 @@ function RTPCell({ rtp }) {
 
 function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunning, microscopeLog, microscopeSource, exportKey, exportRunning, exportProgress }) {
   const [open, setOpen] = useState(false);
+  const [showRankBreakdown, setShowRankBreakdown] = useState(false);
   const key = `${def.betType}:${def.betKey}`;
   const isMicActive = microscopeKey === key;
   const isExportActive = exportKey === key;
+  const hasRankBreakdown = def.betType === 'hand' && r?.rankBreakdown && r.rankBreakdown.length > 0;
 
   if (!r) {
     return (
@@ -229,6 +232,25 @@ function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunni
                 }
                 {microscopeRunning && isMicActive ? 'Reading buffer...' : 'Microscope (50 hands)'}
               </button>
+
+              {hasRankBreakdown && (
+                <button
+                  onClick={e => { e.stopPropagation(); setShowRankBreakdown(v => !v); }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all
+                    ${showRankBreakdown
+                      ? 'border-purple-500 bg-purple-900/30 text-purple-300'
+                      : 'border-slate-600 bg-slate-700/50 text-gray-300 hover:border-purple-600 hover:text-purple-300'
+                    }`}
+                >
+                  <BarChart2 className="w-3.5 h-3.5" />
+                  Rank Breakdown
+                  {showRankBreakdown
+                    ? <ChevronDown className="w-3 h-3" />
+                    : <ChevronRight className="w-3 h-3" />
+                  }
+                </button>
+              )}
+
               {isMicActive && !microscopeRunning && microscopeSource && (
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${
                   microscopeSource === 'buffer'
@@ -239,6 +261,16 @@ function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunni
                 </span>
               )}
             </div>
+
+            {showRankBreakdown && hasRankBreakdown && (
+              <div className="border border-purple-800/40 rounded-xl bg-slate-900/50 px-4 py-3 mb-3">
+                <RankBreakdown
+                  rankBreakdown={r.rankBreakdown}
+                  totalHandWins={r.wins}
+                  totalGames={r.totalGames}
+                />
+              </div>
+            )}
 
             {isMicActive && !microscopeRunning && microscopeLog && (
               <VerificationLog log={microscopeLog} betLabel={def.label} />
@@ -342,6 +374,7 @@ export default function IndividualBetAudit() {
           for965: res.for965,
           for98: res.for98,
           currentPayout: livePayout,
+          rankBreakdown: res.rankBreakdown || null,
         };
 
         setResults(prev => {

@@ -392,6 +392,10 @@ function handleRun(payload) {
   let totalRankNonExceptionWins = 0;
   let totalLostToHouseWins = 0;
 
+  // Rank breakdown for 'hand' betType: track wins by winning rank category
+  // rankBreakdownCounts[rankCat] = number of wins where that hand achieved that rank
+  const rankBreakdownCounts = new Int32Array(9); // indices 0..8 matching RANK_NAMES
+
   for (let g = 0; g < rounds; g++) {
     if (g > 0 && g % PROGRESS_UPDATE_INTERVAL === 0) {
       self.postMessage({ type: 'PROGRESS', callId, done: g, total: rounds });
@@ -456,7 +460,15 @@ function handleRun(payload) {
       }
     }
 
-    if (won) { totalWins++; totalPaid += BET + profit; }
+    if (won) {
+      totalWins++;
+      totalPaid += BET + profit;
+      // Rank breakdown: record the winning rank of the target hand when it wins
+      if (betType === 'hand') {
+        const myRankCat = rankCatFromStrength(strengths[targetHandIdx]);
+        if (myRankCat >= 0 && myRankCat <= 8) rankBreakdownCounts[myRankCat]++;
+      }
+    }
 
     // Phase 3: Independent counters (bestRankCat already computed above)
     if (betType === 'hand' && won) totalCardedHandWins++;
@@ -497,6 +509,10 @@ function handleRun(payload) {
       totalLostToHouseWins,
       bufferSize: globalAuditBufferSize,
       bufferBetKey: globalAuditBufferBetKey,
+      // Rank breakdown (only populated for hand bets)
+      rankBreakdown: betType === 'hand'
+        ? RANK_NAMES.map((name, idx) => ({ rank: name, wins: rankBreakdownCounts[idx] })).filter(r => r.wins > 0)
+        : null,
     },
   });
 }
