@@ -33,22 +33,23 @@ const RANK_OPTIONS = [
   { key: 'Flush',           label: 'Flush',           payout: HAND_RANK_PAYOUTS['Flush']           },
   { key: 'Full House',      label: 'Full House',      payout: HAND_RANK_PAYOUTS['Full House']      },
   { key: 'Four of a Kind',  label: 'Four of a Kind',  payout: HAND_RANK_PAYOUTS['Four of a Kind']  },
+  { key: 'One Pair',        label: 'One Pair',        payout: HAND_RANK_PAYOUTS['One Pair']        },
 ];
 
 const ROUND_OPTIONS = [100, 500, 1000];
 const CHIP_OPTIONS = [5, 10, 25, 50, 100];
 
 const ENABLED_RANKS_BY_HAND = {
-  1:  ['Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House'],
+  1:  ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House'],
   2:  ['Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind'],
-  3:  ['Two Pair', 'Three of a Kind', 'Straight', 'Full House'],
-  4:  ['Two Pair', 'Straight', 'Flush', 'Full House'],
-  5:  ['Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind'],
-  6:  ['Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind'],
+  3:  ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Full House'],
+  4:  ['One Pair', 'Two Pair', 'Straight', 'Flush', 'Full House'],
+  5:  ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind'],
+  6:  ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind'],
   7:  ['Three of a Kind', 'Straight', 'Full House', 'Four of a Kind'],
-  8:  ['Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind'],
+  8:  ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind'],
   9:  ['Three of a Kind', 'Straight', 'Full House', 'Four of a Kind'],
-  10: ['Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind'],
+  10: ['One Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind'],
 };
 
 function getEnabledRanks(handId) {

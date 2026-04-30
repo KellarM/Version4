@@ -18,7 +18,7 @@
  * - 1–2 Card Hand bets: max 2 rank bets allowed
  * - 3+ Card Hand bets: all rank bets locked
  * - All Hand Rank bets are fixed-odds — no progressives
- * - Minimum qualifying rank: Two Pair (One Pair removed 2026-04-14)
+ * - Minimum qualifying rank: One Pair
  * - Maximum qualifying rank: Four of a Kind (Straight Flush removed 2026-04-14)
  *
  * NOTE: Progressive jackpots removed as of 2026-04-01.
@@ -49,6 +49,7 @@ export const HAND_RANK_PAYOUTS = {
   'Straight':        5.1,
   'Three of a Kind': 3.95,
   'Two Pair':        16.8,
+  'One Pair':        35.0,
 };
 
 // ── COLOR BOARD PAYOUTS ───────────────────────────────────────

@@ -10,6 +10,7 @@ export const RANK_BET_OPTIONS = [
   { key: 'Straight',        label: 'Straight',     payout: `${HAND_RANK_PAYOUTS['Straight']}:1`        },
   { key: 'Three of a Kind', label: '3 Of A Kind',  payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1` },
   { key: 'Two Pair',        label: '2 Pair',       payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`        },
+  { key: 'One Pair',        label: '1 Pair',       payout: `${HAND_RANK_PAYOUTS['One Pair']}:1`        },
 ];
 
 function useUnlockPulse(rankKey, unlockedRanks) {

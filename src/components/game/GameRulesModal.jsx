@@ -22,7 +22,8 @@ const RANK_BETS = [
   { name: 'Flush',           payout: `${HAND_RANK_PAYOUTS['Flush']}:1`,           note: '', color: 'text-blue-300' },
   { name: 'Straight',        payout: `${HAND_RANK_PAYOUTS['Straight']}:1`,        note: '', color: 'text-teal-300' },
   { name: 'Three of a Kind', payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1`, note: '', color: 'text-green-300' },
-  { name: 'Two Pair',        payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,        note: '(minimum qualifying rank)', color: 'text-green-300' },
+  { name: 'Two Pair',        payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,        note: '', color: 'text-green-300' },
+  { name: 'One Pair',        payout: `${HAND_RANK_PAYOUTS['One Pair']}:1`,        note: '(minimum qualifying rank)', color: 'text-blue-300' },
 ];
 
 const COLOR_BETS = [

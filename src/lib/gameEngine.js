@@ -337,17 +337,17 @@ export { HAND_RANK_PAYOUTS } from '@/lib/payoutConstants';
 // excluded from rank betting and therefore not represented here.
 // 6-rank model: Four of a Kind (max) → Two Pair (min). One Pair removed 2026-04-14; Straight Flush removed 2026-04-14.
 export const HAND_RANK_MATRIX = Object.freeze({
-  //               FoaK  FH  Flush  Str  Trips  TwoPair
-  1:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // A (A♦ 10♥)
-  10: Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // B (A♥ 5♦)
-  2:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0 }),  // C (K♣ K♠)
-  3:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // D (Q♣ J♠)
-  4:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 0, 'Two Pair': 1 }),  // E (Q♠ 10♠)
-  5:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // F (J♣ 9♣)
-  6:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // G (8♦ 6♦)
-  7:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0 }),  // H (7♦ 7♠)
-  8:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1 }),  // I (4♥ 2♥)
-  9:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0 }),  // J (3♣ 3♥)
+  //               FoaK  FH  Flush  Str  Trips  TwoPair  OnePair
+  1:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // A (A♦ 10♥)
+  10: Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // B (A♥ 5♦)
+  2:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0, 'One Pair': 0 }),  // C (K♣ K♠)
+  3:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // D (Q♣ J♠)
+  4:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 0, 'Two Pair': 1, 'One Pair': 1 }),  // E (Q♠ 10♠)
+  5:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // F (J♣ 9♣)
+  6:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // G (8♦ 6♦)
+  7:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0, 'One Pair': 0 }),  // H (7♦ 7♠)
+  8:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // I (4♥ 2♥)
+  9:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0, 'One Pair': 0 }),  // J (3♣ 3♥)
 });
 
 // Returns the Set of rank names that are mathematically reachable (value > 0)
