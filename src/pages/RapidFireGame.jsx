@@ -1342,7 +1342,7 @@ export default function RapidFireGame() {
   }, [gamePhase, timing.endOfRound, handleNewRound]);
 
   return (
-    <div className="velvet-board h-screen w-screen overflow-hidden text-white flex flex-col" style={{ paddingTop: '2.25rem' }}>
+    <div className="velvet-board h-screen w-screen overflow-hidden text-white flex flex-col">
 
       {/* Countdown Clock */}
       <CountdownClock timeRemaining={countdownTime} isActive={countdownActive} phase={gamePhase} />
@@ -1400,86 +1400,6 @@ export default function RapidFireGame() {
 
       {/* Game Timing Modal */}
       <GameTimingModal isOpen={showGameTiming} onClose={() => setShowGameTiming(false)} />
-
-      {/* Header — slim single row, always visible and fixed so the board never shifts */}
-      <div
-        className="fixed top-0 left-0 right-0 z-40 w-full bg-black/70 border-b border-yellow-800/50 px-2 py-1 flex items-center gap-2 h-9"
-        style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
-      >
-
-        {/* Logo */}
-        <div className="flex items-baseline gap-0.5 leading-none select-none flex-shrink-0">
-          <span
-            className="font-black italic text-base tracking-tighter leading-none"
-            style={{ fontFamily: 'Oswald, sans-serif', transform: 'skewX(-12deg)', background: 'linear-gradient(90deg, #e2e8f0 0%, #ffffff 40%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.05em', filter: 'drop-shadow(2px 0 4px rgba(148,163,184,0.5))' }}
-          >RAPID</span>
-          <span
-            className="font-black italic text-base leading-none"
-            style={{ fontFamily: 'Oswald, sans-serif', transform: 'skewX(-12deg)', background: 'linear-gradient(180deg, #fef08a 0%, #f97316 50%, #dc2626 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.8))', letterSpacing: '-0.02em' }}
-          >🔥FIRE</span>
-        </div>
-
-        {/* Player Seats — right-aligned so last seat sits next to Round info */}
-        <div className="flex-1 flex items-center justify-end gap-1 min-w-0 overflow-x-auto">
-          {Array.from({ length: playerCount }, (_, i) => {
-            const playerTotalBet =
-              Object.values(handBets[i] || {}).reduce((s, v) => s + v, 0) +
-              Object.values(redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
-              Object.values(rankBets[i] || {}).reduce((s, v) => s + v, 0) +
-              (lowHighBets[i]?.amount || 0);
-            return (
-              <PlayerSeat
-                key={i}
-                playerId={i}
-                balance={balances[i] ?? STARTING_BALANCE}
-                isActive={activePlayer === i}
-                onSelect={() => setActivePlayer(i)}
-                gamePhase={gamePhase}
-                totalBet={playerTotalBet}
-              />
-            );
-          })}
-        </div>
-
-        {/* Control group — right aligned */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="flex items-center gap-1.5 border-r border-yellow-700/30 pr-2">
-            <div className="flex items-center gap-0.5">
-              <span className="text-yellow-400/50 text-[10px] leading-none">RND</span>
-              <span className="text-white font-bold text-xs leading-none">#{roundId}</span>
-            </div>
-            <div className="flex items-center gap-0.5">
-              <span className="text-yellow-400/50 text-[10px] leading-none">PHS</span>
-              <span className="text-green-300 font-bold text-[10px] leading-none">{PHASE_LABELS[gamePhase]}</span>
-            </div>
-            {roundsPlayed > 0 && (
-              <div className="flex items-center gap-0.5">
-                <span className="text-yellow-400/50 text-[10px] leading-none">P/L</span>
-                <span className={`font-black text-xs leading-none ${casinoProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {casinoProfit >= 0 ? '+' : ''}${casinoProfit.toFixed(0)}
-                </span>
-              </div>
-            )}
-          </div>
-          {/* Reset Player Bank — player-accessible button */}
-          <button
-            onClick={() => {
-              setBalances(Array(10).fill(STARTING_BALANCE));
-              setRoundId(1);
-              setCasinoProfit(0);
-              setRoundsPlayed(0);
-            }}
-            title="Reset all player banks to $10,000 and clear P/L"
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-700/50 bg-emerald-900/20 text-emerald-300 text-xs font-bold hover:border-emerald-500 hover:bg-emerald-900/40 transition-all flex-shrink-0"
-          >
-            ↺ Reset Bank
-          </button>
-          <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenStrategyTest={() => setShowStrategyTest(true)} onOpenTwoHandTest={() => setShowTwoHandTest(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
-        </div>
-
-
-
-      </div>
 
       {/* Main Layout: 3 columns, fills remaining height */}
       <div className="flex gap-1.5 p-1.5 flex-1 min-h-0">
@@ -1645,10 +1565,16 @@ export default function RapidFireGame() {
               ))}
             </div>
 
+            {/* Player Bank display */}
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-yellow-700/50 bg-yellow-900/20 flex-shrink-0">
+              <span className="text-yellow-400/70 text-[10px] font-bold leading-none">P{activePlayer + 1}</span>
+              <span className="text-yellow-300 font-black text-xs leading-none">${(balances[activePlayer] ?? STARTING_BALANCE).toLocaleString()}</span>
+            </div>
+
             {/* Spacer */}
             <div className="flex-1" />
 
-            {/* Clear button only */}
+            {/* Clear button */}
             <div className="flex items-center gap-2 flex-shrink-0">
               {gamePhase === 'betting' && totalBet > 0 && (
                 <button
@@ -1659,6 +1585,23 @@ export default function RapidFireGame() {
                 </button>
               )}
             </div>
+
+            {/* Reset Bank */}
+            <button
+              onClick={() => {
+                setBalances(Array(10).fill(STARTING_BALANCE));
+                setRoundId(1);
+                setCasinoProfit(0);
+                setRoundsPlayed(0);
+              }}
+              title="Reset all player banks to $10,000 and clear P/L"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-700/50 bg-emerald-900/20 text-emerald-300 text-xs font-bold hover:border-emerald-500 hover:bg-emerald-900/40 transition-all flex-shrink-0"
+            >
+              ↺ Reset Bank
+            </button>
+
+            {/* Tools */}
+            <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenStrategyTest={() => setShowStrategyTest(true)} onOpenTwoHandTest={() => setShowTwoHandTest(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
 
             {/* Game Rules — far right */}
             <div className="border-l border-yellow-700/20 pl-2 flex-shrink-0">
