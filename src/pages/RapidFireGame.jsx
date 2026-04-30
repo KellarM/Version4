@@ -1134,8 +1134,6 @@ export default function RapidFireGame() {
       totalBet: totalBetsAllPlayers,
     });
 
-
-
     // Update all player balances (add payouts received)
     setBalances(prev => {
       const n = [...prev];
@@ -1194,10 +1192,23 @@ export default function RapidFireGame() {
       setDisplayWindowVisible(true);
     }, 1000);
 
-    // History — capture ALL winning outcomes regardless of wagers
+    // ── History entry — only real settled outcomes ──────────────────────────
+    // colorResult: show the actual winning color result from winRB
+    // e.g. "5R", "4B", "3R" — whichever key has the highest count from the resolved winners.
+    // If no color bet wins, show the majority color count as informational display only.
     const reds = finalComm.filter(c => cardColor(c) === 'red').length;
     const blacks = finalComm.length - reds;
-    const colorResult = reds >= blacks ? `${reds}R` : `${blacks}B`;
+
+    // Build a display string: show all winning color results if any, else show the board split
+    let colorResult;
+    if (winRB && winRB.length > 0) {
+      // Show the highest-tier winning result (e.g. if 5R won, show "5R"; if 3B won show "3B")
+      // winRB is already sorted by resolveRedBlack — last element is highest tier
+      colorResult = winRB[winRB.length - 1];
+    } else {
+      // No color winner: display the board split as informational
+      colorResult = reds >= blacks ? `${reds}R` : `${blacks}B`;
+    }
 
     const isBoardWin = leader?.communityBoardWin === true;
     const winnerHandA = (!isBoardWin && leader?.handIds?.length >= 1)
@@ -1276,6 +1287,7 @@ export default function RapidFireGame() {
     setDealerMessage("Bets open — Place Hand, Rank & Color bets now.");
     setGamePhase('betting');
     setActivePlayer(0);
+    // NOTE: history is intentionally NOT cleared here — it accumulates across rounds
   }, [stopTimer]);
 
   const handleRepeatBets = () => {
