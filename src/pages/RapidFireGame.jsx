@@ -1566,10 +1566,13 @@ export default function RapidFireGame() {
               ))}
             </div>
 
-            {/* Player Bank display */}
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-yellow-700/50 bg-yellow-900/20 flex-shrink-0">
-              <span className="text-yellow-400/70 text-[10px] font-bold leading-none">P{activePlayer + 1}</span>
-              <span className="text-yellow-300 font-black text-xs leading-none">${(balances[activePlayer] ?? STARTING_BALANCE).toLocaleString()}</span>
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Player Bank display — centered */}
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-yellow-500 bg-black flex-shrink-0">
+              <span className="text-yellow-400 text-xs font-black leading-none tracking-wider">P{activePlayer + 1}</span>
+              <span className="text-yellow-400 font-black text-lg leading-none tracking-tight" style={{ textShadow: '0 0 8px rgba(251,191,36,0.7)' }}>${(balances[activePlayer] ?? STARTING_BALANCE).toLocaleString()}</span>
             </div>
 
             {/* Spacer */}
