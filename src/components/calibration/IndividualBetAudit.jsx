@@ -151,7 +151,7 @@ function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunni
       <tr className="border-b border-slate-700/40">
         <td className="px-2 py-2.5 w-8"></td>
         <td className="px-3 py-2.5 text-gray-300">{def.label}</td>
-        <td colSpan={9} className="px-4 py-2.5 text-gray-600 text-xs italic">pending...</td>
+        <td colSpan={10} className="px-4 py-2.5 text-gray-600 text-xs italic">pending...</td>
       </tr>
     );
   }
@@ -194,6 +194,12 @@ function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunni
           {r.wins.toLocaleString()}
           <span className="text-gray-600 ml-1">/ {(r.totalGames / 1000).toFixed(0)}K</span>
         </td>
+        <td className="px-3 py-2.5 text-right font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>
+          {def.betType === 'perHandRank' && r.perHandRankHandWins != null
+            ? <span className="text-purple-400">{r.perHandRankHandWins.toLocaleString()}</span>
+            : <span className="text-gray-700">—</span>
+          }
+        </td>
         <td className="px-3 py-2.5 text-right text-gray-300 font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>{r.winFrequency}%</td>
         <td className="px-3 py-2.5 text-right cursor-pointer" onClick={() => setOpen(v => !v)}>
           <span className={`font-bold text-xs font-mono ${houseEdgeNum > 0 ? 'text-red-400' : 'text-green-400'}`}>
@@ -218,7 +224,7 @@ function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunni
 
       {open && (
         <tr className="border-b border-slate-700/30">
-          <td colSpan={11} className="px-4 pb-4 pt-1 bg-slate-900/40">
+          <td colSpan={12} className="px-4 pb-4 pt-1 bg-slate-900/40">
             {/* Export progress bar */}
             {isExportActive && exportRunning && (
               <div className="mb-3">
@@ -388,6 +394,7 @@ export default function IndividualBetAudit() {
         const newResult = {
           wins: res.wins,
           totalGames,
+          perHandRankHandWins: res.perHandRankHandWins ?? null,
           winFrequency: res.winFrequency,
           rtp: parseFloat(res.rtp).toFixed(2),
           houseEdge: res.houseEdge !== undefined ? parseFloat(res.houseEdge).toFixed(2) : (100 - parseFloat(res.rtp)).toFixed(2),
@@ -846,6 +853,7 @@ export default function IndividualBetAudit() {
                         </th>
                         <th className="px-3 py-2.5 text-left">Bet</th>
                         <th className="px-3 py-2.5 text-right">Wins</th>
+                        <th className="px-3 py-2.5 text-right text-purple-400">Card Wins</th>
                         <th className="px-3 py-2.5 text-right">Win %</th>
                         <th className="px-3 py-2.5 text-right">House Edge %</th>
                         <th className="px-3 py-2.5 text-right">Actual RTP</th>
