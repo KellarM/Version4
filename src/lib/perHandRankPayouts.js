@@ -26,7 +26,7 @@ export const PER_HAND_RANK_PAYOUTS = {
     'Three of a Kind': 1.62,
     'Four of a Kind':  7.59,
     'Flush':           12.73,
-    'One Pair':        29.74,
+    'One Pair':        36.83,
     'Straight':        71.13,
   },
 
