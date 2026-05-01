@@ -17,7 +17,7 @@ export const PER_HAND_RANK_PAYOUTS = {
     'Straight':        3.31,
     'Flush':           5.43,
     'Three of a Kind': 8.16,
-    'One Pair':        30.39,
+    'One Pair':        28.19,
   },
 
   // Hand 2: K♣ / K♠
