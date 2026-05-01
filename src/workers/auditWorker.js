@@ -530,11 +530,19 @@ function handleRun(payload) {
   const rtp = totalBet > 0 ? totalPaid / totalBet : 0;
   const houseEdge = 1 - rtp;
 
-  // For perHandRank: conditional win frequency = rank wins / hand wins (not / rounds)
-  // This reflects "given Hand X won, how often did it achieve Rank Y?"
-  const oddsFreq = (betType === 'perHandRank' && perHandRankHandWins > 0)
-    ? totalWins / perHandRankHandWins
-    : winFreq;
+  // For perHandRank: use conditional frequency (rank wins / hand wins) for ALL metrics.
+  // This is the correct basis: "given Hand X won, what % of the time did it achieve Rank Y?"
+  // RTP, house edge, fair odds, and payout targets must all use this same frequency.
+  const isPerHandRank = betType === 'perHandRank' && perHandRankHandWins > 0;
+  const condFreq = isPerHandRank ? totalWins / perHandRankHandWins : null;
+
+  // Effective frequency for odds-based columns (fair, for95, for96.5, for98)
+  const oddsFreq = condFreq !== null ? condFreq : winFreq;
+
+  // RTP and house edge: for perHandRank, recalculate based on conditional freq × payout
+  // RTP = P(rank win | hand win) × (payout + 1)  — because the bettor only "plays" when the hand wins
+  const effectiveRtp   = condFreq !== null ? condFreq * (perHandRankPayout + 1) : rtp;
+  const effectiveHouseEdge = 1 - effectiveRtp;
 
   self.postMessage({
     type: 'RESULT',
@@ -546,8 +554,8 @@ function handleRun(payload) {
       wins: totalWins,
       perHandRankHandWins: betType === 'perHandRank' ? perHandRankHandWins : undefined,
       winFrequency: (winFreq * 100).toFixed(4),
-      rtp: (rtp * 100).toFixed(4),
-      houseEdge: (houseEdge * 100).toFixed(4),
+      rtp: (effectiveRtp * 100).toFixed(4),
+      houseEdge: (effectiveHouseEdge * 100).toFixed(4),
       fairOdds: oddsFreq > 0 ? Math.round(((1/oddsFreq)-1)*100)/100 : null,
       for95:    oddsFreq > 0 ? Math.round(((0.95/oddsFreq)-1)*100)/100 : null,
       for965:   oddsFreq > 0 ? Math.round(((0.965/oddsFreq)-1)*100)/100 : null,
