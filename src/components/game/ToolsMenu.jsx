@@ -65,7 +65,7 @@ export default function ToolsMenu({ onOpenStats, onOpenStrategyTest, onOpenTwoHa
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-52 bg-slate-900 border border-yellow-700/40 rounded-xl shadow-2xl shadow-black/60 z-50 overflow-hidden">
+        <div className="absolute right-0 bottom-full mb-1.5 w-52 bg-slate-900 border border-yellow-700/40 rounded-xl shadow-2xl shadow-black/60 z-50 overflow-hidden">
           <div className="px-3 py-2 border-b border-yellow-700/20">
             <p className="text-yellow-400/60 text-xs font-semibold tracking-wider uppercase">Game Tools</p>
           </div>
