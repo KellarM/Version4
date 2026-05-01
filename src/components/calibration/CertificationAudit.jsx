@@ -3,7 +3,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, RefreshCw, CheckCircle2, XCircle, AlertTriangle, ChevronDown, ChevronRight, Shield, SkipForward, FileDown, FileText, Trash2, Save } from 'lucide-react';
 import { runBetAuditWithAbort } from '@/lib/workerBridge';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
+import { PER_HAND_RANK_PAYOUTS } from '@/lib/perHandRankPayouts';
 import { jsPDF } from 'jspdf';
+
+const HAND_LABELS = {
+  1:'Hand 1 — A♦10♥', 2:'Hand 2 — K♣K♠', 3:'Hand 3 — Q♣J♠', 4:'Hand 4 — Q♠10♠',
+  5:'Hand 5 — J♣9♣', 6:'Hand 6 — 8♦6♦', 7:'Hand 7 — 7♦7♠', 8:'Hand 8 — 4♥2♥',
+  9:'Hand 9 — 3♣3♥', 10:'Hand 10 — A♥5♦',
+};
+
+// Build per-hand rank bets from PER_HAND_RANK_PAYOUTS
+const PER_HAND_RANK_BETS = [];
+for (let handId = 1; handId <= 10; handId++) {
+  const ranks = PER_HAND_RANK_PAYOUTS[handId] || {};
+  for (const rankName of Object.keys(ranks)) {
+    PER_HAND_RANK_BETS.push({
+      betType: 'perHandRank',
+      betKey: `${handId}:${rankName}`,
+      label: `${HAND_LABELS[handId]} / ${rankName}`,
+      group: 'Hand Ranks',
+      handId,
+      rankName,
+    });
+  }
+}
 
 const ALL_BETS = [
   { betType:'hand', betKey:'1',  label:'Hand 1 — A♦10♥',  group:'Carded Hands' },
@@ -16,12 +39,7 @@ const ALL_BETS = [
   { betType:'hand', betKey:'8',  label:'Hand 8 — 4♥2♥',   group:'Carded Hands' },
   { betType:'hand', betKey:'9',  label:'Hand 9 — 3♣3♥',   group:'Carded Hands' },
   { betType:'hand', betKey:'10', label:'Hand 10 — A♥5♦',  group:'Carded Hands' },
-  { betType:'rank', betKey:'Two Pair',        label:'Two Pair',        group:'Hand Ranks' },
-  { betType:'rank', betKey:'Three of a Kind', label:'Three of a Kind', group:'Hand Ranks' },
-  { betType:'rank', betKey:'Straight',        label:'Straight',        group:'Hand Ranks' },
-  { betType:'rank', betKey:'Flush',           label:'Flush',           group:'Hand Ranks' },
-  { betType:'rank', betKey:'Full House',      label:'Full House',      group:'Hand Ranks' },
-  { betType:'rank', betKey:'Four of a Kind',  label:'Four of a Kind',  group:'Hand Ranks' },
+  ...PER_HAND_RANK_BETS,
   { betType:'color', betKey:'3R', label:'3 Red',   group:'Color Board' },
   { betType:'color', betKey:'3B', label:'3 Black',  group:'Color Board' },
   { betType:'color', betKey:'4R', label:'4 Red',   group:'Color Board' },
@@ -53,6 +71,12 @@ function plainLabel(bet) {
 function getLivePayout(betType, betKey) {
   if (betType==='hand')  return CARDED_HAND_PAYOUTS[parseInt(betKey)-1];
   if (betType==='rank')  return HAND_RANK_PAYOUTS[betKey];
+  if (betType==='perHandRank') {
+    const colonIdx = betKey.indexOf(':');
+    const handId = parseInt(betKey.slice(0, colonIdx));
+    const rankName = betKey.slice(colonIdx + 1);
+    return PER_HAND_RANK_PAYOUTS[handId]?.[rankName] ?? null;
+  }
   if (betType==='color') return COLOR_BOARD_PAYOUTS[betKey];
   return LOW_HIGH_PAYOUT;
 }
@@ -174,6 +198,7 @@ function ModulePanel({ module, bets, onResultsChange }) {
     rankPayouts: { ...HAND_RANK_PAYOUTS },
     colorPayouts: { ...COLOR_BOARD_PAYOUTS },
     lhPayout: LOW_HIGH_PAYOUT,
+    perHandRankPayouts: PER_HAND_RANK_PAYOUTS,
   };
 
   const showSaving = useCallback(() => {
@@ -201,6 +226,7 @@ function ModulePanel({ module, bets, onResultsChange }) {
             rankPayouts: livePayouts.rankPayouts,
             colorPayouts: livePayouts.colorPayouts,
             lhPayout: livePayouts.lhPayout,
+            perHandRankPayouts: livePayouts.perHandRankPayouts,
             captureLog: false,
           },
           (pct) => setBetProgress(pct)
@@ -718,7 +744,7 @@ export default function CertificationAudit() {
             <div>
               <h3 className="font-bold text-white mb-1">Multi-Tier Certification Audit</h3>
               <p className="text-gray-400 text-sm">
-                Four escalating audit modules covering all 24 betting positions with live payouts from{' '}
+                Four escalating audit modules covering all {ALL_BETS.length} betting positions (10 hands + {PER_HAND_RANK_BETS.length} per-hand ranks + 8 color/river) with live payouts from{' '}
                 <code className="text-yellow-300 text-xs">payoutConstants.js</code>.
                 Each module auto-saves progress — refresh-safe with Continue recovery.
               </p>

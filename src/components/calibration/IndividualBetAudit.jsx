@@ -3,6 +3,7 @@ import { runBetAuditWithAbort, runMicroscopeWithAbort, runExportWithAbort, reset
 import { motion } from 'framer-motion';
 import { Play, RefreshCw, Trash2, FileDown, FileText, SkipForward, Microscope, ChevronDown, ChevronRight, Download, X, BarChart2 } from 'lucide-react';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
+import { PER_HAND_RANK_PAYOUTS } from '@/lib/perHandRankPayouts';
 import { jsPDF } from 'jspdf';
 import VerificationLog from './VerificationLog';
 import RankBreakdown from './RankBreakdown';
@@ -29,7 +30,31 @@ function getLivePayouts() {
     rankPayouts: { ...HAND_RANK_PAYOUTS },
     colorPayouts: { ...COLOR_BOARD_PAYOUTS },
     lhPayout: LOW_HIGH_PAYOUT,
+    perHandRankPayouts: PER_HAND_RANK_PAYOUTS,
   };
+}
+
+const HAND_LABELS_IBA = {
+  1:'Hand 1 — A♦/10♥', 2:'Hand 2 — K♣/K♠', 3:'Hand 3 — Q♣/J♠', 4:'Hand 4 — Q♠/10♠',
+  5:'Hand 5 — J♣/9♣', 6:'Hand 6 — 8♦/6♦', 7:'Hand 7 — 7♦/7♠', 8:'Hand 8 — 4♥/2♥',
+  9:'Hand 9 — 3♣/3♥', 10:'Hand 10 — A♥/5♦',
+};
+
+// Build per-hand rank entries from PER_HAND_RANK_PAYOUTS
+const PER_HAND_RANK_DEFS = [];
+for (let handId = 1; handId <= 10; handId++) {
+  const ranks = PER_HAND_RANK_PAYOUTS[handId] || {};
+  for (const [rankName, payout] of Object.entries(ranks)) {
+    PER_HAND_RANK_DEFS.push({
+      betType: 'perHandRank',
+      betKey: `${handId}:${rankName}`,
+      label: `${HAND_LABELS_IBA[handId]} / ${rankName}`,
+      group: 'Hand Ranks',
+      currentPayout: payout,
+      handId,
+      rankName,
+    });
+  }
 }
 
 const BET_DEFINITIONS = [
@@ -43,12 +68,7 @@ const BET_DEFINITIONS = [
   { betType: 'hand', betKey: '8',  label: 'Hand 8 — 4♥/2♥',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[7] },
   { betType: 'hand', betKey: '9',  label: 'Hand 9 — 3♣/3♥',   group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[8] },
   { betType: 'hand', betKey: '10', label: 'Hand 10 — A♥/5♦',  group: 'Carded Hands', currentPayout: CARDED_HAND_PAYOUTS[9] },
-  { betType: 'rank', betKey: 'Two Pair',         label: 'Two Pair',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Two Pair'] },
-  { betType: 'rank', betKey: 'Three of a Kind',  label: 'Three of a Kind', group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Three of a Kind'] },
-  { betType: 'rank', betKey: 'Straight',         label: 'Straight',        group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Straight'] },
-  { betType: 'rank', betKey: 'Flush',            label: 'Flush',           group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Flush'] },
-  { betType: 'rank', betKey: 'Full House',        label: 'Full House',      group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Full House'] },
-  { betType: 'rank', betKey: 'Four of a Kind',   label: 'Four of a Kind',  group: 'Hand Ranks', currentPayout: HAND_RANK_PAYOUTS['Four of a Kind'] },
+  ...PER_HAND_RANK_DEFS,
   { betType: 'color', betKey: '3R', label: '3 Red',    group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3R'] },
   { betType: 'color', betKey: '3B', label: '3 Black',  group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['3B'] },
   { betType: 'color', betKey: '4R', label: '4 Red',    group: 'Color Board', currentPayout: COLOR_BOARD_PAYOUTS['4R'] },
@@ -85,7 +105,7 @@ const GROUP_COLORS = {
 };
 
 const SELECTION_OPTIONS = [
-  { value: 'all',                  label: '— All 26 Bets —' },
+  { value: 'all',                  label: `— All ${BET_DEFINITIONS.length} Bets —` },
   { value: 'group:Carded Hands',   label: 'Group: Carded Hands' },
   { value: 'group:Hand Ranks',     label: 'Group: Hand Ranks' },
   { value: 'group:Color Board',    label: 'Group: Color Board' },
@@ -339,6 +359,7 @@ export default function IndividualBetAudit() {
       let livePayout = def.currentPayout;
       if (def.betType === 'hand') livePayout = livePayouts.handPayouts[parseInt(def.betKey) - 1];
       else if (def.betType === 'rank') livePayout = livePayouts.rankPayouts[def.betKey];
+      else if (def.betType === 'perHandRank') livePayout = PER_HAND_RANK_PAYOUTS[def.handId]?.[def.rankName] ?? def.currentPayout;
       else if (def.betType === 'color') livePayout = livePayouts.colorPayouts[def.betKey];
       else if (def.betType === 'lh') livePayout = livePayouts.lhPayout;
 
@@ -352,6 +373,7 @@ export default function IndividualBetAudit() {
             rankPayouts: livePayouts.rankPayouts,
             colorPayouts: livePayouts.colorPayouts,
             lhPayout: livePayouts.lhPayout,
+            perHandRankPayouts: livePayouts.perHandRankPayouts,
             captureLog: false,
           },
           (pct) => setBetProgress(pct)
@@ -432,6 +454,7 @@ export default function IndividualBetAudit() {
         rankPayouts: livePayouts.rankPayouts,
         colorPayouts: livePayouts.colorPayouts,
         lhPayout: livePayouts.lhPayout,
+        perHandRankPayouts: livePayouts.perHandRankPayouts,
       });
       microscopeWorkerRef.current = { abort };
       const res = await promise;
@@ -472,6 +495,7 @@ export default function IndividualBetAudit() {
           rankPayouts: livePayouts.rankPayouts,
           colorPayouts: livePayouts.colorPayouts,
           lhPayout: livePayouts.lhPayout,
+          perHandRankPayouts: livePayouts.perHandRankPayouts,
         },
         (chunk) => { csvChunks.push(chunk); },
         (pct) => setExportProgress(pct)

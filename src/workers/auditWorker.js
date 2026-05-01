@@ -322,11 +322,22 @@ function decodeBetParams(betType, betKey) {
   let colorThreshold = 0, colorIsRed = false;
   if (betType === 'color') { colorThreshold = parseInt(betKey[0]); colorIsRed = betKey[1] === 'R'; }
   const lhLow = betType === 'lh' && betKey === 'LOW';
-  return { targetHandIdx, targetRankCat, colorThreshold, colorIsRed, lhLow };
+
+  // perHandRank: betKey = "handId:rankName" e.g. "1:Full House"
+  let perHandRankHandIdx = -1, perHandRankCat = -99;
+  if (betType === 'perHandRank') {
+    const colonIdx = betKey.indexOf(':');
+    const handId = parseInt(betKey.slice(0, colonIdx));
+    const rankName = betKey.slice(colonIdx + 1);
+    perHandRankHandIdx = handId - 1;
+    perHandRankCat = RANK_CAT_MAP[rankName] ?? -99;
+  }
+
+  return { targetHandIdx, targetRankCat, colorThreshold, colorIsRed, lhLow, perHandRankHandIdx, perHandRankCat };
 }
 
-function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayouts, rankPayouts, colorPayouts, lhPayout) {
-  const { targetHandIdx, targetRankCat, colorThreshold, colorIsRed, lhLow } = params;
+function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts) {
+  const { targetHandIdx, targetRankCat, colorThreshold, colorIsRed, lhLow, perHandRankHandIdx, perHandRankCat } = params;
   const evalResult = evalAllHands(b0, b1, b2, b3, b4);
   const { strengths, winners, winnerCount } = evalResult;
   const isBoardWinMic = winnerCount === 10;
@@ -336,6 +347,15 @@ function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayou
   if (betType === 'hand') {
     oddsUsed = handPayouts[targetHandIdx];
     if (!isBoardWinMic && winners[targetHandIdx] === 1) won = true;
+  } else if (betType === 'perHandRank') {
+    // Win rule: the specific hand must WIN AND achieve the target rank
+    const colonIdx = betKey.indexOf(':');
+    const rankName = betKey.slice(colonIdx + 1);
+    oddsUsed = (perHandRankPayouts && perHandRankPayouts[perHandRankHandIdx + 1]) ? perHandRankPayouts[perHandRankHandIdx + 1][rankName] ?? null : null;
+    if (!isBoardWinMic && winners[perHandRankHandIdx] === 1) {
+      const myRankCat = rankCatFromStrength(strengths[perHandRankHandIdx]);
+      if (myRankCat === perHandRankCat) won = true;
+    }
   } else if (betType === 'rank') {
     // CORRECT RULE: rank bet wins only when the winning hand's rank matches.
     oddsUsed = rankPayouts[betKey] ?? null;
@@ -375,11 +395,11 @@ function handleRun(payload) {
   const {
     callId,
     rounds, betType, betKey,
-    handPayouts, rankPayouts, colorPayouts, lhPayout,
+    handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts,
   } = payload;
 
   const params = decodeBetParams(betType, betKey);
-  const { targetHandIdx, targetRankCat, colorThreshold, colorIsRed, lhLow } = params;
+  const { targetHandIdx, targetRankCat, colorThreshold, colorIsRed, lhLow, perHandRankHandIdx, perHandRankCat } = params;
   const BET = 100;
 
   // EXPLICIT BUFFER FLUSH — clear before allocating new buffer
@@ -425,6 +445,18 @@ function handleRun(payload) {
       if (!isBoardWin && winners[targetHandIdx] === 1) {
         won = true;
         profit = BET * handPayouts[targetHandIdx];
+      }
+    } else if (betType === 'perHandRank') {
+      // Win rule: the specific hand must WIN (not a board win) AND achieve the target rank
+      if (!isBoardWin && winners[perHandRankHandIdx] === 1) {
+        const myRankCat = rankCatFromStrength(strengths[perHandRankHandIdx]);
+        if (myRankCat === perHandRankCat) {
+          won = true;
+          const colonIdx = betKey.indexOf(':');
+          const rankName = betKey.slice(colonIdx + 1);
+          const phr = perHandRankPayouts && perHandRankPayouts[perHandRankHandIdx + 1];
+          profit = BET * (phr ? (phr[rankName] ?? 0) : 0);
+        }
       }
     } else if (betType === 'rank') {
       // CORRECT RULE: Rank bet wins ONLY when the winning hand's rank matches.
@@ -522,7 +554,7 @@ function handleRun(payload) {
 // Falls back to 50 fresh hands only if no matching buffer exists.
 // NEVER re-sorts — data is emitted in strict ascending sequenceId order.
 function handleMicroscope(payload) {
-  const { callId, betType, betKey, handPayouts, rankPayouts, colorPayouts, lhPayout } = payload;
+  const { callId, betType, betKey, handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts } = payload;
   const params = decodeBetParams(betType, betKey);
 
   const bufferMatchesBet = globalAuditBufferBetKey === `${betType}:${betKey}`;
@@ -536,9 +568,10 @@ function handleMicroscope(payload) {
       const handResult = buildHandResult(g + 1, b0, b1, b2, b3, b4);
       const { won, oddsUsed, evalResult } = evalWinFromBoard(
         b0, b1, b2, b3, b4, betType, betKey, params,
-        handPayouts, rankPayouts, colorPayouts, lhPayout
+        handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts
       );
-      log.push(buildLogEntry(handResult, won, oddsUsed, params.targetHandIdx, evalResult));
+      const logHandIdx = betType === 'perHandRank' ? params.perHandRankHandIdx : params.targetHandIdx;
+      log.push(buildLogEntry(handResult, won, oddsUsed, logHandIdx, evalResult));
     }
   } else {
     // Fallback — generate 50 fresh hands, sequenceId 1..50
@@ -547,9 +580,10 @@ function handleMicroscope(payload) {
       const handResult = buildHandResult(g + 1, b0, b1, b2, b3, b4);
       const { won, oddsUsed, evalResult } = evalWinFromBoard(
         b0, b1, b2, b3, b4, betType, betKey, params,
-        handPayouts, rankPayouts, colorPayouts, lhPayout
+        handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts
       );
-      log.push(buildLogEntry(handResult, won, oddsUsed, params.targetHandIdx, evalResult));
+      const logHandIdx = betType === 'perHandRank' ? params.perHandRankHandIdx : params.targetHandIdx;
+      log.push(buildLogEntry(handResult, won, oddsUsed, logHandIdx, evalResult));
     }
   }
 
@@ -575,7 +609,7 @@ function handleExport(payload) {
     callId,
     rows = 1_000_000,
     betType, betKey,
-    handPayouts, rankPayouts, colorPayouts, lhPayout,
+    handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts,
   } = payload;
 
   const bufferMatchesBet = globalAuditBufferBetKey === `${betType}:${betKey}`;
@@ -648,7 +682,7 @@ function handleExport(payload) {
       const exportParams = decodeBetParams(betType, betKey);
       const { won: auditedBetWon } = evalWinFromBoard(
         b0, b1, b2, b3, b4, betType, betKey, exportParams,
-        handPayouts, rankPayouts, colorPayouts, lhPayout
+        handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts
       );
 
       // Phase 3: Three independent per-round win flags for the audited bet
