@@ -98,7 +98,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 initial={{ opacity: 0, scale: 0.8, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] pointer-events-auto relative`}
+                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto pointer-events-auto relative`}
                 style={{ background: 'transparent' }}
               >
                 {/* Close Button */}
@@ -122,7 +122,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 </div>
 
                 {/* Winning bets breakdown */}
-                <div className="space-y-2 mb-4 max-h-96 overflow-y-auto pr-2 pointer-events-auto">
+                <div className="space-y-2 mb-4 pr-2 pointer-events-auto">
                   {payout.wins.map((win, idx) => {
                     const profit = win.payout - win.bet;
                     return (
