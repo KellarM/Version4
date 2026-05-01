@@ -11,10 +11,20 @@ function RTPCell({ rtp }) {
   );
 }
 
+// RANK_PAYOUTS for ranks that are bettable (matches payoutConstants)
+// These are used to compute rank-level RTP stats
+const RANK_PAYOUTS_FOR_BREAKDOWN = {
+  'Four of a Kind':  12.43,
+  'Full House':       2.53,
+  'Flush':            3.10,
+  'Straight':         5.02,
+  'Three of a Kind':  3.95,
+  'Two Pair':        16.76,
+};
+
 const NO_BET_RANKS = new Set(['One Pair (no bet)', 'Straight Flush (no bet)', 'Royal Flush']);
 
-// handRankPayouts: the PER_HAND_RANK_PAYOUTS[handId] object for the specific hand being audited
-export default function RankBreakdown({ rankBreakdown, totalHandWins, totalGames, handRankPayouts }) {
+export default function RankBreakdown({ rankBreakdown, totalHandWins, totalGames }) {
   if (!rankBreakdown || rankBreakdown.length === 0) {
     return (
       <div className="text-gray-500 text-xs italic py-2">No rank breakdown data available.</div>
@@ -53,27 +63,26 @@ export default function RankBreakdown({ rankBreakdown, totalHandWins, totalGames
           <tbody>
             {sorted.map(({ rank, wins }) => {
               const noBet = NO_BET_RANKS.has(rank);
-              // Use the per-hand rank payout from PER_HAND_RANK_PAYOUTS for this specific hand
-              const payout = noBet ? null : (handRankPayouts?.[rank] ?? null);
-
-              // winFreq = wins / totalGames = the actual probability of this rank occurring
-              // in a round. This is the correct base for RTP and odds calculations because:
-              // "I bet $1 on this rank — how often do I win per round?"
+              const payout = noBet ? null : (RANK_PAYOUTS_FOR_BREAKDOWN[rank] ?? null);
               const winFreq = totalGames > 0 ? wins / totalGames : 0;
               const pctOfHandWins = totalHandWins > 0 ? ((wins / totalHandWins) * 100).toFixed(2) : '0.00';
               const winPct = (winFreq * 100).toFixed(4);
 
-              // RTP = win frequency × (1 + payout) × 100
-              // Uses winFreq (per-round) not condFreq (per-hand-win) to correctly reflect
-              // what a player placing a rank bet each round would actually experience.
-              const rtp = (payout !== null && winFreq > 0)
-                ? (winFreq * (1 + payout) * 100)
+              // Conditional probability: rank frequency given that this carded hand won.
+              // Odds are computed off totalHandWins (NOT totalGames), so they reflect
+              // "how often does this rank occur per win of this hand" — not per round.
+              const condFreq = totalHandWins > 0 ? wins / totalHandWins : 0;
+
+              // RTP / house edge use the conditional frequency too, since the rank-level
+              // payout is only realized within the subset of rounds where this hand wins.
+              const rtp = (payout !== null && condFreq > 0)
+                ? (condFreq * (1 + payout) * 100)
                 : null;
               const houseEdge = rtp !== null ? (100 - rtp) : null;
-              const fairOdds = winFreq > 0 ? Math.round(((1 / winFreq) - 1) * 100) / 100 : null;
-              const for95    = winFreq > 0 ? Math.round(((0.95  / winFreq) - 1) * 100) / 100 : null;
-              const for965   = winFreq > 0 ? Math.round(((0.965 / winFreq) - 1) * 100) / 100 : null;
-              const for98    = winFreq > 0 ? Math.round(((0.98  / winFreq) - 1) * 100) / 100 : null;
+              const fairOdds = condFreq > 0 ? Math.round(((1 / condFreq) - 1) * 100) / 100 : null;
+              const for95    = condFreq > 0 ? Math.round(((0.95  / condFreq) - 1) * 100) / 100 : null;
+              const for965   = condFreq > 0 ? Math.round(((0.965 / condFreq) - 1) * 100) / 100 : null;
+              const for98    = condFreq > 0 ? Math.round(((0.98  / condFreq) - 1) * 100) / 100 : null;
 
               return (
                 <tr key={rank} className="border-b border-slate-700/30 hover:bg-slate-700/10">

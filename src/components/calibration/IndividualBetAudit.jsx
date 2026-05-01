@@ -288,7 +288,6 @@ function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunni
                   rankBreakdown={r.rankBreakdown}
                   totalHandWins={r.wins}
                   totalGames={r.totalGames}
-                  handRankPayouts={PER_HAND_RANK_PAYOUTS[parseInt(def.betKey)] ?? {}}
                 />
               </div>
             )}
