@@ -98,8 +98,8 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 initial={{ opacity: 0, scale: 0.8, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl min-w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto pointer-events-auto relative`}
-                style={{ background: 'transparent' }}
+                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl w-[480px] max-w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden pointer-events-auto relative`}
+                style={{ background: 'linear-gradient(135deg, #f6d860 0%, #e8c22a 40%, #fbbf24 100%)' }}
               >
                 {/* Close Button */}
                 <motion.button
@@ -115,10 +115,10 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 {/* Header */}
                 <div className="text-center mb-4">
                   {playerCount > 1 && (
-                    <div className="text-sm font-bold text-yellow-400 mb-1" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>PLAYER {playerId + 1}</div>
+                    <div className="text-sm font-black text-black mb-1">PLAYER {playerId + 1}</div>
                   )}
-                  <div className="text-2xl font-black text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 2px 0 #000, 2px 0 0 #000, 0 -2px 0 #000, -2px 0 0 #000' }}>YOU WIN!</div>
-                  <div className="text-xl font-black text-yellow-400 mt-1" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 2px 0 #000, 2px 0 0 #000, 0 -2px 0 #000, -2px 0 0 #000' }}>WINNER</div>
+                  <div className="text-2xl font-black text-black">YOU WIN!</div>
+                  <div className="text-xl font-black text-black mt-1">WINNER</div>
                 </div>
 
                 {/* Winning bets breakdown */}
@@ -131,19 +131,19 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 + idx * 0.1 }}
-                        className="rounded-lg p-3 border border-yellow-400/30"
-                        style={{ background: 'transparent' }}
-                      >
+                        className="rounded-lg p-3 border border-black/20"
+                        style={{ background: 'rgba(0,0,0,0.08)' }}
+                        >
                         <div className="flex justify-between items-start mb-2 gap-2">
-                         <div className="font-black text-lg text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>{getHandSymbol(win.label)}</div>
-                         <div className="text-right">
-                           <div className="text-lg font-black text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>Bet: ${win.bet.toFixed(2)}</div>
-                           <div className="text-lg font-black text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>Odds: {win.odds}</div>
-                         </div>
+                          <div className="font-black text-lg text-black">{getHandSymbol(win.label)}</div>
+                          <div className="text-right">
+                            <div className="text-lg font-black text-black">Bet: ${win.bet.toFixed(2)}</div>
+                            <div className="text-lg font-black text-black">Odds: {win.odds}</div>
+                          </div>
                         </div>
                         <div className="flex justify-between items-center text-lg gap-2">
-                         <span className="font-black text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>${profit.toFixed(2)} + BET OF ${win.bet.toFixed(2)}</span>
-                         <span className="font-black text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>= ${win.payout.toFixed(2)}</span>
+                          <span className="font-black text-black">${profit.toFixed(2)} + BET OF ${win.bet.toFixed(2)}</span>
+                          <span className="font-black text-black">= ${win.payout.toFixed(2)}</span>
                         </div>
                       </motion.div>
                     );
@@ -151,20 +151,20 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 </div>
 
                 {/* Totals */}
-                <div className="border-t border-yellow-400/30 pt-3 space-y-2">
+                <div className="border-t border-black/30 pt-3 space-y-2">
                   <div className="flex justify-between text-lg font-black gap-2">
-                    <span className="text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>Total Wagered</span>
-                    <span className="text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>${payout.totalBet.toFixed(2)}</span>
+                    <span className="text-black">Total Wagered</span>
+                    <span className="text-black">${payout.totalBet.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-black gap-2">
-                    <span className="text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>Net Win</span>
-                    <span className={payout.netWin >= 0 ? "text-green-400" : "text-red-500"} style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>
+                    <span className="text-black">Net Win</span>
+                    <span className={payout.netWin >= 0 ? "text-green-700 font-black" : "text-red-700 font-black"}>
                       ${payout.netWin.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-lg font-black gap-2">
-                    <span className="text-yellow-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>Total Win</span>
-                    <span className="text-green-400" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>
+                    <span className="text-black">Total Win</span>
+                    <span className={payout.netWin >= 0 ? "text-green-700 font-black" : "text-red-700 font-black"}>
                       ${(payout.totalBet + payout.netWin).toFixed(2)}
                     </span>
                   </div>
