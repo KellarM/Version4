@@ -11,7 +11,8 @@ import {
   getUnlockedRanksForPlayer,
   isSideBetGateOpen,
 } from '@/lib/gameEngine';
-import { HAND_RANK_PAYOUTS as RANK_PAYOUT_MAP, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } from '@/lib/payoutConstants';
+import { COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } from '@/lib/payoutConstants';
+import { getPerHandRankPayout } from '@/lib/perHandRankPayouts';
 import FixedHandCard from '@/components/game/FixedHandCard';
 import CommunityCards from '@/components/game/CommunityCards';
 import SideBets from '@/components/game/SideBets';
@@ -1078,21 +1079,19 @@ export default function RapidFireGame() {
       // AND that winning hand's best rank matches the player's rank bet.
       // A rank match on a non-winning hand (or on a winning hand the player didn't bet) = loss.
       if (leader && Object.keys(prk).length > 0) {
-        const playerBetHandIds = Object.keys(ph).map(Number);
-        const playerWinningHandIds = leader.handIds.filter(id => playerBetHandIds.includes(id));
+      const playerBetHandIds = Object.keys(ph).map(Number);
+      const playerWinningHandIds = leader.handIds.filter(id => playerBetHandIds.includes(id));
 
-        const winningRanksForPlayer = new Set();
+      for (const [rankKey, rankBetAmt] of Object.entries(prk)) {
+        if (rankBetAmt <= 0) continue;
+        // Find the first winning hand that both the player bet on AND achieves this rank
         for (const wid of playerWinningHandIds) {
           const hand = FIXED_HANDS.find(h => h.id === wid);
           if (!hand) continue;
           const result = evaluateBestHand(hand.cards, finalComm);
-          if (result) winningRanksForPlayer.add(result.name);
-        }
-
-        for (const [rankKey, rankBetAmt] of Object.entries(prk)) {
-          if (rankBetAmt > 0 && winningRanksForPlayer.has(rankKey)) {
-            const ratio = RANK_PAYOUT_MAP[rankKey];
-            if (ratio !== undefined && ratio !== null) {
+          if (result && result.name === rankKey) {
+            const ratio = getPerHandRankPayout(wid, rankKey);
+            if (ratio !== null) {
               const payout = calculatePayout(rankBetAmt, ratio);
               w += payout;
               wins.push({
@@ -1102,8 +1101,10 @@ export default function RapidFireGame() {
                 payout,
               });
             }
+            break; // only pay once per rank bet
           }
         }
+      }
       }
 
       // Total bets for this player
@@ -1631,6 +1632,7 @@ export default function RapidFireGame() {
               rankBetCount={rankBetCount}
               unlockedRanks={unlockedRanks}
               activePlayerId={pid}
+              activeHandIds={activeHandIds}
               onAttemptLockedRank={(type) => {
                 setRankAlertType(type);
                 setShowRankLimitAlert(true);

@@ -339,14 +339,14 @@ export { HAND_RANK_PAYOUTS } from '@/lib/payoutConstants';
 export const HAND_RANK_MATRIX = Object.freeze({
   //               FoaK  FH  Flush  Str  Trips  TwoPair  OnePair
   1:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // A (A♦ 10♥)
-  10: Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // B (A♥ 5♦)
-  2:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0, 'One Pair': 0 }),  // C (K♣ K♠)
-  3:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // D (Q♣ J♠)
-  4:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 0, 'Two Pair': 1, 'One Pair': 1 }),  // E (Q♠ 10♠)
-  5:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // F (J♣ 9♣)
-  6:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // G (8♦ 6♦)
+  10: Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 0 }),  // B (A♥ 5♦)
+  2:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0, 'One Pair': 1 }),  // C (K♣ K♠)
+  3:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 0 }),  // D (Q♣ J♠)
+  4:  Object.freeze({ 'Four of a Kind': 0, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 0, 'Two Pair': 1, 'One Pair': 0 }),  // E (Q♠ 10♠)
+  5:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 0 }),  // F (J♣ 9♣)
+  6:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 0 }),  // G (8♦ 6♦)
   7:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0, 'One Pair': 0 }),  // H (7♦ 7♠)
-  8:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 1 }),  // I (4♥ 2♥)
+  8:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 1, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 1, 'One Pair': 0 }),  // I (4♥ 2♥)
   9:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0, 'One Pair': 0 }),  // J (3♣ 3♥)
 });
 

@@ -1,0 +1,161 @@
+/**
+ * PER-HAND RANK PAYOUTS — RAPID FIRE TEXAS HOLD'EM
+ * ==================================================
+ * Each card hand has its own unique rank payout odds.
+ * Key: hand ID (1–10)
+ * Value: object mapping rank name → payout ratio (e.g. 2.87 means 2.87:1)
+ *
+ * Only ranks that are achievable for that hand are listed.
+ * Ranks not listed are not available (locked) for that hand.
+ */
+
+export const PER_HAND_RANK_PAYOUTS = {
+  // Hand 1: A♦ / 10♥
+  1: {
+    'Full House':      2.87,
+    'Two Pair':        3.27,
+    'Straight':        3.33,
+    'Flush':           5.52,
+    'Three of a Kind': 8.16,
+    'One Pair':        28.51,
+  },
+
+  // Hand 2: K♣ / K♠
+  2: {
+    'Full House':      1.35,
+    'Three of a Kind': 1.62,
+    'Four of a Kind':  7.59,
+    'Flush':           12.73,
+    'One Pair':        29.74,
+    'Straight':        71.13,
+  },
+
+  // Hand 3: Q♣ / J♠
+  3: {
+    'Straight':        0.73,
+    'Full House':      4.24,
+    'Two Pair':        5.27,
+    'Three of a Kind': 8.24,
+  },
+
+  // Hand 4: Q♠ / 10♠
+  4: {
+    'Flush':           0.76,
+    'Straight':        2.04,
+    'Full House':      8.88,
+    'Two Pair':        25.70,
+  },
+
+  // Hand 5: J♣ / 9♣
+  5: {
+    'Flush':           1.11,
+    'Straight':        3.53,
+    'Full House':      4.75,
+    'Three of a Kind': 10.98,
+    'Two Pair':        20.17,
+    'Four of a Kind':  54.23,
+  },
+
+  // Hand 6: 8♦ / 6♦
+  6: {
+    'Flush':           1.54,
+    'Straight':        3.51,
+    'Full House':      3.78,
+    'Three of a Kind': 7.71,
+    'Two Pair':        14.15,
+    'Four of a Kind':  32.58,
+  },
+
+  // Hand 7: 7♦ / 7♠
+  7: {
+    'Full House':      1.19,
+    'Three of a Kind': 2.08,
+    'Four of a Kind':  5.05,
+    'Straight':        10.67,
+  },
+
+  // Hand 8: 4♥ / 2♥
+  8: {
+    'Flush':           1.16,
+    'Full House':      5.13,
+    'Straight':        5.62,
+    'Three of a Kind': 5.72,
+    'Two Pair':        12.36,
+    'Four of a Kind':  27.15,
+  },
+
+  // Hand 9: 3♣ / 3♥
+  9: {
+    'Full House':      1.27,
+    'Three of a Kind': 2.19,
+    'Four of a Kind':  3.63,
+    'Straight':        14.84,
+  },
+
+  // Hand 10: A♥ / 5♦
+  10: {
+    'Full House':      2.49,
+    'Straight':        2.84,
+    'Three of a Kind': 4.83,
+    'Two Pair':        4.93,
+    'Flush':           7.83,
+    'Four of a Kind':  26.36,
+  },
+};
+
+/**
+ * Get the payout ratio for a specific hand + rank combination.
+ * Returns null if the rank is not available for that hand.
+ */
+export function getPerHandRankPayout(handId, rankName) {
+  return PER_HAND_RANK_PAYOUTS[handId]?.[rankName] ?? null;
+}
+
+/**
+ * Get the set of available rank names for a given hand ID.
+ */
+export function getAvailableRanksForHand(handId) {
+  return new Set(Object.keys(PER_HAND_RANK_PAYOUTS[handId] || {}));
+}
+
+/**
+ * Given a set of active hand IDs, return the union of available ranks.
+ */
+export function getUnionRanksForHands(handIds) {
+  const union = new Set();
+  for (const id of handIds) {
+    for (const rank of getAvailableRanksForHand(id)) {
+      union.add(rank);
+    }
+  }
+  return union;
+}
+
+/**
+ * Given a rank and a set of active hand IDs, determine the display odds string.
+ * - 0 hands selected: null (no odds shown, locked)
+ * - 1 hand selected: the specific odds for that hand (or null if not available)
+ * - 2 hands selected: "MIXED" if both hands have that rank, or the specific odds if only one has it
+ * - 3+ hands selected: null (kill switch, all locked)
+ */
+export function getRankDisplayOdds(rankName, activeHandIds) {
+  if (!activeHandIds || activeHandIds.length === 0 || activeHandIds.length >= 3) {
+    return null;
+  }
+
+  if (activeHandIds.length === 1) {
+    const payout = getPerHandRankPayout(activeHandIds[0], rankName);
+    return payout !== null ? `${payout}:1` : null;
+  }
+
+  // 2 hands
+  const available = activeHandIds.filter(id => getPerHandRankPayout(id, rankName) !== null);
+  if (available.length === 0) return null;
+  if (available.length === 1) {
+    // Only one of the two hands can achieve this rank — show that hand's odds
+    const payout = getPerHandRankPayout(available[0], rankName);
+    return payout !== null ? `${payout}:1` : null;
+  }
+  // Both hands have this rank with different odds
+  return 'MIXED';
+}

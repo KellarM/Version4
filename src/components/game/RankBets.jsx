@@ -1,16 +1,16 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
-import { HAND_RANK_PAYOUTS } from '@/lib/payoutConstants';
+import { getRankDisplayOdds } from '@/lib/perHandRankPayouts';
 import Chip from './Chip';
 
 export const RANK_BET_OPTIONS = [
-  { key: 'Four of a Kind',  label: '4 Of A Kind',  payout: `${HAND_RANK_PAYOUTS['Four of a Kind']}:1`  },
-  { key: 'Full House',      label: 'Full House',   payout: `${HAND_RANK_PAYOUTS['Full House']}:1`      },
-  { key: 'Flush',           label: 'Flush',        payout: `${HAND_RANK_PAYOUTS['Flush']}:1`           },
-  { key: 'Straight',        label: 'Straight',     payout: `${HAND_RANK_PAYOUTS['Straight']}:1`        },
-  { key: 'Three of a Kind', label: '3 Of A Kind',  payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1` },
-  { key: 'Two Pair',        label: '2 Pair',       payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`        },
-  { key: 'One Pair',        label: '1 Pair',       payout: `${HAND_RANK_PAYOUTS['One Pair']}:1`        },
+  { key: 'Four of a Kind',  label: '4 Of A Kind'  },
+  { key: 'Full House',      label: 'Full House'    },
+  { key: 'Flush',           label: 'Flush'         },
+  { key: 'Straight',        label: 'Straight'      },
+  { key: 'Three of a Kind', label: '3 Of A Kind'   },
+  { key: 'Two Pair',        label: '2 Pair'        },
+  { key: 'One Pair',        label: '1 Pair'        },
 ];
 
 function useUnlockPulse(rankKey, unlockedRanks) {
@@ -52,10 +52,13 @@ function RankSlot({
   opt, rankBets, allRankBets, playerCount, canBet,
   isWinner, isLeading, isKillLocked, isMathLocked, isSlotLocked,
   onRankBet, onRemoveRankBet, onMoveRankBet, gamePhase, unlockedRanks, killSwitchActive,
-  noHandBets, activePlayerId,
+  noHandBets, activePlayerId, activeHandIds,
 }) {
   const bet = rankBets[opt.key] || 0;
   const unlockPulse = useUnlockPulse(opt.key, unlockedRanks);
+
+  // Dynamic odds display based on selected hands
+  const displayOdds = getRankDisplayOdds(opt.key, activeHandIds || []);
 
   const hardLocked = noHandBets || isKillLocked;
   const fullyLocked = hardLocked || isMathLocked || isSlotLocked;
@@ -191,10 +194,10 @@ function RankSlot({
           )}
         </div>
         <span
-          className={`text-right whitespace-nowrap ${oddsColor}`}
-          style={{ fontSize: '0.8rem', fontWeight: 900, lineHeight: 1, flex: 1 }}
+          className={`text-right whitespace-nowrap ${displayOdds === 'MIXED' ? 'text-yellow-300/80' : oddsColor}`}
+          style={{ fontSize: displayOdds === 'MIXED' ? '0.65rem' : '0.8rem', fontWeight: 900, lineHeight: 1, flex: 1 }}
         >
-          {opt.payout}
+          {displayOdds || ''}
         </span>
       </div>
 
@@ -270,7 +273,7 @@ export default function RankBets({
   rankBets, allRankBets, playerCount, onRankBet, onRemoveRankBet, onMoveRankBet,
   gamePhase, winningRank, leadingRank, disabled, killSwitchActive,
   handBetCount, maxRankSlots, rankBetCount, unlockedRanks,
-  activePlayerId,
+  activePlayerId, activeHandIds,
   onAttemptLockedRank, onHoverRankRow,
 }) {
   const canBet = gamePhase === 'betting' && !disabled && !killSwitchActive;
@@ -339,6 +342,7 @@ export default function RankBets({
                 unlockedRanks={unlockedRanks}
                 killSwitchActive={killSwitchActive}
                 activePlayerId={activePlayerId}
+                activeHandIds={activeHandIds}
               />
             </div>
           );

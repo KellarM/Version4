@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
+import { CARDED_HAND_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 
 const FIXED_HANDS = [
   { id: 1,  label: 'A♦ / 10♥', payout: CARDED_HAND_PAYOUTS[0] },
@@ -17,13 +17,13 @@ const FIXED_HANDS = [
 ];
 
 const RANK_BETS = [
-  { name: 'Four of a Kind',  payout: `${HAND_RANK_PAYOUTS['Four of a Kind']}:1`,  note: '', color: 'text-yellow-300' },
-  { name: 'Full House',      payout: `${HAND_RANK_PAYOUTS['Full House']}:1`,      note: '', color: 'text-green-300' },
-  { name: 'Flush',           payout: `${HAND_RANK_PAYOUTS['Flush']}:1`,           note: '', color: 'text-blue-300' },
-  { name: 'Straight',        payout: `${HAND_RANK_PAYOUTS['Straight']}:1`,        note: '', color: 'text-teal-300' },
-  { name: 'Three of a Kind', payout: `${HAND_RANK_PAYOUTS['Three of a Kind']}:1`, note: '', color: 'text-green-300' },
-  { name: 'Two Pair',        payout: `${HAND_RANK_PAYOUTS['Two Pair']}:1`,        note: '', color: 'text-green-300' },
-  { name: 'One Pair',        payout: `${HAND_RANK_PAYOUTS['One Pair']}:1`,        note: '(minimum qualifying rank)', color: 'text-blue-300' },
+  { name: 'Four of a Kind',  note: 'Odds vary by card hand', color: 'text-yellow-300' },
+  { name: 'Full House',      note: 'Odds vary by card hand', color: 'text-green-300' },
+  { name: 'Flush',           note: 'Odds vary by card hand', color: 'text-blue-300' },
+  { name: 'Straight',        note: 'Odds vary by card hand', color: 'text-teal-300' },
+  { name: 'Three of a Kind', note: 'Odds vary by card hand', color: 'text-green-300' },
+  { name: 'Two Pair',        note: 'Odds vary by card hand', color: 'text-green-300' },
+  { name: 'One Pair',        note: 'Min. qualifying rank — available on Hand 1 & 2 only', color: 'text-blue-300' },
 ];
 
 const COLOR_BETS = [
@@ -138,7 +138,7 @@ export default function GameRulesModal() {
 
                 {/* Rank Betting */}
                 <Section title="Rank Betting — Payouts">
-                  <p className="text-gray-400 text-xs mb-3">Bet on what poker rank the winning hand will achieve. Two Pair is the minimum qualifying rank. All ranks can be combined freely.</p>
+                  <p className="text-gray-400 text-xs mb-3">Bet on what poker rank the winning hand will achieve. Odds are unique to each card hand — select a hand to see its specific odds. One Pair is the minimum qualifying rank (available on Hand 1 &amp; 2 only).</p>
                   <div className="space-y-1.5">
                     {RANK_BETS.map(r => (
                       <div key={r.name} className="flex justify-between items-center bg-slate-800/60 rounded-lg px-3 py-1.5">
@@ -146,7 +146,6 @@ export default function GameRulesModal() {
                           <span className={`font-bold text-xs ${r.color}`}>{r.name}</span>
                           {r.note && <span className="text-gray-500 text-xs italic">{r.note}</span>}
                         </div>
-                        <span className="text-yellow-400 font-bold text-xs ml-2">{r.payout}</span>
                       </div>
                     ))}
                   </div>
@@ -206,7 +205,8 @@ export default function GameRulesModal() {
                       ['Flush',           'Five cards of the same suit (not consecutive)'],
                       ['Straight',        'Five consecutive cards (mixed suits)'],
                       ['Three of a Kind', 'Three cards of the same rank'],
-                      ['Two Pair',        'Two different pairs — minimum qualifying rank for Rank Board bets'],
+                      ['Two Pair',        'Two different pairs'],
+                      ['One Pair',        'One pair — minimum qualifying rank (Hand 1 &amp; Hand 2 only)'],
                     ].map(([name, desc]) => (
                       <div key={name} className="flex gap-3 items-start">
                         <span className="text-yellow-400 font-bold text-xs w-36 flex-shrink-0">{name}</span>
