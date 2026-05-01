@@ -327,6 +327,7 @@ export default function IndividualBetAudit() {
   const [microscopeLog, setMicroscopeLog] = useState(null);
   const [microscopeRunning, setMicroscopeRunning] = useState(false);
   const [betProgress, setBetProgress] = useState(0);
+  const [betProgressLabel, setBetProgressLabel] = useState('');
 
   // Export state
   const [exportKey, setExportKey] = useState(null);
@@ -374,6 +375,7 @@ export default function IndividualBetAudit() {
       else if (def.betType === 'lh') livePayout = livePayouts.lhPayout;
 
       try {
+        const isAdaptive = def.betType === 'perHandRank';
         const { promise, abort } = runBetAuditWithAbort(
           {
             rounds: totalGames,
@@ -386,7 +388,14 @@ export default function IndividualBetAudit() {
             perHandRankPayouts: livePayouts.perHandRankPayouts,
             captureLog: false,
           },
-          (pct) => setBetProgress(pct)
+          (pct, done, total) => {
+            setBetProgress(pct);
+            if (isAdaptive && done !== undefined && total !== undefined) {
+              setBetProgressLabel(`${done.toLocaleString()} / ${total.toLocaleString()} Card Wins`);
+            } else {
+              setBetProgressLabel('');
+            }
+          }
         );
         workerRef.current = { abort };
 
@@ -834,6 +843,9 @@ export default function IndividualBetAudit() {
                   transition={{ ease: 'linear', duration: 0.2 }}
                 />
               </div>
+            )}
+            {running && betProgressLabel && (
+              <div className="text-xs text-purple-400 mt-0.5">{betProgressLabel}</div>
             )}
           </div>
         )}

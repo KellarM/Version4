@@ -87,7 +87,7 @@ const MODULES = [
     name: 'Quick Check',
     rounds: 100_000,
     standard: 'Internal Pre-Flight',
-    description: '100K rounds per position — fast sanity check before deeper audits.',
+    description: '100K rounds/bet (Card Hands, Color, River) · 100K card wins/bet (Hand Ranks) — fast sanity check.',
     rtpLow: 93, rtpHigh: 99,
     badge: 'bg-slate-700 text-slate-300',
     accentColor: 'border-slate-500',
@@ -97,7 +97,7 @@ const MODULES = [
     name: 'Pre-Submission',
     rounds: 500_000,
     standard: 'House Internal Standard',
-    description: '500K rounds — internal compliance gate before external lab submission.',
+    description: '500K rounds/bet (Card Hands, Color, River) · 500K card wins/bet (Hand Ranks) — internal compliance gate.',
     rtpLow: 94, rtpHigh: 98.5,
     badge: 'bg-blue-900/40 text-blue-300',
     accentColor: 'border-blue-600',
@@ -107,7 +107,7 @@ const MODULES = [
     name: 'GLI / BMM',
     rounds: 1_000_000,
     standard: 'GLI-11 / BMM Technical',
-    description: '1M rounds — simulates the depth expected by GLI-11 and BMM Technical standards.',
+    description: '1M rounds/bet (Card Hands, Color, River) · 1M card wins/bet (Hand Ranks) — GLI-11 / BMM depth.',
     rtpLow: 95, rtpHigh: 98,
     badge: 'bg-amber-900/40 text-amber-300',
     accentColor: 'border-amber-600',
@@ -117,7 +117,7 @@ const MODULES = [
     name: 'Full Certification',
     rounds: 2_000_000,
     standard: 'eCOGRA / Full Certification',
-    description: '2M rounds per position — matches eCOGRA and full gaming certification depth.',
+    description: '2M rounds/bet (Card Hands, Color, River) · 2M card wins/bet (Hand Ranks) — eCOGRA / Full Certification depth.',
     rtpLow: 95, rtpHigh: 98,
     badge: 'bg-green-900/40 text-green-300',
     accentColor: 'border-green-600',
@@ -481,7 +481,12 @@ function ModulePanel({ module, bets, onResultsChange }) {
                             >
                               <td className="py-1.5 px-3 text-gray-200 font-medium">{bet.label}</td>
                               <td className="py-1.5 px-3 text-right text-gray-300 font-mono">{r.wins.toLocaleString()}</td>
-                              <td className="py-1.5 px-3 text-right text-gray-400">{r.winFrequency}%</td>
+                              <td className="py-1.5 px-3 text-right text-gray-400">
+                                {r.winFrequency}%
+                                {bet.betType === 'perHandRank' && r.perHandRankHandWins && (
+                                  <span className="block text-purple-400/70 text-xs">{r.perHandRankHandWins.toLocaleString()} card wins</span>
+                                )}
+                              </td>
                               <td className="py-1.5 px-3 text-right">
                                 <RTPPill rtp={parseFloat(r.rtp).toFixed(2)} low={module.rtpLow} high={module.rtpHigh} />
                               </td>

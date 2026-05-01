@@ -1,5 +1,5 @@
 // ============================================================
-// AUDIT WEB WORKER — v10 (Unity Buffer + Sequence IDs)
+// AUDIT WEB WORKER — v11 (Adaptive Card Wins for perHandRank)
 //
 // ENGINE RULES:
 //  • 32-card deck = 52 standard cards MINUS the 20 fixed player cards.
@@ -10,6 +10,11 @@
 //  • ALL 10 hands are evaluated using best5(2 hole + 5 board).
 //  • "Best hand" = highest ABSOLUTE 5-CARD STRENGTH.
 //  • Two hands are co-winners ONLY when strength scores are identical.
+//
+//  ADAPTIVE MODE (perHandRank bets only):
+//  • Instead of fixed rounds, the simulation runs until the target card hand
+//    wins the round N times (e.g. 100K card wins).
+//  • RTP and Win % are calculated against those N card wins, not total rounds.
 //
 //  UNITY DATA BUFFER (Single Source of Truth):
 //  • globalAuditBuffer stores boards from each RUN (up to 1M).
@@ -166,18 +171,6 @@ function buildWinnerLabel(winners) {
 
 // ══════════════════════════════════════════════════════════════
 // UNITY DATA BUFFER
-//
-// Layout: Uint8Array, 5 bytes per board.
-//   offset+0 = b0 (Flop card 1, index 0)
-//   offset+1 = b1 (Flop card 2, index 1)
-//   offset+2 = b2 (Flop card 3, index 2)
-//   offset+3 = b3 (Turn card,   index 3)
-//   offset+4 = b4 (River card,  index 4)
-//
-// sequenceId = bufferIndex + 1 (1-based, never reordered).
-// Microscope: reads indices 0..49 → sequenceId 1..50.
-// Export: reads indices 0..N-1 → Row 2..N+1 in Excel.
-// Both sources use identical index → card mapping.
 // ══════════════════════════════════════════════════════════════
 const BUFFER_CAP = 1_000_000;
 let globalAuditBuffer = null;
@@ -191,45 +184,36 @@ function flushBuffer() {
 }
 
 function initBuffer(count) {
-  // Explicit flush before allocating — guarantees no stale data
   flushBuffer();
   const cap = Math.min(count, BUFFER_CAP);
   globalAuditBuffer = new Uint8Array(cap * 5);
 }
 
 function storeBoard(idx, b0, b1, b2, b3, b4) {
-  // Called IMMEDIATELY after shuffleAndDeal(), BEFORE any evaluation.
-  // Index order matches deal order — sequenceId = idx + 1.
   const offset = idx * 5;
-  globalAuditBuffer[offset]   = b0;  // flop[0]
-  globalAuditBuffer[offset+1] = b1;  // flop[1]
-  globalAuditBuffer[offset+2] = b2;  // flop[2]
-  globalAuditBuffer[offset+3] = b3;  // turn
-  globalAuditBuffer[offset+4] = b4;  // river
+  globalAuditBuffer[offset]   = b0;
+  globalAuditBuffer[offset+1] = b1;
+  globalAuditBuffer[offset+2] = b2;
+  globalAuditBuffer[offset+3] = b3;
+  globalAuditBuffer[offset+4] = b4;
 }
 
 function readBoard(idx) {
   const offset = idx * 5;
   return [
-    globalAuditBuffer[offset],   // flop[0]
-    globalAuditBuffer[offset+1], // flop[1]
-    globalAuditBuffer[offset+2], // flop[2]
-    globalAuditBuffer[offset+3], // turn
-    globalAuditBuffer[offset+4], // river
+    globalAuditBuffer[offset],
+    globalAuditBuffer[offset+1],
+    globalAuditBuffer[offset+2],
+    globalAuditBuffer[offset+3],
+    globalAuditBuffer[offset+4],
   ];
 }
 
-// ── Standard HandResult object ────────────────────────────────
-// Both Microscope and Export derive data from this same structure.
-// flop[0] = Flop_C1, flop[1] = Flop_C2, flop[2] = Flop_C3
-// turn    = Turn_C4
-// river   = River_C5
 function buildHandResult(sequenceId, b0, b1, b2, b3, b4) {
   const flop  = [decodeCard(b0), decodeCard(b1), decodeCard(b2)];
   const turn  = decodeCard(b3);
   const river = decodeCard(b4);
 
-  // sequence is derived from flop/turn/river — not an independent source
   const sequence = [
     { position: 'Flop 1', ...flop[0] },
     { position: 'Flop 2', ...flop[1] },
@@ -263,7 +247,6 @@ function buildHandResult(sequenceId, b0, b1, b2, b3, b4) {
   return { sequenceId, flop, turn, river, sequence, reds, blacks, colorWins, isLow, riverResult };
 }
 
-// ── Build a log entry for the Microscope ─────────────────────
 function buildLogEntry(handResult, won, oddsUsed, targetHandIdx, evalResult) {
   const { strengths, bestStr, bestRankCat, winners, winnerCount } = evalResult;
   const winnerLabel = buildWinnerLabel(winners);
@@ -271,37 +254,28 @@ function buildLogEntry(handResult, won, oddsUsed, targetHandIdx, evalResult) {
   const isInspectedHandWinner = targetHandIdx >= 0 && winners[targetHandIdx] === 1;
 
   return {
-    // Primary key — strict ascending, 1-based
     sequenceId: handResult.sequenceId,
-    round: handResult.sequenceId, // alias kept for backward compatibility
-
+    round: handResult.sequenceId,
     won,
     oddsUsed,
-
-    // Canonical card structure — Microscope and Export reference identical indices
-    flop:     handResult.flop,    // flop[0]=C1, flop[1]=C2, flop[2]=C3
-    turn:     handResult.turn,    // C4
-    river:    handResult.river,   // C5
-    sequence: handResult.sequence, // derived view: [flop[0], flop[1], flop[2], turn, river]
-
+    flop:     handResult.flop,
+    turn:     handResult.turn,
+    river:    handResult.river,
+    sequence: handResult.sequence,
     holeCards: targetHandIdx >= 0
       ? [decodeCard(HANDS[targetHandIdx][0]), decodeCard(HANDS[targetHandIdx][1])]
       : null,
-
     winnerHandLabel: winnerLabel,
     winnerHandName:  winnerLabel,
     winnerHandIdx:   -1,
     winnerCount,
-
     bestRankIdx:  bestRankCat,
     bestRankName: bestRankCat >= 0 ? RANK_NAMES[bestRankCat] : 'High Card',
-
     thisHandRankIdx: thisHandRankCat,
     thisHandRank: thisHandRankCat !== null
       ? (thisHandRankCat >= 0 ? RANK_NAMES[thisHandRankCat] : 'High Card')
       : null,
     isInspectedHandWinner,
-
     colorWins:   handResult.colorWins,
     reds:        handResult.reds,
     blacks:      handResult.blacks,
@@ -309,7 +283,6 @@ function buildLogEntry(handResult, won, oddsUsed, targetHandIdx, evalResult) {
   };
 }
 
-// ── Decode bet parameters ─────────────────────────────────────
 const RANK_CAT_MAP = {
   'High Card':-1,'One Pair':0,'Two Pair':1,'Three of a Kind':2,
   'Straight':3,'Flush':4,'Full House':5,'Four of a Kind':6,
@@ -323,7 +296,6 @@ function decodeBetParams(betType, betKey) {
   if (betType === 'color') { colorThreshold = parseInt(betKey[0]); colorIsRed = betKey[1] === 'R'; }
   const lhLow = betType === 'lh' && betKey === 'LOW';
 
-  // perHandRank: betKey = "handId:rankName" e.g. "1:Full House"
   let perHandRankHandIdx = -1, perHandRankCat = -99;
   if (betType === 'perHandRank') {
     const colonIdx = betKey.indexOf(':');
@@ -348,7 +320,6 @@ function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayou
     oddsUsed = handPayouts[targetHandIdx];
     if (!isBoardWinMic && winners[targetHandIdx] === 1) won = true;
   } else if (betType === 'perHandRank') {
-    // Win rule: the specific hand must WIN AND achieve the target rank
     const colonIdx = betKey.indexOf(':');
     const rankName = betKey.slice(colonIdx + 1);
     oddsUsed = (perHandRankPayouts && perHandRankPayouts[perHandRankHandIdx + 1]) ? perHandRankPayouts[perHandRankHandIdx + 1][rankName] ?? null : null;
@@ -357,7 +328,6 @@ function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayou
       if (myRankCat === perHandRankCat) won = true;
     }
   } else if (betType === 'rank') {
-    // CORRECT RULE: rank bet wins only when the winning hand's rank matches.
     oddsUsed = rankPayouts[betKey] ?? null;
     for (let h = 0; h < 10; h++) {
       if (winners[h] === 1) {
@@ -382,7 +352,6 @@ function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayou
   return { won, oddsUsed, evalResult };
 }
 
-// ── Evaluate the rank of a specific hand (by index) against the board ──
 function evalHandRankCat(handIdx, b0, b1, b2, b3, b4) {
   const s = best7strength(HANDS[handIdx][0], HANDS[handIdx][1], b0, b1, b2, b3, b4);
   return rankCatFromStrength(s);
@@ -390,6 +359,8 @@ function evalHandRankCat(handIdx, b0, b1, b2, b3, b4) {
 
 // ── Main RUN handler ──────────────────────────────────────────
 const PROGRESS_UPDATE_INTERVAL = 50_000;
+// Safety cap: never run more than 30M total rounds even in adaptive mode
+const ADAPTIVE_MAX_ROUNDS = 30_000_000;
 
 function handleRun(payload) {
   const {
@@ -398,80 +369,78 @@ function handleRun(payload) {
     handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts,
   } = payload;
 
+  // For perHandRank bets: `rounds` is the TARGET number of card-hand wins (adaptive mode).
+  // For all other bet types: `rounds` is the fixed number of total rounds (unchanged).
+  const isAdaptive = betType === 'perHandRank';
+
   const params = decodeBetParams(betType, betKey);
   const { targetHandIdx, targetRankCat, colorThreshold, colorIsRed, lhLow, perHandRankHandIdx, perHandRankCat } = params;
   const BET = 100;
 
-  // Pre-compute perHandRank payout once outside the loop (avoid repeated string ops per round)
   let perHandRankPayout = 0;
-  if (betType === 'perHandRank') {
+  if (isAdaptive) {
     const colonIdx = betKey.indexOf(':');
     const rankName = betKey.slice(colonIdx + 1);
     const phr = (perHandRankPayouts != null) ? perHandRankPayouts[perHandRankHandIdx + 1] : null;
     perHandRankPayout = (phr != null) ? (phr[rankName] ?? 0) : 0;
-    console.log('[auditWorker] perHandRank init: handIdx=' + perHandRankHandIdx + ' rankName=' + rankName + ' payout=' + perHandRankPayout + ' cat=' + perHandRankCat);
   }
 
-  // EXPLICIT BUFFER FLUSH — clear before allocating new buffer
-  initBuffer(rounds);
-  const bufCap = Math.min(rounds, BUFFER_CAP);
+  // Buffer: for adaptive mode we don't know final round count, so cap at BUFFER_CAP
+  initBuffer(isAdaptive ? BUFFER_CAP : rounds);
+  let bufferedCount = 0;
 
+  let totalRounds = 0;
   let totalWins = 0, totalPaid = 0;
-  // Phase 3: Cumulative independent win counters
   let totalCardedHandWins = 0;
   let totalRankNonExceptionWins = 0;
   let totalLostToHouseWins = 0;
-  // For perHandRank: track how many times the target hand wins the round
-  let perHandRankHandWins = 0;
+  let perHandRankHandWins = 0; // card-hand wins (the hand wins the round)
 
-  // Rank breakdown for 'hand' betType: track wins by winning rank category
-  // rankBreakdownCounts[rankCat] = number of wins where that hand achieved that rank
-  const rankBreakdownCounts = new Int32Array(9); // indices 0..8 matching RANK_NAMES
+  const rankBreakdownCounts = new Int32Array(9);
 
-  for (let g = 0; g < rounds; g++) {
-    if (g > 0 && g % PROGRESS_UPDATE_INTERVAL === 0) {
-      self.postMessage({ type: 'PROGRESS', callId, done: g, total: rounds });
+  // Determine loop termination:
+  // - adaptive: stop when perHandRankHandWins reaches `rounds` (the target card wins)
+  // - fixed: stop when totalRounds reaches `rounds`
+  const targetCardWins = isAdaptive ? rounds : 0;
+  const fixedRounds = isAdaptive ? ADAPTIVE_MAX_ROUNDS : rounds;
+
+  while (totalRounds < fixedRounds) {
+    // Progress reporting
+    if (totalRounds > 0 && totalRounds % PROGRESS_UPDATE_INTERVAL === 0) {
+      const done  = isAdaptive ? perHandRankHandWins : totalRounds;
+      const total = isAdaptive ? targetCardWins : rounds;
+      self.postMessage({ type: 'PROGRESS', callId, done, total });
     }
 
-    // Step 1: Deal (shuffle + extract board)
     const board = shuffleAndDeal();
     const [b0, b1, b2, b3, b4] = board;
 
-    // Step 2: Store to buffer IMMEDIATELY after deal, BEFORE evaluation.
-    // This preserves the deal order as the canonical sequence.
-    if (g < bufCap) {
-      storeBoard(g, b0, b1, b2, b3, b4);
+    // Store to buffer (only up to BUFFER_CAP)
+    if (bufferedCount < BUFFER_CAP) {
+      storeBoard(bufferedCount, b0, b1, b2, b3, b4);
+      bufferedCount++;
     }
 
-    // Step 3: Evaluate
     const { strengths, bestStr, bestRankCat, winners, winnerCount } = evalAllHands(b0, b1, b2, b3, b4);
-
-    // Community Board Win: all 10 hands show as winners → house collects all hand bets.
-    // Rank, Color, and River side bets still resolve normally.
     const isBoardWin = winnerCount === 10;
 
     let won = false, profit = 0;
 
     if (betType === 'hand') {
-      // Hand bet only wins if this specific hand won AND it is NOT a board win
       if (!isBoardWin && winners[targetHandIdx] === 1) {
         won = true;
         profit = BET * handPayouts[targetHandIdx];
       }
     } else if (betType === 'perHandRank') {
-      // Win rule: the specific hand must WIN (not a board win) AND achieve the target rank
       if (!isBoardWin && winners[perHandRankHandIdx] === 1) {
-        perHandRankHandWins++; // track how many times this hand wins the round
+        perHandRankHandWins++; // this card hand won the round
         const myRankCat = rankCatFromStrength(strengths[perHandRankHandIdx]);
         if (myRankCat === perHandRankCat) {
           won = true;
-          profit = BET * perHandRankPayout; // pre-computed above loop
+          profit = BET * perHandRankPayout;
         }
       }
     } else if (betType === 'rank') {
-      // CORRECT RULE: Rank bet wins ONLY when the winning hand's rank matches.
-      // A rank achieved by a NON-WINNING hand does not count.
-      // Board wins are not excluded here — rank/color/river still pay on board wins.
       let rankWon = false;
       for (let h = 0; h < 10; h++) {
         if (winners[h] === 1) {
@@ -505,43 +474,44 @@ function handleRun(payload) {
     if (won) {
       totalWins++;
       totalPaid += BET + profit;
-      // Rank breakdown: record the winning rank of the target hand when it wins
       if (betType === 'hand') {
         const myRankCat = rankCatFromStrength(strengths[targetHandIdx]);
         if (myRankCat >= 0 && myRankCat <= 8) rankBreakdownCounts[myRankCat]++;
       }
     }
 
-    // Phase 3: Independent counters (bestRankCat already computed above)
     if (betType === 'hand' && won) totalCardedHandWins++;
     if (betType === 'rank' && won) {
-      // Rank exception: One Pair (cat 0), Straight Flush (cat 7), Royal Flush (cat 8)
       const isRankException = (bestRankCat === 0 || bestRankCat === 7 || bestRankCat === 8);
       if (!isRankException) totalRankNonExceptionWins++;
     }
     if (isBoardWin && !won) totalLostToHouseWins++;
+
+    totalRounds++;
+
+    // Adaptive stop: reached target card wins
+    if (isAdaptive && perHandRankHandWins >= targetCardWins) break;
   }
 
-  globalAuditBufferSize = bufCap;
+  globalAuditBufferSize = bufferedCount;
   globalAuditBufferBetKey = `${betType}:${betKey}`;
 
-  const totalBet = rounds * BET;
-  const winFreq = totalWins / rounds;
-  const rtp = totalBet > 0 ? totalPaid / totalBet : 0;
-  const houseEdge = 1 - rtp;
+  // ── Metrics ──
+  // For perHandRank (adaptive): denominator for Win% and RTP is perHandRankHandWins (card wins),
+  // not totalRounds. This is the statistically correct base.
+  const totalBet = totalRounds * BET;
 
-  // For perHandRank: use conditional frequency (rank wins / hand wins) for ALL metrics.
-  // This is the correct basis: "given Hand X won, what % of the time did it achieve Rank Y?"
-  // RTP, house edge, fair odds, and payout targets must all use this same frequency.
-  const isPerHandRank = betType === 'perHandRank' && perHandRankHandWins > 0;
-  const condFreq = isPerHandRank ? totalWins / perHandRankHandWins : null;
+  const condFreq = (isAdaptive && perHandRankHandWins > 0)
+    ? totalWins / perHandRankHandWins
+    : null;
 
-  // Effective frequency for odds-based columns (fair, for95, for96.5, for98)
-  const oddsFreq = condFreq !== null ? condFreq : winFreq;
+  const winFreq = condFreq !== null ? condFreq : (totalRounds > 0 ? totalWins / totalRounds : 0);
+  const oddsFreq = winFreq;
 
-  // RTP and house edge: for perHandRank, recalculate based on conditional freq × payout
-  // RTP = P(rank win | hand win) × (payout + 1)  — because the bettor only "plays" when the hand wins
-  const effectiveRtp   = condFreq !== null ? condFreq * (perHandRankPayout + 1) : rtp;
+  // RTP for perHandRank: P(rank win | card win) × (payout + 1)
+  const effectiveRtp = condFreq !== null
+    ? condFreq * (perHandRankPayout + 1)
+    : (totalBet > 0 ? totalPaid / totalBet : 0);
   const effectiveHouseEdge = 1 - effectiveRtp;
 
   self.postMessage({
@@ -550,9 +520,9 @@ function handleRun(payload) {
     data: {
       success: true,
       betType, betKey,
-      actualRounds: rounds,
+      actualRounds: totalRounds,
       wins: totalWins,
-      perHandRankHandWins: betType === 'perHandRank' ? perHandRankHandWins : undefined,
+      perHandRankHandWins: isAdaptive ? perHandRankHandWins : undefined,
       winFrequency: (winFreq * 100).toFixed(4),
       rtp: (effectiveRtp * 100).toFixed(4),
       houseEdge: (effectiveHouseEdge * 100).toFixed(4),
@@ -560,13 +530,11 @@ function handleRun(payload) {
       for95:    oddsFreq > 0 ? Math.round(((0.95/oddsFreq)-1)*100)/100 : null,
       for965:   oddsFreq > 0 ? Math.round(((0.965/oddsFreq)-1)*100)/100 : null,
       for98:    oddsFreq > 0 ? Math.round(((0.98/oddsFreq)-1)*100)/100 : null,
-      // Phase 3 counters
       totalCardedHandWins,
       totalRankNonExceptionWins,
       totalLostToHouseWins,
       bufferSize: globalAuditBufferSize,
       bufferBetKey: globalAuditBufferBetKey,
-      // Rank breakdown (only populated for hand bets)
       rankBreakdown: betType === 'hand'
         ? RANK_NAMES.map((name, idx) => ({ rank: name, wins: rankBreakdownCounts[idx] })).filter(r => r.wins > 0)
         : null,
@@ -575,9 +543,6 @@ function handleRun(payload) {
 }
 
 // ── Microscope ────────────────────────────────────────────────
-// Reads buffer[0..49] (sequenceId 1..50) when buffer matches this bet.
-// Falls back to 50 fresh hands only if no matching buffer exists.
-// NEVER re-sorts — data is emitted in strict ascending sequenceId order.
 function handleMicroscope(payload) {
   const { callId, betType, betKey, handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts } = payload;
   const params = decodeBetParams(betType, betKey);
@@ -587,7 +552,6 @@ function handleMicroscope(payload) {
   const log = [];
 
   if (count > 0) {
-    // Read from buffer — sequenceId = bufferIndex + 1, ascending order guaranteed
     for (let g = 0; g < count; g++) {
       const [b0, b1, b2, b3, b4] = readBoard(g);
       const handResult = buildHandResult(g + 1, b0, b1, b2, b3, b4);
@@ -599,7 +563,6 @@ function handleMicroscope(payload) {
       log.push(buildLogEntry(handResult, won, oddsUsed, logHandIdx, evalResult));
     }
   } else {
-    // Fallback — generate 50 fresh hands, sequenceId 1..50
     for (let g = 0; g < 50; g++) {
       const [b0, b1, b2, b3, b4] = shuffleAndDeal();
       const handResult = buildHandResult(g + 1, b0, b1, b2, b3, b4);
@@ -621,10 +584,6 @@ function handleMicroscope(payload) {
 }
 
 // ── Export ────────────────────────────────────────────────────
-// Streams CSV from buffer starting at index 0 (sequenceId 1).
-// Column 1 = Seq (sequenceId), then the 19 board/outcome columns.
-// Guaranteed: Row 2 in Excel = sequenceId 1 = Microscope row 1.
-// NEVER re-sorts. Data order is deal order, no exceptions.
 const CSV_HEADER = 'Seq,Flop_C1_Rank,Flop_C1_Suit,Flop_C2_Rank,Flop_C2_Suit,Flop_C3_Rank,Flop_C3_Suit,Turn_C4_Rank,Turn_C4_Suit,River_C5_Rank,River_C5_Suit,Winning_Hand,Winning_Hand_2,Winning_Rank,Shared_Win,House_Win,Rank_Exception,3_Red,4_Red,5_Red,3_Black,4_Black,5_Black,Low,High,Audited_Bet_Won,Audited_Bet_Carded_Hand_Win,Audited_Bet_Rank_Non_Exception_Win,Audited_Bet_Lost_To_House_Win';
 const EXPORT_CHUNK_SIZE = 10_000;
 const EXPORT_PROGRESS_INTERVAL = 50_000;
@@ -651,8 +610,6 @@ function handleExport(payload) {
     let lines = '';
 
     for (let i = 0; i < batch; i++) {
-      // bufferIndex = rowsDone + i, sequenceId = bufferIndex + 1
-      // Export starts at bufferIndex 0 → sequenceId 1 → Excel Row 2
       const bufIdx = rowsDone + i;
       let b0, b1, b2, b3, b4;
 
@@ -664,24 +621,18 @@ function handleExport(payload) {
 
       const seqId = bufIdx + 1;
 
-      // Card values — read from same indices as Microscope's flop/turn/river
-      // flop[0]=b0, flop[1]=b1, flop[2]=b2, turn=b3, river=b4
-      const c0 = decodeCard(b0); // Flop_C1 (matches handResult.flop[0])
-      const c1 = decodeCard(b1); // Flop_C2 (matches handResult.flop[1])
-      const c2 = decodeCard(b2); // Flop_C3 (matches handResult.flop[2])
-      const c3 = decodeCard(b3); // Turn_C4 (matches handResult.turn)
-      const c4 = decodeCard(b4); // River_C5 (matches handResult.river)
+      const c0 = decodeCard(b0);
+      const c1 = decodeCard(b1);
+      const c2 = decodeCard(b2);
+      const c3 = decodeCard(b3);
+      const c4 = decodeCard(b4);
 
       const { bestRankCat, winners, winnerCount, strengths } = evalAllHands(b0, b1, b2, b3, b4);
       const isBoardWinExport = winnerCount === 10;
 
-      // House_Win: community board beats all player hands (winnerCount === 10)
       const houseWin = isBoardWinExport ? 1 : 0;
-
-      // Shared_Win: more than one hand tied for the win (but not a board win)
       const sharedWin = (!isBoardWinExport && winnerCount > 1) ? 1 : 0;
 
-      // Winning_Hand (first winner label) and Winning_Hand_2 (second winner if shared)
       const winnerIndices = [];
       for (let h = 0; h < 10; h++) { if (winners[h] === 1) winnerIndices.push(h); }
       const winnerLabelRaw = isBoardWinExport ? 'House Win' : (winnerIndices.length > 0 ? HAND_LABELS[winnerIndices[0]] : 'None');
@@ -689,10 +640,7 @@ function handleExport(payload) {
       const winnerLabel2Raw = (!isBoardWinExport && winnerIndices.length > 1) ? HAND_LABELS[winnerIndices[1]] : '';
       const winnerLabel2 = `"${winnerLabel2Raw}"`;
 
-      // Rank_Exception: winning rank is One Pair (rank cat 0), Straight Flush (rank cat 7), or Royal Flush (rank cat 8)
-      // When true, no rank bets pay out
       const rankException = (bestRankCat === 0 || bestRankCat === 7 || bestRankCat === 8) ? 1 : 0;
-
       const rankName = bestRankCat >= 0 ? RANK_NAMES[bestRankCat] : 'High Card';
 
       let reds = 0;
@@ -710,7 +658,6 @@ function handleExport(payload) {
         handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts
       );
 
-      // Phase 3: Three independent per-round win flags for the audited bet
       const auditedBetCardedHandWin = (betType === 'hand' && auditedBetWon) ? 1 : 0;
       const auditedBetRankNonExceptionWin = (betType === 'rank' && auditedBetWon && rankException === 0) ? 1 : 0;
       const auditedBetLostToHouseWin = (houseWin === 1 && !auditedBetWon) ? 1 : 0;

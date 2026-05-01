@@ -30,7 +30,10 @@ function getPersistentWorker() {
       const pending = callId !== undefined ? _pendingCalls.get(callId) : null;
 
       if (type === 'PROGRESS') {
-        if (pending?.onProgress) pending.onProgress(done / total);
+        if (pending?.onProgress) {
+          const pct = (total > 0) ? done / total : 0;
+          pending.onProgress(pct, done, total);
+        }
         return;
       }
 
