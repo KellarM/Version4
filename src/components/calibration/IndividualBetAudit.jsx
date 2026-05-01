@@ -104,17 +104,28 @@ const GROUP_COLORS = {
   'Low / High':   'text-teal-400',
 };
 
+// Per-hand rank group options (one per card hand)
+const PER_HAND_GROUP_OPTIONS = Array.from({ length: 10 }, (_, i) => ({
+  value: `handranks:${i + 1}`,
+  label: `  Hand ${i + 1} Ranks — ${HAND_LABELS_IBA[i + 1].replace('Hand ' + (i+1) + ' — ', '')}`,
+}));
+
 const SELECTION_OPTIONS = [
   { value: 'all',                  label: `— All ${BET_DEFINITIONS.length} Bets —` },
   { value: 'group:Carded Hands',   label: 'Group: Carded Hands' },
-  { value: 'group:Hand Ranks',     label: 'Group: Hand Ranks' },
+  { value: 'group:Hand Ranks',     label: 'Group: All Hand Ranks' },
+  ...PER_HAND_GROUP_OPTIONS,
   { value: 'group:Color Board',    label: 'Group: Color Board' },
   { value: 'group:Low / High',     label: 'Group: Low / High' },
-  ...BET_DEFINITIONS.map(d => ({ value: `single:${d.betType}:${d.betKey}`, label: `  ${d.label}` })),
+  ...BET_DEFINITIONS.map(d => ({ value: `single:${d.betType}:${d.betKey}`, label: `    ${d.label}` })),
 ];
 
 function getSelectedDefs(selectionValue) {
   if (selectionValue === 'all') return BET_DEFINITIONS;
+  if (selectionValue.startsWith('handranks:')) {
+    const handId = parseInt(selectionValue.replace('handranks:', ''));
+    return BET_DEFINITIONS.filter(d => d.betType === 'perHandRank' && d.handId === handId);
+  }
   if (selectionValue.startsWith('group:')) {
     const grp = selectionValue.replace('group:', '');
     return BET_DEFINITIONS.filter(d => d.group === grp);
@@ -151,7 +162,7 @@ function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunni
       <tr className="border-b border-slate-700/40">
         <td className="px-2 py-2.5 w-8"></td>
         <td className="px-3 py-2.5 text-gray-300">{def.label}</td>
-        <td colSpan={10} className="px-4 py-2.5 text-gray-600 text-xs italic">pending...</td>
+        <td colSpan={11} className="px-4 py-2.5 text-gray-600 text-xs italic">pending...</td>
       </tr>
     );
   }
@@ -197,6 +208,12 @@ function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunni
         <td className="px-3 py-2.5 text-right font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>
           {def.betType === 'perHandRank' && r.perHandRankHandWins != null
             ? <span className="text-purple-400">{r.perHandRankHandWins.toLocaleString()}</span>
+            : <span className="text-gray-700">—</span>
+          }
+        </td>
+        <td className="px-3 py-2.5 text-right font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>
+          {def.betType === 'perHandRank' && r.actualRounds
+            ? <span className="text-slate-400">{r.actualRounds.toLocaleString()}</span>
             : <span className="text-gray-700">—</span>
           }
         </td>
@@ -407,6 +424,7 @@ export default function IndividualBetAudit() {
         const newResult = {
           wins: res.wins,
           totalGames,
+          actualRounds: res.actualRounds ?? totalGames,
           perHandRankHandWins: res.perHandRankHandWins ?? null,
           winFrequency: res.winFrequency,
           rtp: parseFloat(res.rtp).toFixed(2),
@@ -560,8 +578,8 @@ export default function IndividualBetAudit() {
     doc.text(`Generated: ${now}  |  ${progress} bets  |  ${selectedSize.gamesPerBet.toLocaleString()} rounds/bet  |  32-card engine`, pageW - 10, 13, { align: 'right' });
 
     let y = 28;
-    const colX =    [10,  68,  92,  112,  133,  154,  175,  196,  216,  237,  258];
-    const headers = ['Bet','Wins','Win %','House Edge','Actual RTP','Curr Odds','Fair (1)','For 95%','For 96.5%','For 98%','Status'];
+    const colX =    [10,  62,  84,  102,  118,  136,  155,  172,  190,  210,  228,  248];
+    const headers = ['Bet','Wins','Card Wins','# Rounds','Win %','House Edge','Actual RTP','Curr Odds','Fair (1)','For 95%','For 96.5%','For 98%'];
 
     GROUPS.forEach(group => {
       const defs = BET_DEFINITIONS.filter(d => d.group === group);
@@ -595,24 +613,27 @@ export default function IndividualBetAudit() {
         doc.setTextColor(0, 0, 0);
         doc.text(plainLabel(def), colX[0], y);
         doc.text(r.wins.toLocaleString(), colX[1], y);
-        doc.text(r.winFrequency + '%', colX[2], y);
+        doc.setTextColor(120, 80, 200);
+        doc.text(def.betType === 'perHandRank' && r.perHandRankHandWins ? r.perHandRankHandWins.toLocaleString() : '—', colX[2], y);
+        doc.setTextColor(100, 100, 120);
+        doc.text(def.betType === 'perHandRank' && r.actualRounds ? r.actualRounds.toLocaleString() : '—', colX[3], y);
+        doc.setTextColor(0, 0, 0);
+        doc.text(r.winFrequency + '%', colX[4], y);
         doc.setTextColor(180, 30, 30);
-        doc.text(he + '%', colX[3], y);
+        doc.text(he + '%', colX[5], y);
         if (rtpOk) doc.setTextColor(0, 140, 60);
         else if (rtp > 98) doc.setTextColor(200, 100, 0);
         else doc.setTextColor(200, 0, 0);
-        doc.text(r.rtp + '%', colX[4], y);
+        doc.text(r.rtp + '%', colX[6], y);
         doc.setTextColor(0, 0, 0);
-        doc.text(r.currentPayout + ':1', colX[5], y);
-        doc.text(r.fairOdds !== null ? r.fairOdds + ':1' : '—', colX[6], y);
+        doc.text(r.currentPayout + ':1', colX[7], y);
+        doc.text(r.fairOdds !== null ? r.fairOdds + ':1' : '—', colX[8], y);
         doc.setTextColor(0, 120, 0);
-        doc.text(r.for95 + ':1', colX[7], y);
+        doc.text(r.for95 + ':1', colX[9], y);
         doc.setTextColor(160, 100, 0);
-        doc.text(r.for965 + ':1', colX[8], y);
+        doc.text(r.for965 + ':1', colX[10], y);
         doc.setTextColor(0, 80, 180);
-        doc.text(r.for98 + ':1', colX[9], y);
-        doc.setTextColor(rtpOk ? 0 : 180, rtpOk ? 140 : 0, rtpOk ? 60 : 0);
-        doc.text(rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW', colX[10], y);
+        doc.text(r.for98 + ':1', colX[11], y);
         y += ROW_H;
       });
       y += 4;
@@ -631,13 +652,13 @@ export default function IndividualBetAudit() {
 
   const exportWord = () => {
     const now = new Date().toLocaleString();
-    const headers = ['Bet','Wins','Win %','House Edge %','Actual RTP','Curr Odds','Fair (1)','For 95%','For 96.5%','For 98%','Status'];
+    const headers = ['Bet','Wins','Card Wins','# Rounds','Win %','House Edge %','Actual RTP','Curr Odds','Fair (1)','For 95%','For 96.5%','For 98%'];
     let tableRows = '';
     GROUPS.forEach(group => {
       const defs = BET_DEFINITIONS.filter(d => d.group === group);
       const hasAny = defs.some(d => results[`${d.betType}:${d.betKey}`]);
       if (!hasAny) return;
-      tableRows += `<tr><td colspan="11" style="background:#dce6ff;font-weight:bold;font-size:10pt;padding:4px 6px;border:1px solid #6480c8;">${group}</td></tr>`;
+      tableRows += `<tr><td colspan="12" style="background:#dce6ff;font-weight:bold;font-size:10pt;padding:4px 6px;border:1px solid #6480c8;">${group}</td></tr>`;
       tableRows += `<tr>${headers.map(h => `<td style="background:#f0f0f0;font-weight:bold;border:1px solid #aaa;padding:3px 6px;">${h}</td>`).join('')}</tr>`;
       defs.forEach(def => {
         const key = `${def.betType}:${def.betKey}`;
@@ -646,16 +667,16 @@ export default function IndividualBetAudit() {
         const rtp = parseFloat(r.rtp);
         const rtpOk = rtp >= 95 && rtp <= 98;
         const rtpColor = rtpOk ? '#008000' : rtp > 98 ? '#c86400' : '#cc0000';
-        const statusColor = rtpOk ? '#008000' : '#cc0000';
-        const status = rtpOk ? 'PASS' : rtp > 98 ? 'HIGH' : 'LOW';
         const td = (val, color = '#000') => `<td style="border:1px solid #ccc;padding:3px 6px;color:${color};font-weight:bold;">${val}</td>`;
         const he = r.houseEdge !== undefined ? parseFloat(r.houseEdge).toFixed(2) : (100 - rtp).toFixed(2);
+        const cardWins = def.betType === 'perHandRank' && r.perHandRankHandWins ? r.perHandRankHandWins.toLocaleString() : '—';
+        const actualRounds = def.betType === 'perHandRank' && r.actualRounds ? r.actualRounds.toLocaleString() : '—';
         tableRows += `<tr>
-          ${td(plainLabel(def))}${td(r.wins.toLocaleString())}${td(r.winFrequency + '%')}
+          ${td(plainLabel(def))}${td(r.wins.toLocaleString())}${td(cardWins, '#7850c8')}${td(actualRounds, '#666688')}${td(r.winFrequency + '%')}
           ${td(he + '%', '#b41e1e')}${td(r.rtp + '%', rtpColor)}${td(r.currentPayout + ':1')}
           ${td(r.fairOdds !== null ? r.fairOdds + ':1' : '-')}
           ${td(r.for95 + ':1', '#007800')}${td(r.for965 + ':1', '#a06400')}
-          ${td(r.for98 + ':1', '#0050b4')}${td(status, statusColor)}
+          ${td(r.for98 + ':1', '#0050b4')}
         </tr>`;
       });
     });
@@ -870,6 +891,7 @@ export default function IndividualBetAudit() {
                         <th className="px-3 py-2.5 text-left">Bet</th>
                         <th className="px-3 py-2.5 text-right">Wins</th>
                         <th className="px-3 py-2.5 text-right text-purple-400">Card Wins</th>
+                        <th className="px-3 py-2.5 text-right text-slate-400"># Rounds</th>
                         <th className="px-3 py-2.5 text-right">Win %</th>
                         <th className="px-3 py-2.5 text-right">House Edge %</th>
                         <th className="px-3 py-2.5 text-right">Actual RTP</th>
