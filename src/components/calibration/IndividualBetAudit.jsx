@@ -200,7 +200,11 @@ function ResultRow({ def, r, onInspect, onExport, microscopeKey, microscopeRunni
             : <span className="text-gray-700">—</span>
           }
         </td>
-        <td className="px-3 py-2.5 text-right text-gray-300 font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>{r.winFrequency}%</td>
+        <td className="px-3 py-2.5 text-right text-gray-300 font-mono text-xs cursor-pointer" onClick={() => setOpen(v => !v)}>
+          {def.betType === 'perHandRank' && r.perHandRankHandWins
+            ? `${((r.wins / r.perHandRankHandWins) * 100).toFixed(4)}%`
+            : `${r.winFrequency}%`}
+        </td>
         <td className="px-3 py-2.5 text-right cursor-pointer" onClick={() => setOpen(v => !v)}>
           <span className={`font-bold text-xs font-mono ${houseEdgeNum > 0 ? 'text-red-400' : 'text-green-400'}`}>
             {houseEdgeNum.toFixed(2)}%
