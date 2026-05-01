@@ -12,22 +12,22 @@
 export const PER_HAND_RANK_PAYOUTS = {
   // Hand 1: A♦ / 10♥
   1: {
-    'Full House':      2.87,
-    'Two Pair':        3.27,
-    'Straight':        3.33,
-    'Flush':           5.52,
+    'Full House':      2.86,
+    'Two Pair':        3.30,
+    'Straight':        3.31,
+    'Flush':           5.64,
     'Three of a Kind': 8.16,
-    'One Pair':        28.51,
+    'One Pair':        30.39,
   },
 
   // Hand 2: K♣ / K♠
   2: {
-    'Full House':      1.35,
-    'Three of a Kind': 1.62,
-    'Four of a Kind':  7.59,
-    'Flush':           12.73,
-    'One Pair':        36.83,
-    'Straight':        71.13,
+    'Full House':      1.34,
+    'Three of a Kind': 1.66,
+    'Four of a Kind':  7.63,
+    'Flush':           12.67,
+    'One Pair':        37.04,
+    'Straight':        70.00,
   },
 
   // Hand 3: Q♣ / J♠
