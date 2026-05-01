@@ -3,12 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Timer, X } from 'lucide-react';
 
 const DEFAULT_TIMING = {
-  bettingClose: 10,
-  flopReveal: 3,
-  turnReveal: 3,
-  riverBetting: 20,
-  riverReveal: 4,
-  endOfRound: 5,
+  bettingClose: 12,
+  flopReveal: 8,
+  turnReveal: 2,
+  riverBetting: 12,
+  riverReveal: 5,
+  endOfRound: 10,
 };
 
 const TIMING_FIELDS = [
