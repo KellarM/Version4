@@ -408,8 +408,11 @@ export default function IndividualBetAudit() {
         setProgress(newProgress);
         setBetProgress(0);
         try { localStorage.setItem(PROGRESS_KEY, String(newProgress)); } catch {}
-      } catch {
+      } catch (err) {
+        workerRef.current = null;
         if (abortRef.current) break;
+        // Worker errored (not aborted) — log and continue to next bet
+        console.error('[AuditWorker] bet failed:', def.label, err?.message);
       }
     }
     setRunning(false);

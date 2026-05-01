@@ -402,6 +402,16 @@ function handleRun(payload) {
   const { targetHandIdx, targetRankCat, colorThreshold, colorIsRed, lhLow, perHandRankHandIdx, perHandRankCat } = params;
   const BET = 100;
 
+  // Pre-compute perHandRank payout once outside the loop (avoid repeated string ops per round)
+  let perHandRankPayout = 0;
+  if (betType === 'perHandRank') {
+    const colonIdx = betKey.indexOf(':');
+    const rankName = betKey.slice(colonIdx + 1);
+    const phr = (perHandRankPayouts != null) ? perHandRankPayouts[perHandRankHandIdx + 1] : null;
+    perHandRankPayout = (phr != null) ? (phr[rankName] ?? 0) : 0;
+    console.log('[auditWorker] perHandRank init: handIdx=' + perHandRankHandIdx + ' rankName=' + rankName + ' payout=' + perHandRankPayout + ' cat=' + perHandRankCat);
+  }
+
   // EXPLICIT BUFFER FLUSH — clear before allocating new buffer
   initBuffer(rounds);
   const bufCap = Math.min(rounds, BUFFER_CAP);
@@ -455,10 +465,7 @@ function handleRun(payload) {
         const myRankCat = rankCatFromStrength(strengths[perHandRankHandIdx]);
         if (myRankCat === perHandRankCat) {
           won = true;
-          const colonIdx = betKey.indexOf(':');
-          const rankName = betKey.slice(colonIdx + 1);
-          const phr = perHandRankPayouts && perHandRankPayouts[perHandRankHandIdx + 1];
-          profit = BET * (phr ? (phr[rankName] ?? 0) : 0);
+          profit = BET * perHandRankPayout; // pre-computed above loop
         }
       }
     } else if (betType === 'rank') {
@@ -732,7 +739,11 @@ self.onmessage = function(e) {
 
   if (type === 'RUN') {
     try { handleRun(payload); }
-    catch (err) { self.postMessage({ type: 'ERROR', callId: payload?.callId, message: err.message }); }
+    catch (err) {
+      const msg = err?.message ?? String(err);
+      console.error('[auditWorker] RUN error:', msg, 'betType:', payload?.betType, 'betKey:', payload?.betKey);
+      self.postMessage({ type: 'ERROR', callId: payload?.callId, message: msg });
+    }
     return;
   }
 };
