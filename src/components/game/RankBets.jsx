@@ -298,8 +298,8 @@ export default function RankBets({
       {killSwitchActive && gamePhase === 'betting' && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl bg-black/80 border-2 border-red-700/60 backdrop-blur-sm">
           <span className="text-red-400 font-black text-lg mb-1">LOCKED</span>
-          <span className="text-red-300 text-xs font-semibold text-center px-2">4 Hands: Side Bets Disabled</span>
-          <span className="text-red-400/60 text-xs mt-1 text-center px-2">Select 1–3 hands to unlock</span>
+          <span className="text-red-300 text-xs font-semibold text-center px-2">3-4 Hands : Side Bet Disabled</span>
+          <span className="text-red-400/60 text-xs mt-1 text-center px-2">Select 1-2 Hands to Unlock</span>
         </div>
       )}
 
