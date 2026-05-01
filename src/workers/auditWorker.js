@@ -411,6 +411,8 @@ function handleRun(payload) {
   let totalCardedHandWins = 0;
   let totalRankNonExceptionWins = 0;
   let totalLostToHouseWins = 0;
+  // For perHandRank: track how many times the target hand wins the round
+  let perHandRankHandWins = 0;
 
   // Rank breakdown for 'hand' betType: track wins by winning rank category
   // rankBreakdownCounts[rankCat] = number of wins where that hand achieved that rank
@@ -449,6 +451,7 @@ function handleRun(payload) {
     } else if (betType === 'perHandRank') {
       // Win rule: the specific hand must WIN (not a board win) AND achieve the target rank
       if (!isBoardWin && winners[perHandRankHandIdx] === 1) {
+        perHandRankHandWins++; // track how many times this hand wins the round
         const myRankCat = rankCatFromStrength(strengths[perHandRankHandIdx]);
         if (myRankCat === perHandRankCat) {
           won = true;
@@ -520,6 +523,12 @@ function handleRun(payload) {
   const rtp = totalBet > 0 ? totalPaid / totalBet : 0;
   const houseEdge = 1 - rtp;
 
+  // For perHandRank: conditional win frequency = rank wins / hand wins (not / rounds)
+  // This reflects "given Hand X won, how often did it achieve Rank Y?"
+  const oddsFreq = (betType === 'perHandRank' && perHandRankHandWins > 0)
+    ? totalWins / perHandRankHandWins
+    : winFreq;
+
   self.postMessage({
     type: 'RESULT',
     callId,
@@ -528,13 +537,14 @@ function handleRun(payload) {
       betType, betKey,
       actualRounds: rounds,
       wins: totalWins,
+      perHandRankHandWins: betType === 'perHandRank' ? perHandRankHandWins : undefined,
       winFrequency: (winFreq * 100).toFixed(4),
       rtp: (rtp * 100).toFixed(4),
       houseEdge: (houseEdge * 100).toFixed(4),
-      fairOdds: winFreq > 0 ? Math.round(((1/winFreq)-1)*100)/100 : null,
-      for95:    winFreq > 0 ? Math.round(((0.95/winFreq)-1)*100)/100 : null,
-      for965:   winFreq > 0 ? Math.round(((0.965/winFreq)-1)*100)/100 : null,
-      for98:    winFreq > 0 ? Math.round(((0.98/winFreq)-1)*100)/100 : null,
+      fairOdds: oddsFreq > 0 ? Math.round(((1/oddsFreq)-1)*100)/100 : null,
+      for95:    oddsFreq > 0 ? Math.round(((0.95/oddsFreq)-1)*100)/100 : null,
+      for965:   oddsFreq > 0 ? Math.round(((0.965/oddsFreq)-1)*100)/100 : null,
+      for98:    oddsFreq > 0 ? Math.round(((0.98/oddsFreq)-1)*100)/100 : null,
       // Phase 3 counters
       totalCardedHandWins,
       totalRankNonExceptionWins,
