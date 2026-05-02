@@ -10,7 +10,7 @@ function getChipDef(amount) {
   } else if (amount <= 150) {
     return { outer: '#BE185D', mid: '#EC4899', edge: '#9D174D', rim: '#831843', shine: '#F9A8D4' }; // Bright Pink
   } else {
-    return { outer: '#1a1a1a', mid: '#2a2a2a', edge: '#B8860B', rim: '#8B6914', shine: '#DAA520', isBlack500: true }; // Black/Gold $500
+    return { outer: '#0a0a0a', mid: '#0a0a0a', edge: '#0a0a0a', rim: '#0a0a0a', shine: '#0a0a0a', isBlack500: true }; // Pure black $500
   }
 }
 
