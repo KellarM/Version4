@@ -1461,14 +1461,14 @@ export default function RapidFireGame() {
           >
             {/* Logo — left side */}
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
-              <img src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/b8b204c32_RapidFireLogo.png" alt="Rapid Fire Texas Hold'em" style={{ width: '240px', height: 'auto', display: 'block' }} />
+              <img src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/b8b204c32_RapidFireLogo.png" alt="Rapid Fire Texas Hold'em" style={{ width: '220px', height: 'auto', display: 'block', mixBlendMode: 'luminosity', opacity: 0.35, filter: 'contrast(1.1) brightness(0.85)' }} />
             </div>
 
             <CommunityCards cards={communityCards} phase={gamePhase} />
 
             {/* Mirror logo — right side */}
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
-              <img src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/b8b204c32_RapidFireLogo.png" alt="Rapid Fire Texas Hold'em" style={{ width: '240px', height: 'auto', display: 'block' }} />
+              <img src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/b8b204c32_RapidFireLogo.png" alt="Rapid Fire Texas Hold'em" style={{ width: '220px', height: 'auto', display: 'block', mixBlendMode: 'luminosity', opacity: 0.35, filter: 'contrast(1.1) brightness(0.85)' }} />
             </div>
           </div>
 
