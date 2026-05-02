@@ -1,33 +1,37 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 const DEFAULT_TIMING = {
-  bettingClose: 10,
-  flopReveal: 3,
-  turnReveal: 3,
-  riverBetting: 20,
-  riverReveal: 4,
-  endOfRound: 5,
+  bettingClose: 14,
+  flopReveal: 8,
+  turnReveal: 2,
+  riverBetting: 14,
+  riverReveal: 5,
+  endOfRound: 14,
 };
 
+const STORAGE_KEY = 'rapidFireGameTiming';
+
 export function useGameTiming() {
-  const timerRef = useRef(null);
-  const timingRef = useRef(null);
-
-  const loadTiming = useCallback(() => {
+  const [timing, setTiming] = useState(() => {
     try {
-      const saved = localStorage.getItem('rapidFireGameTiming');
-      if (saved) {
-        return { ...DEFAULT_TIMING, ...JSON.parse(saved) };
-      }
-    } catch (e) {
-      console.warn('Failed to load timing config:', e);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? { ...DEFAULT_TIMING, ...JSON.parse(saved) } : DEFAULT_TIMING;
+    } catch {
+      return DEFAULT_TIMING;
     }
-    return DEFAULT_TIMING;
-  }, []);
+  });
 
-  useEffect(() => {
-    timingRef.current = loadTiming();
-  }, [loadTiming]);
+  const timerRef = useRef(null);
+
+  // Listen for timing updates saved from GameTimingModal
+  const reloadTiming = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      setTiming(saved ? { ...DEFAULT_TIMING, ...JSON.parse(saved) } : DEFAULT_TIMING);
+    } catch {
+      setTiming(DEFAULT_TIMING);
+    }
+  }, []);
 
   const startTimer = useCallback((duration, onTick, onComplete) => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -54,15 +58,5 @@ export function useGameTiming() {
     }
   }, []);
 
-  const reloadTiming = useCallback(() => {
-    timingRef.current = loadTiming();
-  }, [loadTiming]);
-
-  return {
-    timing: timingRef.current || DEFAULT_TIMING,
-    startTimer,
-    stopTimer,
-    loadTiming,
-    reloadTiming,
-  };
+  return { timing, startTimer, stopTimer, reloadTiming };
 }
