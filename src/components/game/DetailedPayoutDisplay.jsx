@@ -72,7 +72,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 >
                   <X className="w-7 h-7 text-black font-black" strokeWidth={3} />
                 </motion.button>
-                <div className="text-4xl mb-3">😔</div>
+                <img src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/2667063a3_image.png" alt="Rapid Fire Texas Hold'em" className="w-20 h-auto mx-auto mb-3" />
                 <div className="text-2xl font-black text-yellow-400 mb-2" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>NO WIN</div>
                 <div className="text-red-500 font-bold text-sm" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>Better luck next round!</div>
               </motion.div>
