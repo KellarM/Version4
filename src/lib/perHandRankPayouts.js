@@ -89,7 +89,7 @@ export const PER_HAND_RANK_PAYOUTS = {
     'Full House':      1.28,
     'Three of a Kind': 2.21,
     'Four of a Kind':  3.63,
-    'Straight':        15.04,
+    'Straight':        14.6,
   },
 
   // Hand 10: A♥ / 5♦
