@@ -209,6 +209,7 @@ function SaveToast({ show }) {
 
 function ModulePanel({ module, bets, onResultsChange }) {
   const [running, setRunning] = useState(false);
+  const [redoingKey, setRedoingKey] = useState(null);
   const [progress, setProgress] = useState(() => loadFromStorage(module.id).progress);
   const [results, setResults] = useState(() => loadFromStorage(module.id).results);
   const [currentBet, setCurrentBet] = useState('');
@@ -356,6 +357,64 @@ function ModulePanel({ module, bets, onResultsChange }) {
     workerRef.current = null;
   };
 
+  const redoSingleBet = async (bet) => {
+    if (running || redoingKey) return;
+    const betKey = `${bet.betType}:${bet.betKey}`;
+    setRedoingKey(betKey);
+    setCurrentBet(bet.label);
+    setBetProgress(0);
+    setBetWins(0);
+    setBetDone(0);
+    setBetTotal(module.rounds);
+    startBetTimer();
+    abortRef.current = false;
+
+    try {
+      const { promise, abort: abortWorker } = runBetAuditWithAbort(
+        {
+          rounds: module.rounds,
+          betType: bet.betType,
+          betKey: bet.betKey,
+          handPayouts: livePayouts.handPayouts,
+          rankPayouts: livePayouts.rankPayouts,
+          colorPayouts: livePayouts.colorPayouts,
+          lhPayout: livePayouts.lhPayout,
+          perHandRankPayouts: livePayouts.perHandRankPayouts,
+          captureLog: false,
+        },
+        (pct, done, total) => {
+          setBetProgress(pct);
+          if (done !== undefined) setBetDone(done);
+          if (total !== undefined) setBetTotal(total);
+        },
+        (checkpointAt, data) => {
+          setBetWins(data.totalWins ?? 0);
+        }
+      );
+      workerRef.current = { abort: abortWorker };
+      const res = await promise;
+      workerRef.current = null;
+      stopBetTimer();
+      if (res.success) {
+        setResults(prev => {
+          const updated = { ...prev, [betKey]: res };
+          try { localStorage.setItem(getStorageKeys(module.id).results, JSON.stringify(updated)); } catch {}
+          onResultsChange?.(module.id, updated);
+          return updated;
+        });
+        showSaving();
+      }
+    } catch (err) {
+      workerRef.current = null;
+      stopBetTimer();
+    }
+    setRedoingKey(null);
+    setCurrentBet('');
+    setBetProgress(0);
+    setBetWins(0);
+    setBetDone(0);
+  };
+
   const run = () => {
     setResults({});
     setProgress(0);
@@ -484,22 +543,24 @@ function ModulePanel({ module, bets, onResultsChange }) {
             className="overflow-hidden"
           >
             <div className="border-t border-slate-700 px-5 pb-5 pt-3">
-              {running && (
+              {(running || redoingKey) && (
                 <div className="mb-4">
                   <div className="flex justify-between text-xs text-gray-400 mb-1">
                     <span className="flex items-center gap-1.5">
                       <RefreshCw className="w-3 h-3 animate-spin" />
-                      {currentBet}
+                      {redoingKey ? `Re-running: ${currentBet}` : currentBet}
                     </span>
-                    <span>{done}/{bets.length} — {pct}%</span>
+                    {!redoingKey && <span>{done}/{bets.length} — {pct}%</span>}
                   </div>
-                  <div className="w-full bg-slate-700 rounded-full h-1.5 overflow-hidden mb-1">
-                    <motion.div
-                      className="h-1.5 rounded-full bg-green-500"
-                      animate={{ width: `${pct}%` }}
-                      transition={{ ease: 'linear', duration: 0.2 }}
-                    />
-                  </div>
+                  {!redoingKey && (
+                    <div className="w-full bg-slate-700 rounded-full h-1.5 overflow-hidden mb-1">
+                      <motion.div
+                        className="h-1.5 rounded-full bg-green-500"
+                        animate={{ width: `${pct}%` }}
+                        transition={{ ease: 'linear', duration: 0.2 }}
+                      />
+                    </div>
+                  )}
                   {betProgress > 0 && (
                     <>
                       <div className="w-full bg-slate-700/50 rounded-full h-1 overflow-hidden mb-1">
@@ -578,35 +639,57 @@ function ModulePanel({ module, bets, onResultsChange }) {
                           const rtpV = parseFloat(r.rtp);
                           const status = rtpV >= module.rtpLow && rtpV <= module.rtpHigh ? 'pass' : 'fail';
                           const livePayout = getLivePayout(bet.betType, bet.betKey);
+                          const isRedoing = redoingKey === key;
                           return (
-                            <motion.tr
-                              key={key}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              className="border-b border-slate-700/30 hover:bg-slate-700/10"
-                            >
-                              <td className="py-1.5 px-3 text-gray-200 font-medium">{bet.label}</td>
-                              <td className="py-1.5 px-3 text-right text-gray-300 font-mono">{r.wins.toLocaleString()}</td>
-                              <td className="py-1.5 px-3 text-right text-gray-400">
-                                {r.winFrequency}%
-                                {bet.betType === 'perHandRank' && r.perHandRankHandWins && (
-                                  <span className="block text-purple-400/70 text-xs">{r.perHandRankHandWins.toLocaleString()} card wins</span>
-                                )}
-                              </td>
-                              <td className="py-1.5 px-3 text-right">
-                                <RTPPill rtp={parseFloat(r.rtp).toFixed(2)} low={module.rtpLow} high={module.rtpHigh} />
-                              </td>
-                              <td className="py-1.5 px-3 text-right text-gray-400">{livePayout}:1</td>
-                              <td className="py-1.5 px-3 text-right text-yellow-300 font-semibold">{r.for965}:1</td>
-                              <td className="py-1.5 px-3 text-center">
-                                <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${
-                                  status === 'pass' ? 'bg-green-900/40 text-green-400' : 'bg-red-900/40 text-red-400'
-                                }`}>
-                                  <StatusIcon status={status} />
-                                  {status.toUpperCase()}
-                                </span>
-                              </td>
-                            </motion.tr>
+                           <motion.tr
+                             key={key}
+                             initial={{ opacity: 0 }}
+                             animate={{ opacity: 1 }}
+                             className={`border-b border-slate-700/30 hover:bg-slate-700/10 ${isRedoing ? 'bg-yellow-900/10' : ''}`}
+                           >
+                             <td className="py-1.5 px-3 text-gray-200 font-medium">
+                               {isRedoing ? (
+                                 <span className="flex items-center gap-1 text-yellow-400">
+                                   <RefreshCw className="w-3 h-3 animate-spin" /> {bet.label}
+                                 </span>
+                               ) : bet.label}
+                             </td>
+                             <td className="py-1.5 px-3 text-right text-gray-300 font-mono">{r.wins.toLocaleString()}</td>
+                             <td className="py-1.5 px-3 text-right text-gray-400">
+                               {r.winFrequency}%
+                               {bet.betType === 'perHandRank' && r.perHandRankHandWins && (
+                                 <span className="block text-purple-400/70 text-xs">{r.perHandRankHandWins.toLocaleString()} card wins</span>
+                               )}
+                             </td>
+                             <td className="py-1.5 px-3 text-right">
+                               <RTPPill rtp={parseFloat(r.rtp).toFixed(2)} low={module.rtpLow} high={module.rtpHigh} />
+                             </td>
+                             <td className="py-1.5 px-3 text-right text-gray-400">{livePayout}:1</td>
+                             <td className="py-1.5 px-3 text-right text-yellow-300 font-semibold">{r.for965}:1</td>
+                             <td className="py-1.5 px-3 text-center">
+                               {status === 'pass' ? (
+                                 <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-900/40 text-green-400">
+                                   <CheckCircle2 className="w-4 h-4" />
+                                   PASS
+                                 </span>
+                               ) : isRedoing ? (
+                                 <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400">
+                                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                   RUNNING
+                                 </span>
+                               ) : (
+                                 <button
+                                   onClick={() => redoSingleBet(bet)}
+                                   disabled={!!(running || redoingKey)}
+                                   title="Click to re-run this failed test"
+                                   className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-red-900/40 text-red-400 hover:bg-red-700/50 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                 >
+                                   <XCircle className="w-4 h-4" />
+                                   FAIL
+                                 </button>
+                               )}
+                             </td>
+                           </motion.tr>
                           );
                         })}
                       </tbody>
