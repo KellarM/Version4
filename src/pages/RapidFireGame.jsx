@@ -100,6 +100,7 @@ export default function RapidFireGame() {
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [showPlayerSelector, setShowPlayerSelector] = useState(true);
   const [roundId, setRoundId] = useState(1);
+  const [resetBankVisible, setResetBankVisible] = useState(false);
 
   const [lastWinInfo, setLastWinInfo] = useState(null);
   const [winningRank, setWinningRank] = useState(null);
@@ -160,21 +161,21 @@ export default function RapidFireGame() {
   }, []);
 
   // Ghost Toolbar: Ctrl+Alt+J+L hotkey
+  // Reset Bank visibility: Ctrl+Alt+B+M hotkey
   useEffect(() => {
     const pressed = new Set();
     const onDown = (e) => {
       pressed.add(e.key.toLowerCase());
-      if (
-      pressed.has('control') &&
-      pressed.has('alt') &&
-      pressed.has('j') &&
-      pressed.has('l'))
-      {
+      if (pressed.has('control') && pressed.has('alt') && pressed.has('j') && pressed.has('l')) {
         e.preventDefault();
         setToolbarVisible((v) => !v);
       }
+      if (pressed.has('control') && pressed.has('alt') && pressed.has('b') && pressed.has('m')) {
+        e.preventDefault();
+        setResetBankVisible((v) => !v);
+      }
     };
-    const onUp = (e) => {pressed.delete(e.key.toLowerCase());};
+    const onUp = (e) => { pressed.delete(e.key.toLowerCase()); };
     window.addEventListener('keydown', onDown);
     window.addEventListener('keyup', onUp);
     return () => {
@@ -1590,19 +1591,20 @@ export default function RapidFireGame() {
               }
             </div>
 
-            {/* Reset Bank */}
-            <button
-              onClick={() => {
-                setBalances(Array(10).fill(STARTING_BALANCE));
-                setRoundId(1);
-                setCasinoProfit(0);
-                setRoundsPlayed(0);
-              }}
-              title="Reset all player banks to $10,000 and clear P/L"
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-700/50 bg-emerald-900/20 text-emerald-300 text-xs font-bold hover:border-emerald-500 hover:bg-emerald-900/40 transition-all flex-shrink-0">
-              
-              ↺ Reset Bank
-            </button>
+            {/* Reset Bank — hidden by default, toggled with Ctrl+Alt+B+M */}
+            {resetBankVisible && (
+              <button
+                onClick={() => {
+                  setBalances(Array(10).fill(STARTING_BALANCE));
+                  setRoundId(1);
+                  setCasinoProfit(0);
+                  setRoundsPlayed(0);
+                }}
+                title="Reset all player banks to $10,000 and clear P/L"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-700/50 bg-emerald-900/20 text-emerald-300 text-xs font-bold hover:border-emerald-500 hover:bg-emerald-900/40 transition-all flex-shrink-0">
+                ↺ Reset Bank
+              </button>
+            )}
 
             {/* Tools */}
             <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenStrategyTest={() => setShowStrategyTest(true)} onOpenTwoHandTest={() => setShowTwoHandTest(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
