@@ -96,7 +96,15 @@ export default function FixedHandCard({
 
       {/* Payout — top center */}
       <div className="mb-1 flex items-center justify-center">
-        <span className="text-yellow-300 text-sm font-bold text-halo">{hand.payout}:1</span>
+        <span style={{
+          color: '#e8b84b',
+          fontFamily: 'Oswald, sans-serif',
+          fontWeight: 700,
+          fontSize: '0.85rem',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          textShadow: '0 0 2px #000, 1px 1px 2px #000, -1px -1px 2px #000, 2px 2px 0 #000',
+        }}>{hand.payout}:1</span>
       </div>
 
       {/* Cards */}
