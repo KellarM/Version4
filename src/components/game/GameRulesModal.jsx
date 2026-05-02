@@ -119,6 +119,7 @@ export default function GameRulesModal() {
                   <Rule label="Objective">Bet on which of the 10 hands wins the round.</Rule>
                   <Rule label="Minimum Bet">$5 per betting spot.</Rule>
                   <Rule label="Hand Limits">Select 1 to 4 hands per round.</Rule>
+                  <Rule label="Maximum Bet per Hand">$500 maximum bet per individual card hand.</Rule>
                 </Section>
 
                 {/* Unlocking Side Bets */}
