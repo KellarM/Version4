@@ -1461,7 +1461,7 @@ export default function RapidFireGame() {
             
             {/* Logo — left side */}
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
-              <img src="https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/dfed56ab9_Updated_Logo.PNG" alt="Rapid Fire Texas Hold'em" style={{ width: '240px', height: 'auto', display: 'block' }} className="py-4" />
+              <img src="https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/dfed56ab9_Updated_Logo.PNG" alt="Rapid Fire Texas Hold'em" style={{ width: '240px', height: 'auto', display: 'block' }} />
             </div>
 
             <CommunityCards cards={communityCards} phase={gamePhase} />
