@@ -43,7 +43,7 @@ export const PER_HAND_RANK_PAYOUTS = {
     'Flush':           0.75,
     'Straight':        2.02,
     'Full House':      8.94,
-    'Two Pair':        25.91,
+    'Two Pair':        25.16,
   },
 
   // Hand 5: J♣ / 9♣
