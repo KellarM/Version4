@@ -22,8 +22,12 @@ function CardSlot({ card, index, active }) {
           <PlayingCard card={card} size="md" glow={active} />
         </motion.div>
       ) : (
-        <div style={{ width: CARD_W, height: CARD_H, opacity: 0.45 }}>
-          <PlayingCard faceDown size="md" />
+        <div style={{ width: CARD_W, height: CARD_H, opacity: 0.9 }}>
+          <img
+            src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/1b33b172d_image.png"
+            alt="Card back"
+            style={{ width: CARD_W, height: CARD_H, borderRadius: '6px', objectFit: 'cover', display: 'block' }}
+          />
         </div>
       )}
     </div>
