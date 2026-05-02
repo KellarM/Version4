@@ -1453,7 +1453,7 @@ export default function RapidFireGame() {
               paddingTop: '8px',
               paddingBottom: '8px',
               borderRadius: '0.75rem',
-              border: '2px solid',
+              border: '3px solid',
               background: 'rgba(0,0,0,0.35)',
               boxSizing: 'border-box',
               overflow: 'visible'

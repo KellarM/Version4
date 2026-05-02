@@ -52,7 +52,7 @@ export default function FixedHandCard({
 
   return (
     <motion.div
-      className={`relative rounded-xl p-1.5 border-2 cursor-pointer transition-colors duration-200 select-none flex flex-col justify-between ${borderCls}`}
+      className={`relative rounded-xl p-1.5 border-[3px] cursor-pointer transition-colors duration-200 select-none flex flex-col justify-between ${borderCls}`}
       animate={isLeading && !isWinner ? { scale: [1, 1.02, 1] } : { scale: 1 }}
       transition={{ duration: 0.5, repeat: isLeading && !isWinner ? Infinity : 0, repeatDelay: 1.5 }}
       onMouseDown={(e) => {
