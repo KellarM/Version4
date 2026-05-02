@@ -21,6 +21,7 @@ import DealerAnnouncement from '@/components/game/DealerAnnouncement';
 import RankBets from '@/components/game/RankBets';
 import PayoutTable from '@/components/game/PayoutTable';
 import NewPlayerButton from '@/components/game/NewPlayerButton';
+import Chip from '@/components/game/Chip';
 import PlayerSeat from '@/components/game/PlayerSeat';
 import PlayerStatsPanel from '@/components/game/PlayerStatsPanel';
 import ToolsMenu from '@/components/game/ToolsMenu';
@@ -1556,13 +1557,12 @@ export default function RapidFireGame() {
               <button
                 key={v}
                 onClick={() => setSelectedChip(v)}
-                className={`w-8 h-8 rounded-full font-bold text-xs border-2 transition-all flex-shrink-0
-                    ${selectedChip === v ?
-                'border-yellow-400 bg-yellow-600 text-black shadow-yellow-400/50 shadow-md scale-110' :
-                'border-yellow-700/40 bg-yellow-900/30 text-yellow-300 hover:border-yellow-500'}`}>
-                
-                  ${v}
-                </button>
+                className={`relative flex-shrink-0 transition-all duration-150 rounded-full border-0 bg-transparent p-0
+                    ${selectedChip === v ? 'scale-125 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]' : 'opacity-75 hover:opacity-100 hover:scale-110'}`}
+                style={{ lineHeight: 0 }}
+              >
+                <Chip amount={v} scale={0.72} />
+              </button>
               )}
             </div>
 
