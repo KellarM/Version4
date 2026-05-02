@@ -7,10 +7,10 @@ function getChipDef(amount) {
     return { outer: '#92400E', mid: '#B45309', edge: '#78350F', rim: '#451A03', shine: '#D97706' }; // Brown
   } else if (amount <= 95) {
     return { outer: '#B8860B', mid: '#DAA520', edge: '#8B6914', rim: '#6B4F10', shine: '#FFD700' }; // Gold
-  } else if (amount <= 150) {
+  } else if (amount < 500) {
     return { outer: '#BE185D', mid: '#EC4899', edge: '#9D174D', rim: '#831843', shine: '#F9A8D4' }; // Bright Pink
   } else {
-    return { outer: '#0a0a0a', mid: '#0a0a0a', edge: '#0a0a0a', rim: '#0a0a0a', shine: '#0a0a0a', isBlack500: true }; // Pure black $500
+    return { outer: '#0a0a0a', mid: '#0a0a0a', edge: '#B8860B', rim: '#8B6914', shine: '#0a0a0a', isBlack500: true }; // Pure black $500 with gold trim
   }
 }
 
