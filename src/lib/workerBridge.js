@@ -15,7 +15,7 @@
 
 let _persistentWorker = null;
 let _callId = 0;
-const _pendingCalls = new Map(); // callId → { resolve, reject, onProgress, onChunk }
+const _pendingCalls = new Map(); // callId → { resolve, reject, onProgress, onChunk, onCheckpoint }
 
 function getPersistentWorker() {
   if (!_persistentWorker) {
@@ -33,6 +33,13 @@ function getPersistentWorker() {
         if (pending?.onProgress) {
           const pct = (total > 0) ? done / total : 0;
           pending.onProgress(pct, done, total);
+        }
+        return;
+      }
+
+      if (type === 'CHECKPOINT') {
+        if (pending?.onCheckpoint) {
+          pending.onCheckpoint(e.data.checkpointAt, e.data.data);
         }
         return;
       }
@@ -81,12 +88,12 @@ export function resetPersistentWorker() {
   _pendingCalls.clear();
 }
 
-function callWorker(type, payload, { onProgress, onChunk } = {}) {
+function callWorker(type, payload, { onProgress, onChunk, onCheckpoint } = {}) {
   const callId = ++_callId;
   const worker = getPersistentWorker();
 
   return new Promise((resolve, reject) => {
-    _pendingCalls.set(callId, { resolve, reject, onProgress, onChunk });
+    _pendingCalls.set(callId, { resolve, reject, onProgress, onChunk, onCheckpoint });
     worker.postMessage({ type, payload: { ...payload, callId }, callId });
   });
 }
@@ -96,13 +103,13 @@ export function runBetAuditInWorker(params, onProgress) {
   return callWorker('RUN', params, { onProgress });
 }
 
-export function runBetAuditWithAbort(params, onProgress) {
+export function runBetAuditWithAbort(params, onProgress, onCheckpoint) {
   const callId = ++_callId;
   const worker = getPersistentWorker();
   let aborted = false;
 
   const promise = new Promise((resolve, reject) => {
-    _pendingCalls.set(callId, { resolve, reject, onProgress, onChunk: null });
+    _pendingCalls.set(callId, { resolve, reject, onProgress, onChunk: null, onCheckpoint: onCheckpoint || null });
     worker.postMessage({ type: 'RUN', payload: { ...params, callId }, callId });
   });
 

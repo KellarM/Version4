@@ -359,6 +359,7 @@ function evalHandRankCat(handIdx, b0, b1, b2, b3, b4) {
 
 // ── Main RUN handler ──────────────────────────────────────────
 const PROGRESS_UPDATE_INTERVAL = 50_000;
+const CHECKPOINT_INTERVAL = 20_000; // Save partial state every 20K rounds (or card wins in adaptive)
 // Safety cap: never run more than 30M total rounds even in adaptive mode
 const ADAPTIVE_MAX_ROUNDS = 30_000_000;
 
@@ -367,6 +368,7 @@ function handleRun(payload) {
     callId,
     rounds, betType, betKey,
     handPayouts, rankPayouts, colorPayouts, lhPayout, perHandRankPayouts,
+    resumeFrom, // optional: { totalRounds, totalWins, totalPaid, totalCardedHandWins, totalRankNonExceptionWins, totalLostToHouseWins, perHandRankHandWins, rankBreakdownCounts }
   } = payload;
 
   // For perHandRank bets: `rounds` is the TARGET number of card-hand wins (adaptive mode).
@@ -389,14 +391,22 @@ function handleRun(payload) {
   initBuffer(isAdaptive ? BUFFER_CAP : rounds);
   let bufferedCount = 0;
 
-  let totalRounds = 0;
-  let totalWins = 0, totalPaid = 0;
-  let totalCardedHandWins = 0;
-  let totalRankNonExceptionWins = 0;
-  let totalLostToHouseWins = 0;
-  let perHandRankHandWins = 0; // card-hand wins (the hand wins the round)
+  // Resume from checkpoint if provided
+  let totalRounds = resumeFrom?.totalRounds ?? 0;
+  let totalWins = resumeFrom?.totalWins ?? 0;
+  let totalPaid = resumeFrom?.totalPaid ?? 0;
+  let totalCardedHandWins = resumeFrom?.totalCardedHandWins ?? 0;
+  let totalRankNonExceptionWins = resumeFrom?.totalRankNonExceptionWins ?? 0;
+  let totalLostToHouseWins = resumeFrom?.totalLostToHouseWins ?? 0;
+  let perHandRankHandWins = resumeFrom?.perHandRankHandWins ?? 0;
 
   const rankBreakdownCounts = new Int32Array(9);
+  if (resumeFrom?.rankBreakdownCounts) {
+    for (let i = 0; i < 9; i++) rankBreakdownCounts[i] = resumeFrom.rankBreakdownCounts[i] ?? 0;
+  }
+
+  // Track last checkpoint milestone so we don't double-fire
+  let lastCheckpointMilestone = isAdaptive ? perHandRankHandWins : totalRounds;
 
   // Determine loop termination:
   // - adaptive: stop when perHandRankHandWins reaches `rounds` (the target card wins)
@@ -410,6 +420,30 @@ function handleRun(payload) {
       const done  = isAdaptive ? perHandRankHandWins : totalRounds;
       const total = isAdaptive ? targetCardWins : rounds;
       self.postMessage({ type: 'PROGRESS', callId, done, total });
+    }
+
+    // Checkpoint: save partial state every CHECKPOINT_INTERVAL rounds (or card wins)
+    {
+      const checkpointMetric = isAdaptive ? perHandRankHandWins : totalRounds;
+      const checkpointMilestone = Math.floor(checkpointMetric / CHECKPOINT_INTERVAL) * CHECKPOINT_INTERVAL;
+      if (checkpointMilestone > 0 && checkpointMilestone > lastCheckpointMilestone) {
+        lastCheckpointMilestone = checkpointMilestone;
+        self.postMessage({
+          type: 'CHECKPOINT',
+          callId,
+          checkpointAt: checkpointMilestone,
+          data: {
+            totalRounds,
+            totalWins,
+            totalPaid,
+            totalCardedHandWins,
+            totalRankNonExceptionWins,
+            totalLostToHouseWins,
+            perHandRankHandWins,
+            rankBreakdownCounts: Array.from(rankBreakdownCounts),
+          },
+        });
+      }
     }
 
     const board = shuffleAndDeal();

@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, RefreshCw, CheckCircle2, XCircle, AlertTriangle, ChevronDown, ChevronRight, Shield, SkipForward, FileDown, FileText, Trash2, Save } from 'lucide-react';
+import { Play, RefreshCw, CheckCircle2, XCircle, AlertTriangle, ChevronDown, ChevronRight, Shield, SkipForward, FileDown, FileText, Trash2, Save, Timer } from 'lucide-react';
 import { runBetAuditWithAbort } from '@/lib/workerBridge';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 import { PER_HAND_RANK_PAYOUTS } from '@/lib/perHandRankPayouts';
@@ -128,7 +128,32 @@ function getStorageKeys(moduleId) {
   return {
     results: `certAudit_${moduleId}_results`,
     progress: `certAudit_${moduleId}_progress`,
+    checkpoint: `certAudit_${moduleId}_checkpoint`, // partial progress for current in-flight bet
   };
+}
+
+function saveCheckpoint(moduleId, betKey, data) {
+  try {
+    localStorage.setItem(getStorageKeys(moduleId).checkpoint, JSON.stringify({ betKey, ...data }));
+  } catch {}
+}
+
+function loadCheckpoint(moduleId) {
+  try {
+    const raw = localStorage.getItem(getStorageKeys(moduleId).checkpoint);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function clearCheckpoint(moduleId) {
+  try { localStorage.removeItem(getStorageKeys(moduleId).checkpoint); } catch {}
+}
+
+function formatElapsed(seconds) {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}m ${s}s`;
 }
 
 function loadFromStorage(moduleId) {
@@ -146,6 +171,7 @@ function clearFromStorage(moduleId) {
   const keys = getStorageKeys(moduleId);
   localStorage.removeItem(keys.results);
   localStorage.removeItem(keys.progress);
+  localStorage.removeItem(keys.checkpoint);
 }
 
 function StatusIcon({ status }) {
@@ -187,11 +213,35 @@ function ModulePanel({ module, bets, onResultsChange }) {
   const [results, setResults] = useState(() => loadFromStorage(module.id).results);
   const [currentBet, setCurrentBet] = useState('');
   const [betProgress, setBetProgress] = useState(0);
+  const [betDone, setBetDone] = useState(0);
+  const [betTotal, setBetTotal] = useState(0);
+  const [betWins, setBetWins] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const abortRef = useRef(false);
   const workerRef = useRef(null);
   const savingTimerRef = useRef(null);
+  const timerIntervalRef = useRef(null);
+  const betStartTimeRef = useRef(null);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); };
+  }, []);
+
+  const startBetTimer = useCallback(() => {
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    betStartTimeRef.current = Date.now();
+    setElapsedSeconds(0);
+    timerIntervalRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - betStartTimeRef.current) / 1000));
+    }, 1000);
+  }, []);
+
+  const stopBetTimer = useCallback(() => {
+    if (timerIntervalRef.current) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null; }
+  }, []);
 
   const livePayouts = {
     handPayouts: [...CARDED_HAND_PAYOUTS],
@@ -214,8 +264,26 @@ function ModulePanel({ module, bets, onResultsChange }) {
     for (let i = startIndex; i < bets.length; i++) {
       if (abortRef.current) break;
       const bet = bets[i];
+      const betKey = `${bet.betType}:${bet.betKey}`;
+
+      // Check if there's a saved checkpoint for this exact bet
+      const savedCheckpoint = loadCheckpoint(module.id);
+      const resumeFrom = (savedCheckpoint && savedCheckpoint.betKey === betKey) ? savedCheckpoint : null;
+      if (resumeFrom) {
+        // Restore wins display from checkpoint
+        setBetWins(resumeFrom.totalWins ?? 0);
+        setBetDone(resumeFrom.totalRounds ?? 0);
+        setBetTotal(module.rounds);
+      } else {
+        setBetWins(0);
+        setBetDone(0);
+        setBetTotal(module.rounds);
+      }
+
       setCurrentBet(bet.label);
-      setBetProgress(0);
+      setBetProgress(resumeFrom ? (resumeFrom.totalRounds ?? 0) / module.rounds : 0);
+      startBetTimer();
+
       try {
         const { promise, abort: abortWorker } = runBetAuditWithAbort(
           {
@@ -228,17 +296,37 @@ function ModulePanel({ module, bets, onResultsChange }) {
             lhPayout: livePayouts.lhPayout,
             perHandRankPayouts: livePayouts.perHandRankPayouts,
             captureLog: false,
+            resumeFrom: resumeFrom ? {
+              totalRounds: resumeFrom.totalRounds,
+              totalWins: resumeFrom.totalWins,
+              totalPaid: resumeFrom.totalPaid,
+              totalCardedHandWins: resumeFrom.totalCardedHandWins,
+              totalRankNonExceptionWins: resumeFrom.totalRankNonExceptionWins,
+              totalLostToHouseWins: resumeFrom.totalLostToHouseWins,
+              perHandRankHandWins: resumeFrom.perHandRankHandWins,
+              rankBreakdownCounts: resumeFrom.rankBreakdownCounts,
+            } : undefined,
           },
-          (pct) => setBetProgress(pct)
+          (pct, done, total) => {
+            setBetProgress(pct);
+            if (done !== undefined) setBetDone(done);
+            if (total !== undefined) setBetTotal(total);
+          },
+          (checkpointAt, data) => {
+            // Save checkpoint to localStorage so a refresh can resume here
+            saveCheckpoint(module.id, betKey, data);
+            setBetWins(data.totalWins ?? 0);
+          }
         );
         workerRef.current = { abort: abortWorker };
         const res = await promise;
         workerRef.current = null;
+        stopBetTimer();
         if (abortRef.current) break;
         if (res.success) {
-          const key = `${bet.betType}:${bet.betKey}`;
+          clearCheckpoint(module.id);
           setResults(prev => {
-            const updated = { ...prev, [key]: res };
+            const updated = { ...prev, [betKey]: res };
             try {
               localStorage.setItem(getStorageKeys(module.id).results, JSON.stringify(updated));
             } catch {}
@@ -248,24 +336,30 @@ function ModulePanel({ module, bets, onResultsChange }) {
           const newProgress = i + 1;
           setProgress(newProgress);
           setBetProgress(0);
+          setBetWins(0);
+          setBetDone(0);
           try { localStorage.setItem(getStorageKeys(module.id).progress, String(newProgress)); } catch {}
           showSaving();
         }
       } catch (err) {
         workerRef.current = null;
+        stopBetTimer();
         if (abortRef.current) break;
       }
     }
     setRunning(false);
     setCurrentBet('');
     setBetProgress(0);
+    setBetWins(0);
+    setBetDone(0);
+    stopBetTimer();
     workerRef.current = null;
   };
 
   const run = () => {
     setResults({});
     setProgress(0);
-    clearFromStorage(module.id);
+    clearFromStorage(module.id); // also clears checkpoint
     runFrom(0);
     setExpanded(true);
   };
@@ -407,13 +501,25 @@ function ModulePanel({ module, bets, onResultsChange }) {
                     />
                   </div>
                   {betProgress > 0 && (
-                    <div className="w-full bg-slate-700/50 rounded-full h-0.5 overflow-hidden">
-                      <motion.div
-                        className="h-0.5 rounded-full bg-yellow-400/50"
-                        animate={{ width: `${Math.round(betProgress * 100)}%` }}
-                        transition={{ ease: 'linear', duration: 0.15 }}
-                      />
-                    </div>
+                    <>
+                      <div className="w-full bg-slate-700/50 rounded-full h-1 overflow-hidden mb-1">
+                        <motion.div
+                          className="h-1 rounded-full bg-yellow-400/60"
+                          animate={{ width: `${Math.round(betProgress * 100)}%` }}
+                          transition={{ ease: 'linear', duration: 0.15 }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-xs mt-0.5">
+                        <span className="text-purple-400 font-mono">
+                          {betWins > 0 && <span>{betWins.toLocaleString()} wins · </span>}
+                          {betDone > 0 && <span>{betDone.toLocaleString()} / {betTotal.toLocaleString()} rounds</span>}
+                        </span>
+                        <span className="flex items-center gap-1 text-yellow-400/70 font-mono">
+                          <Timer className="w-3 h-3" />
+                          {formatElapsed(elapsedSeconds)}
+                        </span>
+                      </div>
+                    </>
                   )}
                 </div>
               )}

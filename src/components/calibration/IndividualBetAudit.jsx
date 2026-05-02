@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { runBetAuditWithAbort, runMicroscopeWithAbort, runExportWithAbort, resetPersistentWorker } from '@/lib/workerBridge';
 import { motion } from 'framer-motion';
 import { Play, RefreshCw, Trash2, FileDown, FileText, SkipForward, Microscope, ChevronDown, ChevronRight, Download, X, BarChart2 } from 'lucide-react';
@@ -10,6 +10,23 @@ import RankBreakdown from './RankBreakdown';
 
 const STORAGE_KEY = 'individualBetAudit_results';
 const PROGRESS_KEY = 'individualBetAudit_progress';
+const CHECKPOINT_KEY = 'individualBetAudit_checkpoint';
+
+function saveIBACheckpoint(betKey, data) {
+  try { localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({ betKey, ...data })); } catch {}
+}
+function loadIBACheckpoint() {
+  try { const raw = localStorage.getItem(CHECKPOINT_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
+}
+function clearIBACheckpoint() {
+  try { localStorage.removeItem(CHECKPOINT_KEY); } catch {}
+}
+function formatElapsed(seconds) {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}m ${s}s`;
+}
 
 const SAMPLE_SIZES = [
   { label: '2M (Full)', gamesPerBet: 2_000_000, batches: 40 },
@@ -345,6 +362,29 @@ export default function IndividualBetAudit() {
   const [microscopeRunning, setMicroscopeRunning] = useState(false);
   const [betProgress, setBetProgress] = useState(0);
   const [betProgressLabel, setBetProgressLabel] = useState('');
+  const [betWins, setBetWins] = useState(0);
+  const [betDone, setBetDone] = useState(0);
+  const [betTotal, setBetTotal] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerIntervalRef = useRef(null);
+  const betStartTimeRef = useRef(null);
+
+  useEffect(() => {
+    return () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); };
+  }, []);
+
+  const startBetTimer = useCallback(() => {
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    betStartTimeRef.current = Date.now();
+    setElapsedSeconds(0);
+    timerIntervalRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - betStartTimeRef.current) / 1000));
+    }, 1000);
+  }, []);
+
+  const stopBetTimer = useCallback(() => {
+    if (timerIntervalRef.current) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null; }
+  }, []);
 
   // Export state
   const [exportKey, setExportKey] = useState(null);
@@ -370,6 +410,7 @@ export default function IndividualBetAudit() {
     setMicroscopeKey(null);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROGRESS_KEY);
+    clearIBACheckpoint();
   };
 
   const runAuditFrom = async (startIndex, batchesPerBet, defs) => {
@@ -381,8 +422,18 @@ export default function IndividualBetAudit() {
     for (let bi = startIndex; bi < defs.length; bi++) {
       if (abortRef.current) break;
       const def = defs[bi];
+      const key = `${def.betType}:${def.betKey}`;
+
+      // Check for a saved checkpoint for this exact bet
+      const savedCheckpoint = loadIBACheckpoint();
+      const resumeFrom = (savedCheckpoint && savedCheckpoint.betKey === key) ? savedCheckpoint : null;
+
       setCurrentBet(def.label);
-      setBetProgress(0);
+      setBetProgress(resumeFrom ? (resumeFrom.totalRounds ?? 0) / totalGames : 0);
+      setBetWins(resumeFrom ? (resumeFrom.totalWins ?? 0) : 0);
+      setBetDone(resumeFrom ? (resumeFrom.totalRounds ?? 0) : 0);
+      setBetTotal(totalGames);
+      startBetTimer();
 
       let livePayout = def.currentPayout;
       if (def.betType === 'hand') livePayout = livePayouts.handPayouts[parseInt(def.betKey) - 1];
@@ -404,23 +455,40 @@ export default function IndividualBetAudit() {
             lhPayout: livePayouts.lhPayout,
             perHandRankPayouts: livePayouts.perHandRankPayouts,
             captureLog: false,
+            resumeFrom: resumeFrom ? {
+              totalRounds: resumeFrom.totalRounds,
+              totalWins: resumeFrom.totalWins,
+              totalPaid: resumeFrom.totalPaid,
+              totalCardedHandWins: resumeFrom.totalCardedHandWins,
+              totalRankNonExceptionWins: resumeFrom.totalRankNonExceptionWins,
+              totalLostToHouseWins: resumeFrom.totalLostToHouseWins,
+              perHandRankHandWins: resumeFrom.perHandRankHandWins,
+              rankBreakdownCounts: resumeFrom.rankBreakdownCounts,
+            } : undefined,
           },
           (pct, done, total) => {
             setBetProgress(pct);
+            if (done !== undefined) setBetDone(done);
+            if (total !== undefined) setBetTotal(total);
             if (isAdaptive && done !== undefined && total !== undefined) {
               setBetProgressLabel(`${done.toLocaleString()} / ${total.toLocaleString()} Card Wins`);
             } else {
               setBetProgressLabel('');
             }
+          },
+          (checkpointAt, data) => {
+            saveIBACheckpoint(key, data);
+            setBetWins(data.totalWins ?? 0);
           }
         );
         workerRef.current = { abort };
 
         const res = await promise;
         workerRef.current = null;
+        stopBetTimer();
         if (abortRef.current) break;
 
-        const key = `${def.betType}:${def.betKey}`;
+        clearIBACheckpoint();
         const newResult = {
           wins: res.wins,
           totalGames,
@@ -445,17 +513,23 @@ export default function IndividualBetAudit() {
         const newProgress = bi + 1;
         setProgress(newProgress);
         setBetProgress(0);
+        setBetWins(0);
+        setBetDone(0);
         try { localStorage.setItem(PROGRESS_KEY, String(newProgress)); } catch {}
       } catch (err) {
         workerRef.current = null;
+        stopBetTimer();
         if (abortRef.current) break;
-        // Worker errored (not aborted) — log and continue to next bet
         console.error('[AuditWorker] bet failed:', def.label, err?.message);
       }
     }
     setRunning(false);
     setCurrentBet('');
     setBetProgress(0);
+    setBetProgressLabel('');
+    setBetWins(0);
+    setBetDone(0);
+    stopBetTimer();
     workerRef.current = null;
   };
 
@@ -468,6 +542,7 @@ export default function IndividualBetAudit() {
     setMicroscopeKey(null);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROGRESS_KEY);
+    clearIBACheckpoint();
     runAuditFrom(0, size.batches, defs);
   };
 
@@ -857,16 +932,25 @@ export default function IndividualBetAudit() {
               />
             </div>
             {running && betProgress > 0 && (
-              <div className="w-full bg-slate-700/50 rounded-full h-1 overflow-hidden">
-                <motion.div
-                  className="h-1 rounded-full bg-yellow-500/60"
-                  animate={{ width: `${Math.round(betProgress * 100)}%` }}
-                  transition={{ ease: 'linear', duration: 0.2 }}
-                />
-              </div>
-            )}
-            {running && betProgressLabel && (
-              <div className="text-xs text-purple-400 mt-0.5">{betProgressLabel}</div>
+              <>
+                <div className="w-full bg-slate-700/50 rounded-full h-1 overflow-hidden mb-1">
+                  <motion.div
+                    className="h-1 rounded-full bg-yellow-500/60"
+                    animate={{ width: `${Math.round(betProgress * 100)}%` }}
+                    transition={{ ease: 'linear', duration: 0.2 }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs mt-0.5">
+                  <span className="text-purple-400 font-mono">
+                    {betWins > 0 && <span>{betWins.toLocaleString()} wins · </span>}
+                    {betDone > 0 && <span>{betDone.toLocaleString()} / {betTotal.toLocaleString()} {betProgressLabel ? 'Card Wins' : 'rounds'}</span>}
+                  </span>
+                  <span className="flex items-center gap-1 text-yellow-400/70 font-mono">
+                    <span className="text-[10px]">⏱</span>
+                    {formatElapsed(elapsedSeconds)}
+                  </span>
+                </div>
+              </>
             )}
           </div>
         )}
