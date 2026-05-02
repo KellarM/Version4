@@ -1437,6 +1437,7 @@ export default function RapidFireGame() {
 
           {/* Community Cards — expanded canvas for labels, assets stay fixed size */}
           <div
+            className="slot-border-dormant"
             style={{
               height: '152px',
               minHeight: '152px',
@@ -1452,9 +1453,8 @@ export default function RapidFireGame() {
               paddingTop: '8px',
               paddingBottom: '8px',
               borderRadius: '0.75rem',
-              border: '1px solid rgba(133,77,14,0.5)',
+              border: '2px solid',
               background: 'rgba(0,0,0,0.35)',
-              boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5), 0 1px 0 rgba(197,160,89,0.15)',
               boxSizing: 'border-box',
               overflow: 'visible'
             }}>

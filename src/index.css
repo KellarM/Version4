@@ -249,14 +249,21 @@
 
 /* Metallic gold border — muted (inactive slot) */
 .slot-border-dormant {
-  border-color: rgba(197,160,89,0.35) !important;
-  box-shadow: 0 0 0 1px rgba(197,160,89,0.1) inset;
+  border-color: #8B6914 !important;
+  box-shadow:
+    0 0 0 1px #000 inset,
+    0 0 0 2px rgba(197,160,89,0.25) inset,
+    0 2px 8px rgba(0,0,0,0.6);
 }
 
 /* Metallic gold border — active (bet placed) */
 .slot-border-active {
-  border-color: #c5a059 !important;
-  box-shadow: 0 0 6px 1px rgba(197,160,89,0.5) inset, 0 0 8px rgba(197,160,89,0.3);
+  border-color: #e8b84b !important;
+  box-shadow:
+    0 0 0 1px #000 inset,
+    0 0 0 2px rgba(232,184,75,0.4) inset,
+    0 0 10px 2px rgba(232,184,75,0.35),
+    0 2px 8px rgba(0,0,0,0.6);
 }
 
 /* Floating card shadow on felt */
