@@ -15,7 +15,7 @@ export const PER_HAND_RANK_PAYOUTS = {
     'Full House':      2.86,
     'Two Pair':        3.30,
     'Straight':        3.31,
-    'Flush':           5.43,
+    'Flush':           5.55,
     'Three of a Kind': 8.16,
     'One Pair':        28.20,
   },
