@@ -9,8 +9,8 @@ import {
   getTotalHandBets, getTotalRankBets, getTotalColorBets, hasRankBet,
   calculateTiePayout,
   getUnlockedRanksForPlayer,
-  isSideBetGateOpen,
-} from '@/lib/gameEngine';
+  isSideBetGateOpen } from
+'@/lib/gameEngine';
 import { COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } from '@/lib/payoutConstants';
 import { getPerHandRankPayout } from '@/lib/perHandRankPayouts';
 import FixedHandCard from '@/components/game/FixedHandCard';
@@ -47,17 +47,17 @@ const MIN_BET = 5;
 
 // Must match PLAYER_CHIP_COLORS in child components
 const PLAYER_TAB_STYLES = [
-  { active: 'border-yellow-400 bg-yellow-500 text-black',   inactive: 'border-yellow-700/40 bg-yellow-900/20 text-yellow-400' },
-  { active: 'border-blue-400 bg-blue-500 text-white',       inactive: 'border-blue-700/40 bg-blue-900/20 text-blue-400'       },
-  { active: 'border-pink-400 bg-pink-500 text-white',       inactive: 'border-pink-700/40 bg-pink-900/20 text-pink-400'       },
-  { active: 'border-green-400 bg-green-500 text-black',     inactive: 'border-green-700/40 bg-green-900/20 text-green-400'    },
-  { active: 'border-orange-400 bg-orange-500 text-black',   inactive: 'border-orange-700/40 bg-orange-900/20 text-orange-400' },
-  { active: 'border-cyan-400 bg-cyan-500 text-black',       inactive: 'border-cyan-700/40 bg-cyan-900/20 text-cyan-400'       },
-  { active: 'border-red-400 bg-red-500 text-white',         inactive: 'border-red-700/40 bg-red-900/20 text-red-400'          },
-  { active: 'border-lime-400 bg-lime-500 text-black',       inactive: 'border-lime-700/40 bg-lime-900/20 text-lime-400'       },
-  { active: 'border-violet-400 bg-violet-500 text-white',   inactive: 'border-violet-700/40 bg-violet-900/20 text-violet-400' },
-  { active: 'border-amber-400 bg-amber-500 text-black',     inactive: 'border-amber-700/40 bg-amber-900/20 text-amber-400'   },
-];
+{ active: 'border-yellow-400 bg-yellow-500 text-black', inactive: 'border-yellow-700/40 bg-yellow-900/20 text-yellow-400' },
+{ active: 'border-blue-400 bg-blue-500 text-white', inactive: 'border-blue-700/40 bg-blue-900/20 text-blue-400' },
+{ active: 'border-pink-400 bg-pink-500 text-white', inactive: 'border-pink-700/40 bg-pink-900/20 text-pink-400' },
+{ active: 'border-green-400 bg-green-500 text-black', inactive: 'border-green-700/40 bg-green-900/20 text-green-400' },
+{ active: 'border-orange-400 bg-orange-500 text-black', inactive: 'border-orange-700/40 bg-orange-900/20 text-orange-400' },
+{ active: 'border-cyan-400 bg-cyan-500 text-black', inactive: 'border-cyan-700/40 bg-cyan-900/20 text-cyan-400' },
+{ active: 'border-red-400 bg-red-500 text-white', inactive: 'border-red-700/40 bg-red-900/20 text-red-400' },
+{ active: 'border-lime-400 bg-lime-500 text-black', inactive: 'border-lime-700/40 bg-lime-900/20 text-lime-400' },
+{ active: 'border-violet-400 bg-violet-500 text-white', inactive: 'border-violet-700/40 bg-violet-900/20 text-violet-400' },
+{ active: 'border-amber-400 bg-amber-500 text-black', inactive: 'border-amber-700/40 bg-amber-900/20 text-amber-400' }];
+
 
 // Phases: 'betting' | 'flop' | 'turn' | 'lowHighBetting' | 'river' | 'settlement' | 'winner'
 const PHASE_LABELS = {
@@ -67,7 +67,7 @@ const PHASE_LABELS = {
   lowHighBetting: 'Low / High Betting Open',
   river: 'River',
   settlement: 'Settling...',
-  winner: 'Round Complete',
+  winner: 'Round Complete'
 };
 
 export default function RapidFireGame() {
@@ -121,7 +121,7 @@ export default function RapidFireGame() {
   const {
     hoveredHandId, setHoveredHandId,
     hoveredRiverType, setHoveredRiverType,
-    riverWinFlash, triggerRiverWin,
+    riverWinFlash, triggerRiverWin
   } = useGreedEngineState();
   const [hoveredRankRow, setHoveredRankRow] = useState(null);
 
@@ -164,16 +164,16 @@ export default function RapidFireGame() {
     const onDown = (e) => {
       pressed.add(e.key.toLowerCase());
       if (
-        pressed.has('control') &&
-        pressed.has('alt') &&
-        pressed.has('j') &&
-        pressed.has('l')
-      ) {
+      pressed.has('control') &&
+      pressed.has('alt') &&
+      pressed.has('j') &&
+      pressed.has('l'))
+      {
         e.preventDefault();
-        setToolbarVisible(v => !v);
+        setToolbarVisible((v) => !v);
       }
     };
-    const onUp = (e) => { pressed.delete(e.key.toLowerCase()); };
+    const onUp = (e) => {pressed.delete(e.key.toLowerCase());};
     window.addEventListener('keydown', onDown);
     window.addEventListener('keyup', onUp);
     return () => {
@@ -188,7 +188,7 @@ export default function RapidFireGame() {
       balances,
       roundId,
       casinoProfit,
-      roundsPlayed,
+      roundsPlayed
     };
     localStorage.setItem('rapidFireGameState', JSON.stringify(gameState));
   }, [balances, roundId, casinoProfit, roundsPlayed]);
@@ -213,25 +213,25 @@ export default function RapidFireGame() {
 
   // Greed Engine: live total investment for active player
   const totalInvestment =
-    Object.values(pHandBets).reduce((s, v) => s + v, 0) +
-    Object.values(pRankBets).reduce((s, v) => s + v, 0) +
-    Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
-    (pLowHighBet?.amount || 0);
+  Object.values(pHandBets).reduce((s, v) => s + v, 0) +
+  Object.values(pRankBets).reduce((s, v) => s + v, 0) +
+  Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) + (
+  pLowHighBet?.amount || 0);
 
   // Luminous Path: derive glow state (0–3) for Color/River panel borders
   const isHandBetPlaced = handBetCount > 0 && !killSwitchActive;
   const isRankBetPlaced = rankBetCount > 0;
   const isRankHovered = hoveredRankRow !== null;
 
-  const luminosityClass = riverWinFlash
-    ? 'lp-jackpot'
-    : sideBetGateOpen
-      ? 'lp-rank-placed'
-      : isRankHovered
-        ? 'lp-rank-hover'
-        : isHandBetPlaced
-          ? 'lp-hand-placed'
-          : 'lp-dormant';
+  const luminosityClass = riverWinFlash ?
+  'lp-jackpot' :
+  sideBetGateOpen ?
+  'lp-rank-placed' :
+  isRankHovered ?
+  'lp-rank-hover' :
+  isHandBetPlaced ?
+  'lp-hand-placed' :
+  'lp-dormant';
 
   // Mathematical Path: rank slots locked when they have zero probability across active hands
   const activeHandIds = Object.keys(pHandBets).map(Number);
@@ -251,9 +251,9 @@ export default function RapidFireGame() {
   const totalColorBetAmount = getTotalColorBets(pRedBlackBets);
 
   const totalBet = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
-    Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
-    Object.values(pRankBets).reduce((s, v) => s + v, 0) +
-    (pLowHighBet ? pLowHighBet.amount : 0);
+  Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
+  Object.values(pRankBets).reduce((s, v) => s + v, 0) + (
+  pLowHighBet ? pLowHighBet.amount : 0);
 
   // Total bets across ALL players this round (for casino profit calc)
   const totalAllBets = () => {
@@ -262,7 +262,7 @@ export default function RapidFireGame() {
       t += Object.values(handBets[i] || {}).reduce((s, v) => s + v, 0);
       t += Object.values(redBlackBets[i] || {}).reduce((s, v) => s + v, 0);
       t += Object.values(rankBets[i] || {}).reduce((s, v) => s + v, 0);
-      t += (lowHighBets[i]?.amount || 0);
+      t += lowHighBets[i]?.amount || 0;
     }
     return t;
   };
@@ -290,8 +290,8 @@ export default function RapidFireGame() {
 
     // Right-click / if already bet: remove it
     if (existing > 0 && balance < selectedChip) {
-      setHandBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[handId]; return { ...prev, [pid]: n }; });
-      setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+      setHandBets((prev) => {const n = { ...(prev[pid] || {}) };delete n[handId];return { ...prev, [pid]: n };});
+      setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
       return;
     }
     if (balance <= 0 || balance < selectedChip) return;
@@ -305,17 +305,17 @@ export default function RapidFireGame() {
       const colorRefund = Object.values(pRedBlackBets).reduce((s, v) => s + v, 0);
       const riverRefund = pLowHighBet?.amount || 0;
       if (colorRefund > 0 || riverRefund > 0) {
-        setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
-        setLowHighBets(prev => ({ ...prev, [pid]: null }));
-        setBalances(b => { const n = [...b]; n[pid] += colorRefund + riverRefund - selectedChip; return n; });
-        setHandBets(prev => ({ ...prev, [pid]: simulatedHandBets }));
+        setRedBlackBets((prev) => ({ ...prev, [pid]: {} }));
+        setLowHighBets((prev) => ({ ...prev, [pid]: null }));
+        setBalances((b) => {const n = [...b];n[pid] += colorRefund + riverRefund - selectedChip;return n;});
+        setHandBets((prev) => ({ ...prev, [pid]: simulatedHandBets }));
         setShowAutoTrimToast(true);
         return;
       }
     }
 
-    setHandBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
-    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+    setHandBets((prev) => ({ ...prev, [pid]: { ...(prev[pid] || {}), [handId]: existing + selectedChip } }));
+    setBalances((b) => {const n = [...b];n[pid] -= selectedChip;return n;});
 
     // Start countdown on first bet
     if (Object.keys(pHandBets).length === 0 && !timerActiveRef.current) {
@@ -365,7 +365,7 @@ export default function RapidFireGame() {
       setRankBets(newRankBets);
       setRedBlackBets(newRedBlackBets);
       setLowHighBets(newLowHighBets);
-      setBalances(b => { const n = [...b]; n[pid] += removeAmount + rankRefund + colorRefund + riverRefund; return n; });
+      setBalances((b) => {const n = [...b];n[pid] += removeAmount + rankRefund + colorRefund + riverRefund;return n;});
       if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
       checkAndResetIfNoBets(newHandBets, newRedBlackBets, newRankBets, newLowHighBets);
       return;
@@ -455,11 +455,11 @@ export default function RapidFireGame() {
       }
     }
 
-    setHandBets(prev => ({ ...prev, [pid]: updatedHandBets }));
-    setRankBets(prev => ({ ...prev, [pid]: updatedRankBets }));
-    setRedBlackBets(prev => ({ ...prev, [pid]: updatedColorBets }));
-    setLowHighBets(prev => ({ ...prev, [pid]: updatedRiver }));
-    setBalances(b => { const n = [...b]; n[pid] += removeAmount + rankRefund + colorRefund + riverRefund; return n; });
+    setHandBets((prev) => ({ ...prev, [pid]: updatedHandBets }));
+    setRankBets((prev) => ({ ...prev, [pid]: updatedRankBets }));
+    setRedBlackBets((prev) => ({ ...prev, [pid]: updatedColorBets }));
+    setLowHighBets((prev) => ({ ...prev, [pid]: updatedRiver }));
+    setBalances((b) => {const n = [...b];n[pid] += removeAmount + rankRefund + colorRefund + riverRefund;return n;});
     if (rankRefund > 0 || colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
   }, [gamePhase, pid, selectedChip, handBets, rankBets, redBlackBets, lowHighBets]);
 
@@ -475,14 +475,14 @@ export default function RapidFireGame() {
       if (!gateStillOpen) {
         const colorRefund = Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0);
         const riverRefund = lowHighBets[pid]?.amount || 0;
-        setRankBets(prev => ({ ...prev, [pid]: remainingRankBets }));
-        setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
-        setLowHighBets(prev => ({ ...prev, [pid]: null }));
-        setBalances(b => { const n = [...b]; n[pid] += existing + colorRefund + riverRefund; return n; });
+        setRankBets((prev) => ({ ...prev, [pid]: remainingRankBets }));
+        setRedBlackBets((prev) => ({ ...prev, [pid]: {} }));
+        setLowHighBets((prev) => ({ ...prev, [pid]: null }));
+        setBalances((b) => {const n = [...b];n[pid] += existing + colorRefund + riverRefund;return n;});
         if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
       } else {
-        setRankBets(prev => ({ ...prev, [pid]: remainingRankBets }));
-        setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+        setRankBets((prev) => ({ ...prev, [pid]: remainingRankBets }));
+        setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
       }
       return;
     }
@@ -537,8 +537,8 @@ export default function RapidFireGame() {
     }
     if (balance <= 0) return;
 
-    setRankBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
-    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+    setRankBets((prev) => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
+    setBalances((b) => {const n = [...b];n[pid] -= selectedChip;return n;});
   }, [gamePhase, balance, selectedChip, pid, rankBets, handBets, pRankBets]);
 
   const handleRemoveRankBet = useCallback((key) => {
@@ -557,15 +557,15 @@ export default function RapidFireGame() {
       // Gate closed: cascade out all color and river bets
       const colorRefund = Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0);
       const riverRefund = lowHighBets[pid]?.amount || 0;
-      setRankBets(prev => ({ ...prev, [pid]: remainingRankBets }));
-      setRedBlackBets(prev => ({ ...prev, [pid]: {} }));
-      setLowHighBets(prev => ({ ...prev, [pid]: null }));
-      setBalances(b => { const n = [...b]; n[pid] += existing + colorRefund + riverRefund; return n; });
+      setRankBets((prev) => ({ ...prev, [pid]: remainingRankBets }));
+      setRedBlackBets((prev) => ({ ...prev, [pid]: {} }));
+      setLowHighBets((prev) => ({ ...prev, [pid]: null }));
+      setBalances((b) => {const n = [...b];n[pid] += existing + colorRefund + riverRefund;return n;});
       if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
     } else {
       // Gate still open: just remove this rank bet, color/river stay
-      setRankBets(prev => ({ ...prev, [pid]: remainingRankBets }));
-      setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+      setRankBets((prev) => ({ ...prev, [pid]: remainingRankBets }));
+      setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
     }
   }, [gamePhase, pid, rankBets, handBets, redBlackBets, lowHighBets]);
 
@@ -594,7 +594,7 @@ export default function RapidFireGame() {
     const totalRankAmt = Object.values(updated).reduce((s, v) => s + v, 0);
     if (totalRankAmt > totalHandAmt) return;
 
-    setRankBets(prev => ({ ...prev, [pid]: updated }));
+    setRankBets((prev) => ({ ...prev, [pid]: updated }));
   }, [gamePhase, pid, rankBets, handBets]);
 
   const handleRedBlackBet = useCallback((key) => {
@@ -603,8 +603,8 @@ export default function RapidFireGame() {
 
     // Removal path: existing bet + insufficient funds to add more → refund and remove
     if (existing > 0 && balance < selectedChip) {
-      setRedBlackBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
-      setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+      setRedBlackBets((prev) => {const n = { ...(prev[pid] || {}) };delete n[key];return { ...prev, [pid]: n };});
+      setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
       return;
     }
 
@@ -641,16 +641,16 @@ export default function RapidFireGame() {
     }
     if (balance <= 0) return;
 
-    setRedBlackBets(prev => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
-    setBalances(b => { const n = [...b]; n[pid] -= selectedChip; return n; });
+    setRedBlackBets((prev) => ({ ...prev, [pid]: { ...(prev[pid] || {}), [key]: existing + selectedChip } }));
+    setBalances((b) => {const n = [...b];n[pid] -= selectedChip;return n;});
   }, [gamePhase, balance, selectedChip, pid, redBlackBets, handBets, rankBets]);
 
   const handleRemoveRedBlackBet = useCallback((key) => {
     if (gamePhase !== 'betting') return;
     const existing = (redBlackBets[pid] || {})[key] || 0;
     if (existing <= 0) return;
-    setRedBlackBets(prev => { const n = { ...(prev[pid] || {}) }; delete n[key]; return { ...prev, [pid]: n }; });
-    setBalances(b => { const n = [...b]; n[pid] += existing; return n; });
+    setRedBlackBets((prev) => {const n = { ...(prev[pid] || {}) };delete n[key];return { ...prev, [pid]: n };});
+    setBalances((b) => {const n = [...b];n[pid] += existing;return n;});
   }, [gamePhase, pid, redBlackBets]);
 
   const handleLowHighBet = useCallback((type) => {
@@ -673,24 +673,24 @@ export default function RapidFireGame() {
 
     // Also enforce the legacy board-total cap (River ≤ board total)
     const boardBet = Object.values(handBets[pid] || {}).reduce((s, v) => s + v, 0) +
-      Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0) +
-      Object.values(rankBets[pid] || {}).reduce((s, v) => s + v, 0);
+    Object.values(redBlackBets[pid] || {}).reduce((s, v) => s + v, 0) +
+    Object.values(rankBets[pid] || {}).reduce((s, v) => s + v, 0);
     const current = pLowHighBet && pLowHighBet.type === type ? pLowHighBet.amount : 0;
     const remaining = boardBet - current;
     if (remaining <= 0) return;
     const addAmount = Math.min(selectedChip, remaining);
 
     if (balance <= 0 || balance < addAmount) return;
-    setLowHighBets(prev => ({ ...prev, [pid]: { type, amount: (prev[pid]?.type === type ? prev[pid].amount : 0) + addAmount } }));
-    setBalances(b => { const n = [...b]; n[pid] -= addAmount; return n; });
+    setLowHighBets((prev) => ({ ...prev, [pid]: { type, amount: (prev[pid]?.type === type ? prev[pid].amount : 0) + addAmount } }));
+    setBalances((b) => {const n = [...b];n[pid] -= addAmount;return n;});
   }, [gamePhase, balance, selectedChip, handBets, redBlackBets, rankBets, pLowHighBet, pid]);
 
   const handleRemoveLowHighBet = useCallback(() => {
     // Can only remove Low/High bet during lowHighBetting phase (after turn, before river)
     if (gamePhase !== 'lowHighBetting') return;
     if (!pLowHighBet || pLowHighBet.amount <= 0) return;
-    setBalances(b => { const n = [...b]; n[pid] += pLowHighBet.amount; return n; });
-    setLowHighBets(prev => ({ ...prev, [pid]: null }));
+    setBalances((b) => {const n = [...b];n[pid] += pLowHighBet.amount;return n;});
+    setLowHighBets((prev) => ({ ...prev, [pid]: null }));
   }, [gamePhase, pid, pLowHighBet]);
 
   // Drag-drop: move a chip from one hand to another, or back to bank
@@ -708,11 +708,11 @@ export default function RapidFireGame() {
         const rankRefund = Object.values(rankBets[dragPid] || {}).reduce((s, v) => s + v, 0);
         const colorRefund = Object.values(redBlackBets[dragPid] || {}).reduce((s, v) => s + v, 0);
         const riverRefund = lowHighBets[dragPid]?.amount || 0;
-        setHandBets(prev => ({ ...prev, [dragPid]: remainingHandBets }));
-        setRankBets(prev => ({ ...prev, [dragPid]: {} }));
-        setRedBlackBets(prev => ({ ...prev, [dragPid]: {} }));
-        setLowHighBets(prev => ({ ...prev, [dragPid]: null }));
-        setBalances(b => { const n = [...b]; n[dragPid] += fromAmt + rankRefund + colorRefund + riverRefund; return n; });
+        setHandBets((prev) => ({ ...prev, [dragPid]: remainingHandBets }));
+        setRankBets((prev) => ({ ...prev, [dragPid]: {} }));
+        setRedBlackBets((prev) => ({ ...prev, [dragPid]: {} }));
+        setLowHighBets((prev) => ({ ...prev, [dragPid]: null }));
+        setBalances((b) => {const n = [...b];n[dragPid] += fromAmt + rankRefund + colorRefund + riverRefund;return n;});
       } else {
         const remainingHandCount = Object.keys(remainingHandBets).length;
         const slotsAllowed = remainingHandCount === 1 ? 1 : 2;
@@ -765,11 +765,11 @@ export default function RapidFireGame() {
           }
         }
 
-        setHandBets(prev => { const n = { ...(prev[dragPid] || {}) }; delete n[fromHandId]; return { ...prev, [dragPid]: n }; });
-        setRankBets(prev => ({ ...prev, [dragPid]: updatedRankBets }));
-        setRedBlackBets(prev => ({ ...prev, [dragPid]: updatedColorBets }));
-        setLowHighBets(prev => ({ ...prev, [dragPid]: updatedRiver }));
-        setBalances(b => { const n = [...b]; n[dragPid] += fromAmt + rankRefund + colorRefund + riverRefund; return n; });
+        setHandBets((prev) => {const n = { ...(prev[dragPid] || {}) };delete n[fromHandId];return { ...prev, [dragPid]: n };});
+        setRankBets((prev) => ({ ...prev, [dragPid]: updatedRankBets }));
+        setRedBlackBets((prev) => ({ ...prev, [dragPid]: updatedColorBets }));
+        setLowHighBets((prev) => ({ ...prev, [dragPid]: updatedRiver }));
+        setBalances((b) => {const n = [...b];n[dragPid] += fromAmt + rankRefund + colorRefund + riverRefund;return n;});
         if (colorRefund > 0 || riverRefund > 0) setShowAutoTrimToast(true);
       }
     } else {
@@ -832,12 +832,12 @@ export default function RapidFireGame() {
         updatedRiver = null;
       }
 
-      setHandBets(prev => ({ ...prev, [dragPid]: updatedHandBets }));
-      setRankBets(prev => ({ ...prev, [dragPid]: updatedRankBets }));
-      setRedBlackBets(prev => ({ ...prev, [dragPid]: updatedColorBets }));
-      setLowHighBets(prev => ({ ...prev, [dragPid]: updatedRiver }));
+      setHandBets((prev) => ({ ...prev, [dragPid]: updatedHandBets }));
+      setRankBets((prev) => ({ ...prev, [dragPid]: updatedRankBets }));
+      setRedBlackBets((prev) => ({ ...prev, [dragPid]: updatedColorBets }));
+      setLowHighBets((prev) => ({ ...prev, [dragPid]: updatedRiver }));
       if (rankRefund > 0 || colorRefund > 0 || riverRefund > 0) {
-        setBalances(b => { const n = [...b]; n[dragPid] += rankRefund + colorRefund + riverRefund; return n; });
+        setBalances((b) => {const n = [...b];n[dragPid] += rankRefund + colorRefund + riverRefund;return n;});
         setShowAutoTrimToast(true);
       }
     }
@@ -845,13 +845,13 @@ export default function RapidFireGame() {
 
   // Helper: check if ALL players have zero bets and reset board if timer is active
   const checkAndResetIfNoBets = (updatedHandBets, updatedRedBlackBets, updatedRankBets, updatedLowHighBets) => {
-    const anyBetsRemain = Array.from({ length: playerCount }, (_, i) => i).some(i => {
+    const anyBetsRemain = Array.from({ length: playerCount }, (_, i) => i).some((i) => {
       return (
         Object.keys(updatedHandBets[i] || {}).length > 0 ||
         Object.keys(updatedRedBlackBets[i] || {}).length > 0 ||
         Object.keys(updatedRankBets[i] || {}).length > 0 ||
-        (updatedLowHighBets[i]?.amount || 0) > 0
-      );
+        (updatedLowHighBets[i]?.amount || 0) > 0);
+
     });
     if (!anyBetsRemain && timerActiveRef.current) {
       stopTimer();
@@ -874,10 +874,10 @@ export default function RapidFireGame() {
   const clearBets = () => {
     const riverRefund = pLowHighBet?.amount || 0;
     const refund = Object.values(pHandBets).reduce((s, v) => s + v, 0) +
-      Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
-      Object.values(pRankBets).reduce((s, v) => s + v, 0) +
-      riverRefund;
-    setBalances(b => { const n = [...b]; n[pid] += refund; return n; });
+    Object.values(pRedBlackBets).reduce((s, v) => s + v, 0) +
+    Object.values(pRankBets).reduce((s, v) => s + v, 0) +
+    riverRefund;
+    setBalances((b) => {const n = [...b];n[pid] += refund;return n;});
     const newHandBets = { ...handBets, [pid]: {} };
     const newRedBlackBets = { ...redBlackBets, [pid]: {} };
     const newRankBets = { ...rankBets, [pid]: {} };
@@ -906,12 +906,12 @@ export default function RapidFireGame() {
     setLeadingHandIds(leader ? leader.handIds : []);
     setLeadingRank(leader ? leader.handResult.name : null);
 
-    const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
-    const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
+    const leaderHand = leader ? FIXED_HANDS.find((h) => h.id === leader.handIds[0]) : null;
+    const leaderCards = leaderHand ? leaderHand.cards.map((c) => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
     setDealerMessage(
-      leader
-        ? `Flop: ${flop.map(cardDisplay).join(' ')} — ${leaderCards} leads (${leader.handResult.name})`
-        : `Flop: ${flop.map(cardDisplay).join(' ')}`
+      leader ?
+      `Flop: ${flop.map(cardDisplay).join(' ')} — ${leaderCards} leads (${leader.handResult.name})` :
+      `Flop: ${flop.map(cardDisplay).join(' ')}`
     );
     setGamePhase('flop');
   }, [gamePhase, stopTimer]);
@@ -921,14 +921,14 @@ export default function RapidFireGame() {
     const turnCard = deck[deckIndex];
     const newComm = [...communityCards, turnCard];
     setCommunityCards(newComm);
-    setDeckIndex(i => i + 1);
+    setDeckIndex((i) => i + 1);
 
     const leader = findLeadingHand(newComm);
     setLeadingHandIds(leader ? leader.handIds : []);
     setLeadingRank(leader ? leader.handResult.name : null);
 
-    const leaderHand = leader ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
-    const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
+    const leaderHand = leader ? FIXED_HANDS.find((h) => h.id === leader.handIds[0]) : null;
+    const leaderCards = leaderHand ? leaderHand.cards.map((c) => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
 
     setDealerMessage(
       `Turn: ${cardDisplay(turnCard)}${leaderCards ? ` — ${leaderCards} leads (${leader.handResult.name})` : ''} — River bet now open!`
@@ -958,7 +958,7 @@ export default function RapidFireGame() {
     const riverCard = deck[deckIndex];
     const newComm = [...communityCards, riverCard];
     setCommunityCards(newComm);
-    setDeckIndex(i => i + 1);
+    setDeckIndex((i) => i + 1);
 
     const leader = findLeadingHand(newComm);
     setLeadingHandIds([]);
@@ -971,17 +971,17 @@ export default function RapidFireGame() {
     setWinningRedBlack(winRB);
     setWinningLowHigh(winLH);
 
-    const reds = newComm.filter(c => cardColor(c) === 'red').length;
+    const reds = newComm.filter((c) => cardColor(c) === 'red').length;
     const blacks = newComm.length - reds;
-    const leaderHand = (leader && !leader.communityBoardWin) ? FIXED_HANDS.find(h => h.id === leader.handIds[0]) : null;
-    const leaderCards = leaderHand ? leaderHand.cards.map(c => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
+    const leaderHand = leader && !leader.communityBoardWin ? FIXED_HANDS.find((h) => h.id === leader.handIds[0]) : null;
+    const leaderCards = leaderHand ? leaderHand.cards.map((c) => `${c.rank}${SUITS[c.suit]}`).join(' & ') : '';
 
     setDealerMessage(
-      leader?.communityBoardWin
-        ? `Board Wins! All Hand bets lose. Board: ${reds}R / ${blacks}B — River: ${winLH}`
-        : leader
-          ? `Winner: ${leaderCards} — ${leader.handResult.name}! Board: ${reds}R / ${blacks}B — River: ${winLH}`
-          : `River: ${cardDisplay(riverCard)}`
+      leader?.communityBoardWin ?
+      `Board Wins! All Hand bets lose. Board: ${reds}R / ${blacks}B — River: ${winLH}` :
+      leader ?
+      `Winner: ${leaderCards} — ${leader.handResult.name}! Board: ${reds}R / ${blacks}B — River: ${winLH}` :
+      `River: ${cardDisplay(riverCard)}`
     );
     setGamePhase('river');
 
@@ -1023,28 +1023,28 @@ export default function RapidFireGame() {
       // Carded hand bets
       if (leader) {
         const numWinners = leader.handIds.length;
-        leader.handIds.forEach(wid => {
+        leader.handIds.forEach((wid) => {
           const bet = ph[wid] || 0;
           if (bet > 0) {
-            const hand = FIXED_HANDS.find(h => h.id === wid);
+            const hand = FIXED_HANDS.find((h) => h.id === wid);
             const effectiveRatio = calculateTiePayout(hand.payout, numWinners);
             const payout = calculatePayout(bet, effectiveRatio);
             w += payout;
-            const oddsLabel = numWinners > 1
-              ? `${effectiveRatio.toFixed(2)}:1 (tie/${numWinners})`
-              : `${hand.payout}:1`;
+            const oddsLabel = numWinners > 1 ?
+            `${effectiveRatio.toFixed(2)}:1 (tie/${numWinners})` :
+            `${hand.payout}:1`;
             wins.push({
               label: `Hand ${wid}`,
               bet,
               odds: oddsLabel,
-              payout,
+              payout
             });
           }
         });
       }
 
       // Red/Black
-      winRB.forEach(key => {
+      winRB.forEach((key) => {
         const bet = prb[key] || 0;
         if (bet > 0) {
           const ratio = COLOR_BOARD_PAYOUTS[key];
@@ -1054,7 +1054,7 @@ export default function RapidFireGame() {
             label: key,
             bet,
             odds: `${ratio}:1`,
-            payout,
+            payout
           });
         }
       });
@@ -1067,7 +1067,7 @@ export default function RapidFireGame() {
           label: plh.type,
           bet: plh.amount,
           odds: `${LOW_HIGH_PAYOUT}:1`,
-          payout,
+          payout
         });
         if (i === activePlayer) triggerRiverWin();
       }
@@ -1079,51 +1079,51 @@ export default function RapidFireGame() {
       // AND that winning hand's best rank matches the player's rank bet.
       // A rank match on a non-winning hand (or on a winning hand the player didn't bet) = loss.
       if (leader && Object.keys(prk).length > 0) {
-      const playerBetHandIds = Object.keys(ph).map(Number);
-      const playerWinningHandIds = leader.handIds.filter(id => playerBetHandIds.includes(id));
+        const playerBetHandIds = Object.keys(ph).map(Number);
+        const playerWinningHandIds = leader.handIds.filter((id) => playerBetHandIds.includes(id));
 
-      for (const [rankKey, rankBetAmt] of Object.entries(prk)) {
-        if (rankBetAmt <= 0) continue;
-        // Find the first winning hand that both the player bet on AND achieves this rank
-        for (const wid of playerWinningHandIds) {
-          const hand = FIXED_HANDS.find(h => h.id === wid);
-          if (!hand) continue;
-          const result = evaluateBestHand(hand.cards, finalComm);
-          if (result && result.name === rankKey) {
-            const ratio = getPerHandRankPayout(wid, rankKey);
-            if (ratio !== null) {
-              const payout = calculatePayout(rankBetAmt, ratio);
-              w += payout;
-              wins.push({
-                label: rankKey,
-                bet: rankBetAmt,
-                odds: `${ratio}:1`,
-                payout,
-              });
+        for (const [rankKey, rankBetAmt] of Object.entries(prk)) {
+          if (rankBetAmt <= 0) continue;
+          // Find the first winning hand that both the player bet on AND achieves this rank
+          for (const wid of playerWinningHandIds) {
+            const hand = FIXED_HANDS.find((h) => h.id === wid);
+            if (!hand) continue;
+            const result = evaluateBestHand(hand.cards, finalComm);
+            if (result && result.name === rankKey) {
+              const ratio = getPerHandRankPayout(wid, rankKey);
+              if (ratio !== null) {
+                const payout = calculatePayout(rankBetAmt, ratio);
+                w += payout;
+                wins.push({
+                  label: rankKey,
+                  bet: rankBetAmt,
+                  odds: `${ratio}:1`,
+                  payout
+                });
+              }
+              break; // only pay once per rank bet
             }
-            break; // only pay once per rank bet
           }
         }
-      }
       }
 
       // Total bets for this player
       const playerTotalBet =
-        Object.values(ph).reduce((s, v) => s + v, 0) +
-        Object.values(prb).reduce((s, v) => s + v, 0) +
-        Object.values(prk).reduce((s, v) => s + v, 0) +
-        (plh?.amount || 0);
+      Object.values(ph).reduce((s, v) => s + v, 0) +
+      Object.values(prb).reduce((s, v) => s + v, 0) +
+      Object.values(prk).reduce((s, v) => s + v, 0) + (
+      plh?.amount || 0);
 
       totalBetsAllPlayers += playerTotalBet;
       totalWinningsAllPlayers += w;
       // Push total payout (balance update will add this to current balance)
       playerWinnings.push(w);
-      
+
       // Build payout display data (net = payout - bet)
       playerPayouts.push({
         wins,
         totalBet: playerTotalBet,
-        netWin: w - playerTotalBet,
+        netWin: w - playerTotalBet
       });
     }
 
@@ -1132,11 +1132,11 @@ export default function RapidFireGame() {
       handBets: snapHandBets,
       redBlackBets: snapRedBlackBets,
       rankBets: snapRankBets,
-      totalBet: totalBetsAllPlayers,
+      totalBet: totalBetsAllPlayers
     });
 
     // Update all player balances (add payouts received)
-    setBalances(prev => {
+    setBalances((prev) => {
       const n = [...prev];
       for (let i = 0; i < playerCount; i++) {
         // Current balance already had bets deducted, so just add payout back
@@ -1146,13 +1146,13 @@ export default function RapidFireGame() {
     });
 
     // Update player stats
-    setPlayerStats(prev => {
+    setPlayerStats((prev) => {
       const updated = { ...prev };
       for (let i = 0; i < playerCount; i++) {
         const playerBet = Object.values(snapHandBets[i] || {}).reduce((s, v) => s + v, 0) +
-                         Object.values(snapRedBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
-                         Object.values(snapRankBets[i] || {}).reduce((s, v) => s + v, 0) +
-                         (snapLowHighBets[i]?.amount || 0);
+        Object.values(snapRedBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+        Object.values(snapRankBets[i] || {}).reduce((s, v) => s + v, 0) + (
+        snapLowHighBets[i]?.amount || 0);
 
         const playerWin = playerWinnings[i] || 0;
         const multiplier = playerBet > 0 ? playerWin / playerBet : 0;
@@ -1171,7 +1171,7 @@ export default function RapidFireGame() {
           highestBalance: newHighest ? postRoundBalance : prev_i.highestBalance,
           highestBalanceRound: newHighest ? currentRound : prev_i.highestBalanceRound,
           lowestBalance: newLowest ? postRoundBalance : prev_i.lowestBalance,
-          lowestBalanceRound: newLowest ? currentRound : prev_i.lowestBalanceRound,
+          lowestBalanceRound: newLowest ? currentRound : prev_i.lowestBalanceRound
         };
       }
       return updated;
@@ -1179,8 +1179,8 @@ export default function RapidFireGame() {
 
     // Casino profit = total bets - total winnings paid out
     const roundProfit = totalBetsAllPlayers - totalWinningsAllPlayers;
-    setCasinoProfit(p => p + roundProfit);
-    setRoundsPlayed(r => r + 1);
+    setCasinoProfit((p) => p + roundProfit);
+    setRoundsPlayed((r) => r + 1);
 
     setGamePhase('winner');
 
@@ -1188,7 +1188,7 @@ export default function RapidFireGame() {
     setTimeout(() => {
       setLastWinInfo({
         playerPayouts,
-        playerCount,
+        playerCount
       });
       setDisplayWindowVisible(true);
     }, 1000);
@@ -1197,7 +1197,7 @@ export default function RapidFireGame() {
     // colorResult: show the actual winning color result from winRB
     // e.g. "5R", "4B", "3R" — whichever key has the highest count from the resolved winners.
     // If no color bet wins, show the majority color count as informational display only.
-    const reds = finalComm.filter(c => cardColor(c) === 'red').length;
+    const reds = finalComm.filter((c) => cardColor(c) === 'red').length;
     const blacks = finalComm.length - reds;
 
     // Build a display string: show all winning color results if any, else show the board split
@@ -1212,14 +1212,14 @@ export default function RapidFireGame() {
     }
 
     const isBoardWin = leader?.communityBoardWin === true;
-    const winnerHandA = (!isBoardWin && leader?.handIds?.length >= 1)
-      ? FIXED_HANDS.find(h => h.id === leader.handIds[0])
-      : null;
-    const winnerHandB = (!isBoardWin && leader?.handIds?.length >= 2)
-      ? FIXED_HANDS.find(h => h.id === leader.handIds[1])
-      : null;
+    const winnerHandA = !isBoardWin && leader?.handIds?.length >= 1 ?
+    FIXED_HANDS.find((h) => h.id === leader.handIds[0]) :
+    null;
+    const winnerHandB = !isBoardWin && leader?.handIds?.length >= 2 ?
+    FIXED_HANDS.find((h) => h.id === leader.handIds[1]) :
+    null;
 
-    setHistory(prev => [{
+    setHistory((prev) => [{
       roundId,
       isBoardWin,
       handRank: handResult?.name || 'No Hand',
@@ -1227,7 +1227,7 @@ export default function RapidFireGame() {
       cardsB: winnerHandB?.cards || [],
       colorResult,
       colorWinners: winRB,
-      lowHighResult: winLH || '-',
+      lowHighResult: winLH || '-'
     }, ...prev]);
 
     // Auto-progression to new round is handled by useEffect watching gamePhase
@@ -1284,7 +1284,7 @@ export default function RapidFireGame() {
     setRepeatUsedThisRound(false);
     setDeck(getSecureRandomBoard());
     setDeckIndex(0);
-    setRoundId(r => r + 1);
+    setRoundId((r) => r + 1);
     setDealerMessage("Bets open — Place Hand, Rank & Color bets now.");
     setGamePhase('betting');
     setActivePlayer(0);
@@ -1293,31 +1293,31 @@ export default function RapidFireGame() {
 
   const handleRepeatBets = () => {
     if (!previousBets) return;
-    
+
     // Check if all players have sufficient funds for previous bets
     for (let i = 0; i < playerCount; i++) {
-      const playerBet = 
-        Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
-        Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
-        Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
+      const playerBet =
+      Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
+      Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+      Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
       if ((balances[i] || STARTING_BALANCE) < playerBet) {
         setShowInsufficientFunds(true);
         return;
       }
     }
-    
+
     setHandBets(previousBets.handBets);
     setRedBlackBets(previousBets.redBlackBets);
     setRankBets(previousBets.rankBets);
     setRepeatUsedThisRound(true);
     // Deduct from balances
-    setBalances(b => {
+    setBalances((b) => {
       const n = [...b];
       for (let i = 0; i < playerCount; i++) {
-        const playerBet = 
-          Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
-          Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
-          Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
+        const playerBet =
+        Object.values(previousBets.handBets[i] || {}).reduce((s, v) => s + v, 0) +
+        Object.values(previousBets.redBlackBets[i] || {}).reduce((s, v) => s + v, 0) +
+        Object.values(previousBets.rankBets[i] || {}).reduce((s, v) => s + v, 0);
         n[i] = Math.max(0, n[i] - playerBet);
       }
       return n;
@@ -1351,29 +1351,29 @@ export default function RapidFireGame() {
       {/* Alerts */}
       <HandBetLimitAlert
         isOpen={showHandLimitAlert}
-        onClose={() => setShowHandLimitAlert(false)}
-      />
+        onClose={() => setShowHandLimitAlert(false)} />
+      
       <RankBetLimitAlert
         isOpen={showRankLimitAlert}
         onClose={() => setShowRankLimitAlert(false)}
         currentHandBets={handBetCount}
         alertType={rankAlertType}
-        maxRankSlots={maxRankSlots}
-      />
+        maxRankSlots={maxRankSlots} />
+      
       <RankBetLimitAlert
         isOpen={showCapAlert}
         onClose={() => setShowCapAlert(false)}
         alertType={capAlertType}
-        currentHandBets={handBetCount}
-      />
+        currentHandBets={handBetCount} />
+      
       <InsufficientFundsAlert
         isVisible={showInsufficientFunds}
-        onClose={() => setShowInsufficientFunds(false)}
-      />
+        onClose={() => setShowInsufficientFunds(false)} />
+      
       <AutoTrimToast
         isVisible={showAutoTrimToast}
-        onHide={() => setShowAutoTrimToast(false)}
-      />
+        onHide={() => setShowAutoTrimToast(false)} />
+      
 
 
 
@@ -1382,21 +1382,21 @@ export default function RapidFireGame() {
         isOpen={showStatsPanel}
         onClose={() => setShowStatsPanel(false)}
         playerStats={playerStats}
-        playerCount={playerCount}
-      />
+        playerCount={playerCount} />
+      
 
       {/* Individual Strategy Test */}
       <AnimatePresence>
-        {showStrategyTest && (
-          <IndividualStrategyTest onClose={() => setShowStrategyTest(false)} />
-        )}
+        {showStrategyTest &&
+        <IndividualStrategyTest onClose={() => setShowStrategyTest(false)} />
+        }
       </AnimatePresence>
 
       {/* 2 Hand/Rank Test */}
       <AnimatePresence>
-        {showTwoHandTest && (
-          <TwoHandRankTest onClose={() => setShowTwoHandTest(false)} />
-        )}
+        {showTwoHandTest &&
+        <TwoHandRankTest onClose={() => setShowTwoHandTest(false)} />
+        }
       </AnimatePresence>
 
       {/* Game Timing Modal */}
@@ -1429,9 +1429,9 @@ export default function RapidFireGame() {
               borderRadius: '0.5rem',
               border: '1px solid rgba(202,138,4,0.4)',
               background: 'linear-gradient(90deg, rgba(78,47,0,0.5) 0%, rgba(83,37,0,0.5) 100%)',
-              boxSizing: 'border-box',
-            }}
-          >
+              boxSizing: 'border-box'
+            }}>
+            
             <DealerAnnouncement message={dealerMessage} phase={gamePhase} />
           </div>
 
@@ -1456,19 +1456,19 @@ export default function RapidFireGame() {
               background: 'rgba(0,0,0,0.35)',
               boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5), 0 1px 0 rgba(197,160,89,0.15)',
               boxSizing: 'border-box',
-              overflow: 'visible',
-            }}
-          >
+              overflow: 'visible'
+            }}>
+            
             {/* Logo — left side */}
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
-              <img src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/2667063a3_image.png" alt="Rapid Fire Texas Hold'em" style={{ width: '220px', height: 'auto', display: 'block', borderRadius: '12px' }} />
+              <img src="https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/dfed56ab9_Updated_Logo.PNG" alt="Rapid Fire Texas Hold'em" style={{ width: '240px', height: 'auto', display: 'block' }} className="py-4" />
             </div>
 
             <CommunityCards cards={communityCards} phase={gamePhase} />
 
             {/* Mirror logo — right side */}
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
-              <img src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/2667063a3_image.png" alt="Rapid Fire Texas Hold'em" style={{ width: '220px', height: 'auto', display: 'block', borderRadius: '12px' }} />
+              <img src="https://media.base44.com/images/public/69efcf8f4ff921af12d96aea/dfed56ab9_Updated_Logo.PNG" alt="Rapid Fire Texas Hold'em" style={{ width: '240px', height: 'auto', display: 'block' }} />
             </div>
           </div>
 
@@ -1478,26 +1478,26 @@ export default function RapidFireGame() {
           {/* 10 Fixed Hands Grid */}
           <div className="flex-1 min-h-0 w-full">
             <div className="grid grid-cols-5 gap-1.5 h-full auto-rows-fr">
-              {FIXED_HANDS.map(hand => (
-                <FixedHandCard
-                  key={hand.id}
-                  hand={hand}
-                  isLeading={leadingHandIds.includes(hand.id)}
-                  isWinner={winnerHandIds.includes(hand.id)}
-                  communityCards={communityCards}
-                  betAmount={pHandBets[hand.id] || 0}
-                  allHandBets={handBets}
-                  playerCount={playerCount}
-                  activePlayerId={pid}
-                  onBet={handleHandBet}
-                  onRemoveBet={handleRemoveHandBet}
-                  onDropChip={handleDropChip}
-                  gamePhase={gamePhase}
-                  disabled={balance < selectedChip && !pHandBets[hand.id]}
-                  disabledByConstraint={(handBetsLockedByRanks && !pHandBets[hand.id]) || (handBetCount >= maxHandBetsAllowed && !pHandBets[hand.id])}
-                  onAttemptLockedBet={() => setShowHandLimitAlert(true)}
-                />
-              ))}
+              {FIXED_HANDS.map((hand) =>
+              <FixedHandCard
+                key={hand.id}
+                hand={hand}
+                isLeading={leadingHandIds.includes(hand.id)}
+                isWinner={winnerHandIds.includes(hand.id)}
+                communityCards={communityCards}
+                betAmount={pHandBets[hand.id] || 0}
+                allHandBets={handBets}
+                playerCount={playerCount}
+                activePlayerId={pid}
+                onBet={handleHandBet}
+                onRemoveBet={handleRemoveHandBet}
+                onDropChip={handleDropChip}
+                gamePhase={gamePhase}
+                disabled={balance < selectedChip && !pHandBets[hand.id]}
+                disabledByConstraint={handBetsLockedByRanks && !pHandBets[hand.id] || handBetCount >= maxHandBetsAllowed && !pHandBets[hand.id]}
+                onAttemptLockedBet={() => setShowHandLimitAlert(true)} />
+
+              )}
             </div>
           </div>
 
@@ -1505,65 +1505,65 @@ export default function RapidFireGame() {
           <div className="flex items-center gap-2 border-t border-yellow-900/40 pt-1.5 flex-shrink-0 w-full">
             {/* Far left: bank drop zone + chip selector */}
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              {gamePhase === 'betting' && (
-                <div
-                  id="bank-drop-zone"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const data = e.dataTransfer.getData('text/plain');
-                    if (!data) return;
-                    try {
-                      const parsed = JSON.parse(data);
-                      const { from, type, pid: dragPid } = parsed;
-                      if (type === 'hand') {
-                        handleDropChip(from, 'bank', dragPid);
-                      } else if (type === 'rank') {
-                        const amt = (rankBets[dragPid] || {})[from] || 0;
-                        if (amt > 0) {
-                          const remainingRankBets = { ...(rankBets[dragPid] || {}) };
-                          delete remainingRankBets[from];
-                          const isLastRankBet = !hasRankBet(remainingRankBets);
-                          if (isLastRankBet) {
-                            const colorRefund = Object.values(redBlackBets[dragPid] || {}).reduce((s, v) => s + v, 0);
-                            const riverRefund = lowHighBets[dragPid]?.amount || 0;
-                            setRankBets(prev => ({ ...prev, [dragPid]: remainingRankBets }));
-                            setRedBlackBets(prev => ({ ...prev, [dragPid]: {} }));
-                            setLowHighBets(prev => ({ ...prev, [dragPid]: null }));
-                            setBalances(b => { const n = [...b]; n[dragPid] += amt + colorRefund + riverRefund; return n; });
-                          } else {
-                            setRankBets(prev => { const n = { ...(prev[dragPid] || {}) }; delete n[from]; return { ...prev, [dragPid]: n }; });
-                            setBalances(b => { const n = [...b]; n[dragPid] += amt; return n; });
-                          }
-                        }
-                      } else if (type === 'rb') {
-                        const amt = (redBlackBets[dragPid] || {})[from] || 0;
-                        if (amt > 0) {
-                          setRedBlackBets(prev => { const n = { ...(prev[dragPid] || {}) }; delete n[from]; return { ...prev, [dragPid]: n }; });
-                          setBalances(b => { const n = [...b]; n[dragPid] += amt; return n; });
+              {gamePhase === 'betting' &&
+              <div
+                id="bank-drop-zone"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const data = e.dataTransfer.getData('text/plain');
+                  if (!data) return;
+                  try {
+                    const parsed = JSON.parse(data);
+                    const { from, type, pid: dragPid } = parsed;
+                    if (type === 'hand') {
+                      handleDropChip(from, 'bank', dragPid);
+                    } else if (type === 'rank') {
+                      const amt = (rankBets[dragPid] || {})[from] || 0;
+                      if (amt > 0) {
+                        const remainingRankBets = { ...(rankBets[dragPid] || {}) };
+                        delete remainingRankBets[from];
+                        const isLastRankBet = !hasRankBet(remainingRankBets);
+                        if (isLastRankBet) {
+                          const colorRefund = Object.values(redBlackBets[dragPid] || {}).reduce((s, v) => s + v, 0);
+                          const riverRefund = lowHighBets[dragPid]?.amount || 0;
+                          setRankBets((prev) => ({ ...prev, [dragPid]: remainingRankBets }));
+                          setRedBlackBets((prev) => ({ ...prev, [dragPid]: {} }));
+                          setLowHighBets((prev) => ({ ...prev, [dragPid]: null }));
+                          setBalances((b) => {const n = [...b];n[dragPid] += amt + colorRefund + riverRefund;return n;});
+                        } else {
+                          setRankBets((prev) => {const n = { ...(prev[dragPid] || {}) };delete n[from];return { ...prev, [dragPid]: n };});
+                          setBalances((b) => {const n = [...b];n[dragPid] += amt;return n;});
                         }
                       }
-                    } catch (e) {}
-                  }}
-                  className="flex items-center justify-center w-7 h-7 rounded-full border border-dashed border-yellow-600/50 bg-yellow-900/20 text-yellow-500/60 text-xs font-bold transition-all hover:border-yellow-400 hover:bg-yellow-900/40"
-                  title="Drag chip here to refund to bank"
-                >
+                    } else if (type === 'rb') {
+                      const amt = (redBlackBets[dragPid] || {})[from] || 0;
+                      if (amt > 0) {
+                        setRedBlackBets((prev) => {const n = { ...(prev[dragPid] || {}) };delete n[from];return { ...prev, [dragPid]: n };});
+                        setBalances((b) => {const n = [...b];n[dragPid] += amt;return n;});
+                      }
+                    }
+                  } catch (e) {}
+                }}
+                className="flex items-center justify-center w-7 h-7 rounded-full border border-dashed border-yellow-600/50 bg-yellow-900/20 text-yellow-500/60 text-xs font-bold transition-all hover:border-yellow-400 hover:bg-yellow-900/40"
+                title="Drag chip here to refund to bank">
+                
                   💰
                 </div>
-              )}
+              }
               <span className="text-yellow-400/60 text-xs flex-shrink-0">Chip:</span>
-              {CHIP_VALUES.map(v => (
-                <button
-                  key={v}
-                  onClick={() => setSelectedChip(v)}
-                  className={`w-8 h-8 rounded-full font-bold text-xs border-2 transition-all flex-shrink-0
-                    ${selectedChip === v
-                      ? 'border-yellow-400 bg-yellow-600 text-black shadow-yellow-400/50 shadow-md scale-110'
-                      : 'border-yellow-700/40 bg-yellow-900/30 text-yellow-300 hover:border-yellow-500'}`}
-                >
+              {CHIP_VALUES.map((v) =>
+              <button
+                key={v}
+                onClick={() => setSelectedChip(v)}
+                className={`w-8 h-8 rounded-full font-bold text-xs border-2 transition-all flex-shrink-0
+                    ${selectedChip === v ?
+                'border-yellow-400 bg-yellow-600 text-black shadow-yellow-400/50 shadow-md scale-110' :
+                'border-yellow-700/40 bg-yellow-900/30 text-yellow-300 hover:border-yellow-500'}`}>
+                
                   ${v}
                 </button>
-              ))}
+              )}
             </div>
 
             {/* Spacer */}
@@ -1580,14 +1580,14 @@ export default function RapidFireGame() {
 
             {/* Clear button */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {gamePhase === 'betting' && totalBet > 0 && (
-                <button
-                  onClick={clearBets}
-                  className="px-3 py-1.5 rounded-lg border border-red-700/50 bg-red-900/30 text-red-300 text-xs font-semibold hover:bg-red-900/50 transition-all"
-                >
+              {gamePhase === 'betting' && totalBet > 0 &&
+              <button
+                onClick={clearBets}
+                className="px-3 py-1.5 rounded-lg border border-red-700/50 bg-red-900/30 text-red-300 text-xs font-semibold hover:bg-red-900/50 transition-all">
+                
                   Clear
                 </button>
-              )}
+              }
             </div>
 
             {/* Reset Bank */}
@@ -1599,8 +1599,8 @@ export default function RapidFireGame() {
                 setRoundsPlayed(0);
               }}
               title="Reset all player banks to $10,000 and clear P/L"
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-700/50 bg-emerald-900/20 text-emerald-300 text-xs font-bold hover:border-emerald-500 hover:bg-emerald-900/40 transition-all flex-shrink-0"
-            >
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-700/50 bg-emerald-900/20 text-emerald-300 text-xs font-bold hover:border-emerald-500 hover:bg-emerald-900/40 transition-all flex-shrink-0">
+              
               ↺ Reset Bank
             </button>
 
@@ -1640,8 +1640,8 @@ export default function RapidFireGame() {
                 setRankAlertType(type);
                 setShowRankLimitAlert(true);
               }}
-              onHoverRankRow={setHoveredRankRow}
-            />
+              onHoverRankRow={setHoveredRankRow} />
+            
           </div>
           {/* Side Bets panel */}
           <div className={`border rounded-xl p-2 flex flex-col slot-border-dormant ${luminosityClass}`} style={{ flex: '5 1 0', background: 'rgba(0,0,0,0.45)', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.4)', overflow: 'visible' }}>
@@ -1668,11 +1668,11 @@ export default function RapidFireGame() {
               riverWinFlash={riverWinFlash}
               selectedChip={selectedChip}
               hoveredRankRow={hoveredRankRow}
-              isRankBetPlaced={isRankBetPlaced}
-            />
+              isRankBetPlaced={isRankBetPlaced} />
+            
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
