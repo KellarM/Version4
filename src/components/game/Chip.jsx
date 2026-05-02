@@ -7,8 +7,10 @@ function getChipDef(amount) {
     return { outer: '#92400E', mid: '#B45309', edge: '#78350F', rim: '#451A03', shine: '#D97706' }; // Brown
   } else if (amount <= 95) {
     return { outer: '#B8860B', mid: '#DAA520', edge: '#8B6914', rim: '#6B4F10', shine: '#FFD700' }; // Gold
-  } else {
+  } else if (amount <= 150) {
     return { outer: '#BE185D', mid: '#EC4899', edge: '#9D174D', rim: '#831843', shine: '#F9A8D4' }; // Bright Pink
+  } else {
+    return { outer: '#1a1a1a', mid: '#2a2a2a', edge: '#B8860B', rim: '#8B6914', shine: '#DAA520', isBlack500: true }; // Black/Gold $500
   }
 }
 
@@ -94,18 +96,20 @@ export default function Chip({ amount, scale = 1, draggable = false, onDragStart
         );
       })}
 
-      {/* White center circle */}
-      <span aria-hidden style={{
-        position: 'absolute',
-        top: (d - centerD) / 2,
-        left: (d - centerD) / 2,
-        width: centerD, height: centerD,
-        borderRadius: '50%',
-        background: 'radial-gradient(ellipse at 38% 32%, #ffffff 0%, #f0f0f0 70%, #e0e0e0 100%)',
-        border: `${Math.max(1, Math.round(1.5 * scale))}px solid rgba(0,0,0,0.25)`,
-        boxShadow: `inset 0 ${Math.round(1*scale)}px ${Math.round(3*scale)}px rgba(0,0,0,0.15)`,
-        pointerEvents: 'none',
-      }} />
+      {/* White center circle — hidden for $500 black chip */}
+      {!def.isBlack500 && (
+        <span aria-hidden style={{
+          position: 'absolute',
+          top: (d - centerD) / 2,
+          left: (d - centerD) / 2,
+          width: centerD, height: centerD,
+          borderRadius: '50%',
+          background: 'radial-gradient(ellipse at 38% 32%, #ffffff 0%, #f0f0f0 70%, #e0e0e0 100%)',
+          border: `${Math.max(1, Math.round(1.5 * scale))}px solid rgba(0,0,0,0.25)`,
+          boxShadow: `inset 0 ${Math.round(1*scale)}px ${Math.round(3*scale)}px rgba(0,0,0,0.15)`,
+          pointerEvents: 'none',
+        }} />
+      )}
 
       {/* Specular glint on top */}
       <span aria-hidden style={{
@@ -117,13 +121,13 @@ export default function Chip({ amount, scale = 1, draggable = false, onDragStart
         pointerEvents: 'none', transform: 'rotate(-20deg)',
       }} />
 
-      {/* Dollar value label — always full value, bold black on white center */}
+      {/* Dollar value label — gold on black chip, black on others */}
       {label !== null && (
         <span style={{
           position: 'absolute',
           top: 0, left: 0, width: d, height: d,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#000000',
+          color: def.isBlack500 ? '#DAA520' : '#000000',
           fontSize,
           fontWeight: 900,
           lineHeight: 1,

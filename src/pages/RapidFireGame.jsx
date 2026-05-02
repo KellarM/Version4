@@ -40,7 +40,8 @@ import { useGameTiming } from '@/hooks/useGameTiming';
 
 
 const STARTING_BALANCE = 10000;
-const CHIP_VALUES = [5, 10, 25, 50, 100];
+const CHIP_VALUES = [5, 10, 25, 50, 100, 500];
+const MAX_HAND_BET_AMOUNT = 500;
 const DEFAULT_CHIP = 5;
 const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -280,6 +281,9 @@ export default function RapidFireGame() {
       setShowHandLimitAlert(true);
       return;
     }
+
+    // Enforce $500 max per card hand
+    if (existing + selectedChip > MAX_HAND_BET_AMOUNT) return;
 
     // Enforce minimum bet
     if (selectedChip < MIN_BET) return;
