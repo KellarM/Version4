@@ -1087,96 +1087,114 @@ export default function CertificationAudit() {
     //  y195–203 Bottom tagline     8mm (inside border)
     // ─────────────────────────────────────────────────────────────────────
 
+    // ══════════════════════════════════════════════════════════════════════
+    // PRECISE LAYOUT — landscape A4 297×210mm, inner usable: y12 to y198
+    // Total usable height = 186mm, divided into sections:
+    //  y12–27   Header band        15mm
+    //  y29–40   Title + subtitle   11mm
+    //  y41–42   Gold double rule
+    //  y43–51   PASS/FAIL banner    8mm
+    //  y53–63   4 summary boxes    10mm
+    //  y65–76   Compliance text    11mm  (3 lines × 3.5mm)
+    //  y77      Divider
+    //  y79–82   Category label      3mm
+    //  y83–93   3 category boxes   10mm
+    //  y95–108  Hand rank row 1    13mm
+    //  y110–123 Hand rank row 2    13mm
+    //  y125     Footer divider
+    //  y127–196 Footer meta+seal   21mm (3 lines × 6mm + seal)
+    //  y198     Tagline
+    // ══════════════════════════════════════════════════════════════════════
+
     // ── Header band ───────────────────────────────────────────────────────
     doc.setFillColor(12, 18, 48);
-    doc.rect(10, 10, pW - 20, 18, 'F');
+    doc.rect(12, 12, pW - 24, 15, 'F');
     doc.setDrawColor(197, 160, 89);
     doc.setLineWidth(0.5);
-    doc.line(10, 28, pW - 10, 28);
+    doc.line(12, 27, pW - 12, 27);
     doc.setTextColor(197, 160, 89);
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text("RAPID FIRE TEXAS HOLD'EM", pW / 2, 17, { align: 'center' });
-    doc.setFontSize(6.5);
+    doc.text("RAPID FIRE TEXAS HOLD'EM", pW / 2, 18.5, { align: 'center' });
+    doc.setFontSize(6);
     doc.setTextColor(165, 174, 210);
     doc.setFont('helvetica', 'normal');
-    doc.text('32-Card Certified Game Engine  ·  Monte Carlo Simulation Platform', pW / 2, 22.5, { align: 'center' });
-    doc.setFontSize(5.5);
+    doc.text('32-Card Certified Game Engine  ·  Monte Carlo Simulation Platform', pW / 2, 23, { align: 'center' });
+    doc.setFontSize(5);
     doc.setTextColor(108, 118, 158);
-    doc.text('Gaming Compliance & Certification Division', pW / 2, 26.5, { align: 'center' });
+    doc.text('Gaming Compliance & Certification Division', pW / 2, 26, { align: 'center' });
 
     // ── Title block ───────────────────────────────────────────────────────
-    doc.setFontSize(20);
+    doc.setFontSize(17);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(250, 210, 40);
-    doc.text('CERTIFICATE OF COMPLIANCE', pW / 2, 37, { align: 'center' });
-    doc.setFontSize(9);
+    doc.text('CERTIFICATE OF COMPLIANCE', pW / 2, 34, { align: 'center' });
+    doc.setFontSize(8);
     doc.setTextColor(197, 160, 89);
-    doc.text(`${module.name.toUpperCase()} AUDIT`, pW / 2, 43, { align: 'center' });
+    doc.text(`${module.name.toUpperCase()} AUDIT`, pW / 2, 39, { align: 'center' });
     doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(0.7);
-    doc.line(20, 45.5, pW - 20, 45.5);
+    doc.setLineWidth(0.6);
+    doc.line(20, 41, pW - 20, 41);
     doc.setLineWidth(0.2);
-    doc.line(20, 47, pW - 20, 47);
+    doc.line(20, 42.5, pW - 20, 42.5);
 
     // ── PASS / FAIL banner ────────────────────────────────────────────────
-    const bannerW = 88, bannerH = 9;
+    const bannerW = 85, bannerH = 8;
     const bannerX = pW / 2 - bannerW / 2;
     if (allPass) { doc.setFillColor(15, 110, 50); doc.setDrawColor(50, 200, 90); }
     else         { doc.setFillColor(150, 20, 20);  doc.setDrawColor(220, 60, 60); }
     doc.setLineWidth(0.5);
-    doc.roundedRect(bannerX, 49, bannerW, bannerH, 2, 2, 'FD');
+    doc.roundedRect(bannerX, 43, bannerW, bannerH, 2, 2, 'FD');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text(allPass ? 'ALL BETS PASSED' : `${failed} BET(S) FAILED`, pW / 2, 55, { align: 'center' });
+    doc.text(allPass ? 'ALL BETS PASSED' : `${failed} BET(S) FAILED`, pW / 2, 48.5, { align: 'center' });
 
-    // ── 4 Summary info boxes ──────────────────────────────────────────────
-    const sbW = 58, sbH = 14;
+    // ── 4 Summary info boxes — height 10mm ────────────────────────────────
+    const sbW = 58, sbH = 10;
     const sbTotalW = 4 * sbW;
-    const sbGap = (pW - 20 - sbTotalW) / 5;
-    const sbY = 60;
+    const sbGap = (pW - 24 - sbTotalW) / 5;
+    const sbY = 53;
     [
       { label: 'Standard',    value: module.standard,                          bg: [18, 32, 82],  border: [90, 120, 210] },
       { label: 'Blended RTP', value: blendedRtp + '%',                         bg: allPass ? [14, 90, 42] : [100, 18, 18], border: allPass ? [50, 190, 90] : [210, 70, 70] },
       { label: 'Bets Passed', value: `${passed} / ${done}`,                   bg: [18, 32, 82],  border: [90, 120, 210] },
       { label: 'RTP Range',   value: `${module.rtpLow}%–${module.rtpHigh}%`, bg: [55, 40, 8],   border: [197, 160, 89] },
     ].forEach((b, i) => {
-      const bx = 10 + sbGap + i * (sbW + sbGap);
+      const bx = 12 + sbGap + i * (sbW + sbGap);
       doc.setFillColor(...b.bg);
       doc.roundedRect(bx, sbY, sbW, sbH, 2, 2, 'F');
       doc.setDrawColor(...b.border);
       doc.setLineWidth(0.5);
       doc.roundedRect(bx, sbY, sbW, sbH, 2, 2, 'S');
       doc.setTextColor(148, 158, 200);
-      doc.setFontSize(5.5);
+      doc.setFontSize(5);
       doc.setFont('helvetica', 'normal');
-      doc.text(b.label, bx + sbW / 2, sbY + 4.5, { align: 'center' });
+      doc.text(b.label, bx + sbW / 2, sbY + 3.5, { align: 'center' });
       doc.setTextColor(250, 220, 100);
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text(b.value, bx + sbW / 2, sbY + 11, { align: 'center' });
+      doc.text(b.value, bx + sbW / 2, sbY + 8, { align: 'center' });
     });
 
-    // ── Compliance statement ──────────────────────────────────────────────
-    const stY = 79;
+    // ── Compliance statement — 3 lines at y65–76 ─────────────────────────
     doc.setTextColor(160, 168, 205);
-    doc.setFontSize(6);
+    doc.setFontSize(5.5);
     doc.setFont('helvetica', 'normal');
     [
       `This certificate confirms that the above-named game engine has undergone a rigorous Monte Carlo statistical audit under the ${module.standard} standard.`,
       `All ${done} betting positions were simulated at ${module.rounds.toLocaleString()} rounds per bet using a certified 32-card randomised engine.`,
       `The Return to Player values fall within the declared range of ${module.rtpLow}%–${module.rtpHigh}%.`,
-    ].forEach((l, i) => doc.text(l, pW / 2, stY + i * 4.5, { align: 'center' }));
+    ].forEach((l, i) => doc.text(l, pW / 2, 67 + i * 4, { align: 'center' }));
 
     // ── Section divider ───────────────────────────────────────────────────
     doc.setDrawColor(197, 160, 89);
     doc.setLineWidth(0.3);
-    doc.line(20, 93, pW - 20, 93);
+    doc.line(20, 79, pW - 20, 79);
     doc.setTextColor(197, 160, 89);
-    doc.setFontSize(6.5);
+    doc.setFontSize(6);
     doc.setFont('helvetica', 'bold');
-    doc.text('BLENDED RTP BY CATEGORY', pW / 2, 97, { align: 'center' });
+    doc.text('BLENDED RTP BY CATEGORY', pW / 2, 83, { align: 'center' });
 
     // Calculate group RTPs
     const groupRTPs = {};
@@ -1201,11 +1219,11 @@ export default function CertificationAudit() {
       handRank:   { bg: [38, 18, 80],  border: [125, 75, 220] },
     };
 
-    // ── 3 category RTP boxes ──────────────────────────────────────────────
-    const cbW = 72, cbH = 13, cbGap = 10;
+    // ── 3 category RTP boxes — height 10mm, y85–95 ───────────────────────
+    const cbW = 72, cbH = 10, cbGap = 10;
     const cbTotalW = 3 * cbW + 2 * cbGap;
     const cbStartX = (pW - cbTotalW) / 2;
-    const cbY = 99;
+    const cbY = 85;
     [
       { label: 'Card Hand Blended RTP',   value: groupRTPs['Carded Hands'] || '—', colors: CAT_COLORS.cardHand },
       { label: 'Color Board Blended RTP', value: groupRTPs['Color Board']   || '—', colors: CAT_COLORS.colorBoard },
@@ -1219,27 +1237,25 @@ export default function CertificationAudit() {
       doc.setLineWidth(0.5);
       doc.roundedRect(bx, cbY, cbW, cbH, 2, 2, 'S');
       doc.setTextColor(168, 194, 220);
-      doc.setFontSize(5.5);
+      doc.setFontSize(5);
       doc.setFont('helvetica', 'normal');
-      doc.text(b.label, bx + cbW / 2, cbY + 4.5, { align: 'center' });
+      doc.text(b.label, bx + cbW / 2, cbY + 3.5, { align: 'center' });
       doc.setTextColor(240, 218, 100);
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text(b.value + (isNaN(rtpNum) ? '' : '%'), bx + cbW / 2, cbY + 10.5, { align: 'center' });
+      doc.text(b.value + (isNaN(rtpNum) ? '' : '%'), bx + cbW / 2, cbY + 8.5, { align: 'center' });
     });
 
-    // ── 10 hand/rank RTP boxes (5 per row × 2 rows) ──────────────────────
+    // ── 10 hand/rank RTP boxes — 2 rows of 5, height 13mm each ───────────
+    // Row 1: y97–110,  Row 2: y112–125
     const HAND_SHORT = {
       1:'A/10 Rank Hand', 2:'K/K Rank Hand', 3:'Q/J Rank Hand', 4:'Q/10 Rank Hand', 5:'J/9 Rank Hand',
       6:'8/6 Rank Hand',  7:'7/7 Rank Hand', 8:'4/2 Rank Hand', 9:'3/3 Rank Hand',  10:'A/5 Rank Hand',
     };
-    // Hand boxes fill from cbY+cbH+4 down to footerDivY-4
-    // footerDivY = 172 (reduced from 152), giving more room here
-    const footerDivY = 172;
-    const hbW = 52, hbH = 20, hbCols = 5, hbGap = 4;
+    const hbW = 52, hbH = 13, hbCols = 5, hbGap = 4;
     const hbTotalW = hbCols * hbW + (hbCols - 1) * hbGap;
     const hbStartX = (pW - hbTotalW) / 2;
-    const hbY0 = cbY + cbH + 4; // = 116
+    const hbY0 = cbY + cbH + 2; // = 97
 
     for (let hid = 1; hid <= 10; hid++) {
       const rtp = handRTPs[hid];
@@ -1248,37 +1264,37 @@ export default function CertificationAudit() {
       const col = idx % hbCols;
       const row = Math.floor(idx / hbCols);
       const bx = hbStartX + col * (hbW + hbGap);
-      const by = hbY0 + row * (hbH + 5); // row 0: y116, row 1: y141 — 5mm gap between rows
+      const by = hbY0 + row * (hbH + 2); // row 0: y97, row 1: y112
       doc.setFillColor(...CAT_COLORS.handRank.bg);
       doc.roundedRect(bx, by, hbW, hbH, 1.5, 1.5, 'F');
       doc.setDrawColor(...CAT_COLORS.handRank.border);
       doc.setLineWidth(0.35);
       doc.roundedRect(bx, by, hbW, hbH, 1.5, 1.5, 'S');
       doc.setTextColor(185, 168, 230);
-      doc.setFontSize(5.5);
+      doc.setFontSize(5);
       doc.setFont('helvetica', 'normal');
-      doc.text(HAND_SHORT[hid], bx + hbW / 2, by + 5.5, { align: 'center' });
-      doc.setFontSize(4.5);
-      doc.text('Blended RTP', bx + hbW / 2, by + 10, { align: 'center' });
+      doc.text(HAND_SHORT[hid], bx + hbW / 2, by + 4, { align: 'center' });
+      doc.setFontSize(4);
+      doc.text('Blended RTP', bx + hbW / 2, by + 7, { align: 'center' });
       doc.setTextColor(210, 178, 255);
-      doc.setFontSize(8.5);
+      doc.setFontSize(7.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(rtp + '%', bx + hbW / 2, by + 16.5, { align: 'center' });
+      doc.text(rtp + '%', bx + hbW / 2, by + 11.5, { align: 'center' });
     }
 
-    // ── Footer strip — ~50% shorter than before (~28mm vs ~52mm) ─────────
+    // ── Footer strip — y127 divider, meta y129–148, seal centred ─────────
+    const footerDivY = 127;
     doc.setDrawColor(197, 160, 89);
     doc.setLineWidth(0.3);
     doc.line(20, footerDivY, pW - 20, footerDivY);
 
-    // Left: cert metadata — tighter spacing to fit reduced height
     const metaLineH = 6;
     [
       { label: 'Certificate No.:', value: certNo },
       { label: 'Issue Date:',       value: dateStr },
       { label: 'Engine:',           value: 'Rapid Fire Texas 10 — In-Browser Monte Carlo v1.0' },
     ].forEach((f, i) => {
-      const fy = footerDivY + 6 + i * metaLineH;
+      const fy = footerDivY + 7 + i * metaLineH;
       doc.setTextColor(115, 125, 165);
       doc.setFontSize(6);
       doc.setFont('helvetica', 'normal');
@@ -1288,23 +1304,23 @@ export default function CertificationAudit() {
       doc.text(f.value, 14 + 28, fy);
     });
 
-    // Right: smaller seal to fit reduced footer height
+    // Seal — centred in footer area (y127 to y198 = 71mm, centre at y162)
     const sX = pW - 32;
-    const sY = footerDivY + 14; // centred in ~28mm footer
+    const sY = footerDivY + 35;
     doc.setFillColor(12, 18, 50);
     doc.setDrawColor(197, 160, 89);
     doc.setLineWidth(1.0);
-    doc.circle(sX, sY, 10, 'FD');
+    doc.circle(sX, sY, 28, 'FD');
     doc.setDrawColor(220, 185, 110);
-    doc.setLineWidth(0.4);
-    doc.circle(sX, sY, 7.5, 'S');
+    doc.setLineWidth(0.5);
+    doc.circle(sX, sY, 23, 'S');
     doc.setTextColor(197, 160, 89);
-    doc.setFontSize(5);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('CERTIFIED', sX, sY - 2.5, { align: 'center' });
-    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', sX, sY + 2, { align: 'center' });
-    doc.setFontSize(4.5);
-    doc.text(String(now.getFullYear()), sX, sY + 6, { align: 'center' });
+    doc.text('CERTIFIED', sX, sY - 5, { align: 'center' });
+    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', sX, sY + 4, { align: 'center' });
+    doc.setFontSize(7);
+    doc.text(String(now.getFullYear()), sX, sY + 13, { align: 'center' });
 
     // Bottom tagline — inside the inner border (y=198 max, border is at y=200)
     doc.setTextColor(68, 74, 100);
@@ -1519,14 +1535,14 @@ export default function CertificationAudit() {
 
     // Page numbers — cover (page 1) and all detail pages
     const totalPages = doc.internal.getNumberOfPages();
-    // Update cover page tagline with correct total (no rect overdraw — stays inside border)
+    // Update cover page tagline — y198, safely inside inner border
     doc.setPage(1);
     doc.setTextColor(68, 74, 100);
     doc.setFontSize(5);
     doc.setFont('helvetica', 'normal');
     doc.text(
       `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page 1 of ${totalPages}`,
-      pW / 2, 200, { align: 'center' }
+      pW / 2, 198, { align: 'center' }
     );
     // Portrait detail pages
     for (let i = 2; i <= totalPages; i++) {
