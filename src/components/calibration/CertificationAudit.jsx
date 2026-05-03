@@ -1230,7 +1230,7 @@ export default function CertificationAudit() {
       7:'7/7 Rank Hand',  8:'4/2 Rank Hand',  9:'3/3 Rank Hand',
       10:'A/5 Rank Hand',
     };
-    const hbW = 40, hbH = 16, hbCols = 4, hbGap = 3;
+    const hbW = 40, hbH = 18, hbCols = 4, hbGap = 3;
     const hbStartX = (pW - (hbCols * hbW + (hbCols - 1) * hbGap)) / 2;
     const hbY0 = catRowY + gbH + 4;
 
@@ -1238,11 +1238,14 @@ export default function CertificationAudit() {
       const rtp = handRTPs[hid];
       if (!rtp) continue;
       const idx = hid - 1;
+
+      // Rows 0-1: 4 cols each (hands 1-8). Last row (hands 9-10): shift right by 1 col gap
       const col = idx % hbCols;
       const row = Math.floor(idx / hbCols);
-      const x = hbStartX + col * (hbW + hbGap);
+      const lastRow = row === Math.floor(9 / hbCols); // row index of hands 9-10
+      const lastRowOffset = lastRow ? (hbW + hbGap) : 0; // shift right by one box width
+      const x = hbStartX + col * (hbW + hbGap) + lastRowOffset;
       const y = hbY0 + row * (hbH + 3);
-      const rtpVal = parseFloat(rtp);
 
       doc.setFillColor(...CAT_COLORS.handRank.bg);
       doc.roundedRect(x, y, hbW, hbH, 2, 2, 'F');
@@ -1250,13 +1253,17 @@ export default function CertificationAudit() {
       doc.setLineWidth(0.4);
       doc.roundedRect(x, y, hbW, hbH, 2, 2, 'S');
       doc.setTextColor(190, 175, 230);
-      doc.setFontSize(5);
+      doc.setFontSize(4.8);
       doc.setFont('helvetica', 'normal');
       doc.text(HAND_LABELS_SHORT[hid], x + hbW / 2, y + 5.5, { align: 'center' });
+      doc.setTextColor(190, 175, 230);
+      doc.setFontSize(4.2);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Blended RTP', x + hbW / 2, y + 9.5, { align: 'center' });
       doc.setTextColor(210, 180, 255);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text(rtp + '%', x + hbW / 2, y + 12.5, { align: 'center' });
+      doc.text(rtp + '%', x + hbW / 2, y + 15.5, { align: 'center' });
     }
 
     // ── Certificate footer (Page 1) ───────────────────────────
