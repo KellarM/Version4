@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, RefreshCw, CheckCircle2, XCircle, AlertTriangle, ChevronDown, ChevronRight, Shield, SkipForward, FileDown, FileText, Trash2, Save, Timer } from 'lucide-react';
+import { Play, RefreshCw, CheckCircle2, XCircle, AlertTriangle, ChevronDown, ChevronRight, Shield, SkipForward, FileDown, FileText, Trash2, Save, Timer, Award } from 'lucide-react';
 import { runBetAuditWithAbort } from '@/lib/workerBridge';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 import { PER_HAND_RANK_PAYOUTS } from '@/lib/perHandRankPayouts';
@@ -207,7 +207,7 @@ function SaveToast({ show }) {
   );
 }
 
-function ModulePanel({ module, bets, onResultsChange }) {
+function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
   const [running, setRunning] = useState(false);
   const [redoingKey, setRedoingKey] = useState(null);
   const [progress, setProgress] = useState(() => loadFromStorage(module.id).progress);
@@ -539,13 +539,22 @@ function ModulePanel({ module, bets, onResultsChange }) {
               </button>
             )}
             {done > 0 && !running && (
-              <button
-                onClick={clearPanel}
-                title="Clear this module's data"
-                className="flex items-center gap-1 px-2.5 py-2 rounded-lg border border-slate-600 text-gray-500 text-sm hover:text-red-400 hover:border-red-700 transition-all"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              <>
+                <button
+                  onClick={() => onExportCertificate?.(module.id)}
+                  title="Export official certificate PDF for this module"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-700/60 bg-amber-900/20 text-amber-300 text-sm hover:bg-amber-900/40 transition-all font-semibold whitespace-nowrap"
+                >
+                  <Award className="w-3.5 h-3.5" /> Certificate
+                </button>
+                <button
+                  onClick={clearPanel}
+                  title="Clear this module's data"
+                  className="flex items-center gap-1 px-2.5 py-2 rounded-lg border border-slate-600 text-gray-500 text-sm hover:text-red-400 hover:border-red-700 transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -628,6 +637,8 @@ function ModulePanel({ module, bets, onResultsChange }) {
                         <tr className="border-b border-slate-700 text-gray-400 uppercase">
                           <th className="py-2 px-3 text-left">Bet</th>
                           <th className="py-2 px-3 text-right">Wins</th>
+                          <th className="py-2 px-3 text-right text-purple-400">Card Wins</th>
+                          <th className="py-2 px-3 text-right text-slate-400"># Rounds</th>
                           <th className="py-2 px-3 text-right">Win %</th>
                           <th className="py-2 px-3 text-right">RTP</th>
                           <th className="py-2 px-3 text-right">Live Odds</th>
@@ -643,7 +654,7 @@ function ModulePanel({ module, bets, onResultsChange }) {
                           if (!r && !isRunning) return (
                             <tr key={key} className="border-b border-slate-700/30">
                               <td className="py-1.5 px-3 text-gray-500">{bet.label}</td>
-                              <td colSpan="6" className="py-1.5 px-3 text-gray-700 italic">pending</td>
+                              <td colSpan="8" className="py-1.5 px-3 text-gray-700 italic">pending</td>
                             </tr>
                           );
                           if (!r && isRunning) return (
@@ -651,7 +662,7 @@ function ModulePanel({ module, bets, onResultsChange }) {
                               <td className="py-1.5 px-3 text-yellow-400 flex items-center gap-1">
                                 <RefreshCw className="w-3 h-3 animate-spin" /> {bet.label}
                               </td>
-                              <td colSpan="6" className="py-1.5 px-3 text-yellow-600 italic text-xs">running...</td>
+                              <td colSpan="8" className="py-1.5 px-3 text-yellow-600 italic text-xs">running...</td>
                             </tr>
                           );
                           const rtpV = parseFloat(r.rtp);
@@ -679,11 +690,18 @@ function ModulePanel({ module, bets, onResultsChange }) {
                                ) : bet.label}
                              </td>
                              <td className="py-1.5 px-3 text-right text-gray-300 font-mono">{r.wins.toLocaleString()}</td>
+                             <td className="py-1.5 px-3 text-right font-mono text-xs">
+                               {bet.betType === 'perHandRank' && r.perHandRankHandWins
+                                 ? <span className="text-purple-400">{r.perHandRankHandWins.toLocaleString()}</span>
+                                 : <span className="text-gray-700">—</span>}
+                             </td>
+                             <td className="py-1.5 px-3 text-right font-mono text-xs">
+                               {bet.betType === 'perHandRank' && r.actualRounds
+                                 ? <span className="text-slate-400">{r.actualRounds.toLocaleString()}</span>
+                                 : <span className="text-gray-700">—</span>}
+                             </td>
                              <td className="py-1.5 px-3 text-right text-gray-400">
                                {r.winFrequency}%
-                               {bet.betType === 'perHandRank' && r.perHandRankHandWins && (
-                                 <span className="block text-purple-400/70 text-xs">{r.perHandRankHandWins.toLocaleString()} card wins</span>
-                               )}
                              </td>
                              <td className="py-1.5 px-3 text-right">
                                <RTPPill rtp={parseFloat(r.rtp).toFixed(2)} low={module.rtpLow} high={module.rtpHigh} />
@@ -835,8 +853,8 @@ export default function CertificationAudit() {
       doc.text(`${module.name}  —  ${module.standard}  (RTP ${module.rtpLow}%–${module.rtpHigh}%)`, 12, y);
       y += 8;
 
-      const colX = [10, 68, 92, 112, 133, 154, 175, 258];
-      const headers = ['Bet', 'Wins', 'Win %', 'Actual RTP', 'Live Odds', 'For 96.5%', 'Status'];
+      const colX = [10, 62, 86, 107, 126, 146, 164, 182, 258];
+      const headers = ['Bet', 'Wins', 'Card Wins', '# Rounds', 'Win %', 'Actual RTP', 'Live Odds', 'For 96.5%', 'Status'];
 
       doc.setFillColor(240, 240, 240);
       doc.rect(10, y - ROW_H + 1, pageW - 20, ROW_H, 'F');
@@ -877,16 +895,23 @@ export default function CertificationAudit() {
           doc.setTextColor(0, 0, 0);
           doc.text(plainLabel(bet), colX[0], y);
           doc.text(r.wins.toLocaleString(), colX[1], y);
-          doc.text(r.winFrequency + '%', colX[2], y);
+          // Card Wins (perHandRank only)
+          doc.setTextColor(120, 80, 200);
+          doc.text(bet.betType === 'perHandRank' && r.perHandRankHandWins ? r.perHandRankHandWins.toLocaleString() : '—', colX[2], y);
+          // Actual Rounds (perHandRank only)
+          doc.setTextColor(100, 100, 120);
+          doc.text(bet.betType === 'perHandRank' && r.actualRounds ? r.actualRounds.toLocaleString() : '—', colX[3], y);
+          doc.setTextColor(0, 0, 0);
+          doc.text(r.winFrequency + '%', colX[4], y);
           if (ok) doc.setTextColor(0, 140, 60);
           else doc.setTextColor(200, 0, 0);
-          doc.text(parseFloat(r.rtp).toFixed(2) + '%', colX[3], y);
+          doc.text(parseFloat(r.rtp).toFixed(2) + '%', colX[5], y);
           doc.setTextColor(0, 0, 0);
-          doc.text(livePayout + ':1', colX[4], y);
+          doc.text(livePayout + ':1', colX[6], y);
           doc.setTextColor(160, 100, 0);
-          doc.text(r.for965 + ':1', colX[5], y);
+          doc.text(r.for965 + ':1', colX[7], y);
           doc.setTextColor(ok ? 0 : 180, ok ? 140 : 0, ok ? 60 : 0);
-          doc.text(ok ? 'PASS' : 'FAIL', colX[6], y);
+          doc.text(ok ? 'PASS' : 'FAIL', colX[8], y);
           y += ROW_H;
         });
         y += 2;
@@ -920,11 +945,11 @@ export default function CertificationAudit() {
       const done = Object.keys(storedResults).length;
       if (done === 0) return;
 
-      tableRows += `<tr><td colspan="7" style="background:#0f172a;color:#facc15;font-weight:bold;font-size:11pt;padding:6px 8px;border:1px solid #334155;">
+      tableRows += `<tr><td colspan="9" style="background:#0f172a;color:#facc15;font-weight:bold;font-size:11pt;padding:6px 8px;border:1px solid #334155;">
         ${module.name} — ${module.standard} (RTP ${module.rtpLow}%–${module.rtpHigh}%)
       </td></tr>`;
 
-      const headers = ['Bet', 'Wins', 'Win %', 'Actual RTP', 'Live Odds', 'For 96.5%', 'Status'];
+      const headers = ['Bet', 'Wins', 'Card Wins', '# Rounds', 'Win %', 'Actual RTP', 'Live Odds', 'For 96.5%', 'Status'];
       tableRows += `<tr>${headers.map(h => `<td style="background:#f0f0f0;font-weight:bold;border:1px solid #aaa;padding:3px 6px;">${h}</td>`).join('')}</tr>`;
 
       GROUPS.forEach(group => {
@@ -932,7 +957,7 @@ export default function CertificationAudit() {
         const hasAny = groupBets.some(b => storedResults[`${b.betType}:${b.betKey}`]);
         if (!hasAny) return;
 
-        tableRows += `<tr><td colspan="7" style="background:#dce6ff;font-weight:bold;font-size:9pt;padding:3px 6px;border:1px solid #6480c8;">${group}</td></tr>`;
+        tableRows += `<tr><td colspan="9" style="background:#dce6ff;font-weight:bold;font-size:9pt;padding:3px 6px;border:1px solid #6480c8;">${group}</td></tr>`;
 
         groupBets.forEach(bet => {
           const key = `${bet.betType}:${bet.betKey}`;
@@ -944,9 +969,13 @@ export default function CertificationAudit() {
           const statusColor = ok ? '#008000' : '#cc0000';
           const livePayout = getLivePayout(bet.betType, bet.betKey);
           const td = (val, color = '#000') => `<td style="border:1px solid #ccc;padding:3px 6px;color:${color};font-weight:bold;">${val}</td>`;
+          const cardWins = bet.betType === 'perHandRank' && r.perHandRankHandWins ? r.perHandRankHandWins.toLocaleString() : '—';
+          const actualRounds = bet.betType === 'perHandRank' && r.actualRounds ? r.actualRounds.toLocaleString() : '—';
           tableRows += `<tr>
             ${td(plainLabel(bet))}
             ${td(r.wins.toLocaleString())}
+            ${td(cardWins, '#7850c8')}
+            ${td(actualRounds, '#666688')}
             ${td(r.winFrequency + '%')}
             ${td(parseFloat(r.rtp).toFixed(2) + '%', rtpColor)}
             ${td(livePayout + ':1')}
@@ -956,7 +985,7 @@ export default function CertificationAudit() {
         });
       });
 
-      tableRows += `<tr><td colspan="7" style="padding:8px;border:none;">&nbsp;</td></tr>`;
+      tableRows += `<tr><td colspan="9" style="padding:8px;border:none;">&nbsp;</td></tr>`;
     });
 
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
@@ -975,6 +1004,217 @@ export default function CertificationAudit() {
     a.download = `RapidFire_CertAudit_${new Date().toISOString().slice(0, 10)}.doc`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const exportModuleCertificate = (moduleId) => {
+    const module = MODULES.find(m => m.id === moduleId);
+    if (!module) return;
+    const storedResults = moduleResults[moduleId]?.results || {};
+    const done = Object.keys(storedResults).length;
+    if (done === 0) return;
+
+    const passed = Object.values(storedResults).filter(r => {
+      const v = parseFloat(r.rtp);
+      return v >= module.rtpLow && v <= module.rtpHigh;
+    }).length;
+    const failed = done - passed;
+    const allPass = failed === 0 && done === ALL_BETS.length;
+    const blendedRtp = (Object.values(storedResults).reduce((s, r) => s + parseFloat(r.rtp), 0) / done).toFixed(2);
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const certNo = `RF-${moduleId.toUpperCase()}-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pW = doc.internal.pageSize.getWidth();
+    const pH = doc.internal.pageSize.getHeight();
+
+    // Background
+    doc.setFillColor(10, 15, 30);
+    doc.rect(0, 0, pW, pH, 'F');
+
+    // Outer gold border
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(1.5);
+    doc.rect(8, 8, pW - 16, pH - 16);
+    doc.setLineWidth(0.4);
+    doc.rect(11, 11, pW - 22, pH - 22);
+
+    // Header band
+    doc.setFillColor(20, 30, 60);
+    doc.rect(11, 11, pW - 22, 28, 'F');
+
+    // Logo text
+    doc.setTextColor(197, 160, 89);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RAPID FIRE TEXAS HOLD\'EM', pW / 2, 22, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setTextColor(180, 180, 200);
+    doc.text('32-Card Certified Game Engine  ·  Monte Carlo Simulation Platform', pW / 2, 29, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setTextColor(130, 130, 150);
+    doc.text('Gaming Compliance & Certification Division', pW / 2, 35, { align: 'center' });
+
+    // Certificate title
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(250, 204, 21);
+    doc.text('CERTIFICATE OF COMPLIANCE', pW / 2, 58, { align: 'center' });
+
+    doc.setFontSize(11);
+    doc.setTextColor(197, 160, 89);
+    doc.text(`${module.name.toUpperCase()} AUDIT`, pW / 2, 67, { align: 'center' });
+
+    // Decorative line
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(0.6);
+    doc.line(25, 71, pW - 25, 71);
+    doc.setLineWidth(0.2);
+    doc.line(25, 73, pW - 25, 73);
+
+    // Status stamp
+    const stampColor = allPass ? [0, 140, 60] : [180, 30, 30];
+    doc.setFillColor(...stampColor);
+    doc.roundedRect(pW / 2 - 28, 77, 56, 14, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(allPass ? '✓  ALL BETS PASSED' : `⚠  ${failed} BET(S) FAILED`, pW / 2, 86.5, { align: 'center' });
+
+    // Summary boxes
+    const boxY = 98;
+    const boxW = 38;
+    const boxH = 20;
+    const boxes = [
+      { label: 'Standard', value: module.standard, color: [30, 50, 100] },
+      { label: 'Blended RTP', value: blendedRtp + '%', color: allPass ? [20, 80, 40] : [100, 20, 20] },
+      { label: 'Bets Passed', value: `${passed} / ${done}`, color: [30, 50, 80] },
+      { label: 'RTP Range', value: `${module.rtpLow}% – ${module.rtpHigh}%`, color: [50, 40, 10] },
+    ];
+    boxes.forEach((b, i) => {
+      const bx = 20 + i * (boxW + 5);
+      doc.setFillColor(...b.color);
+      doc.roundedRect(bx, boxY, boxW, boxH, 2, 2, 'F');
+      doc.setDrawColor(197, 160, 89);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(bx, boxY, boxW, boxH, 2, 2, 'S');
+      doc.setTextColor(160, 160, 180);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(b.label, bx + boxW / 2, boxY + 6, { align: 'center' });
+      doc.setTextColor(250, 220, 100);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(b.value, bx + boxW / 2, boxY + 14, { align: 'center' });
+    });
+
+    // Description block
+    doc.setTextColor(180, 180, 200);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    const descY = 128;
+    doc.text('This certificate confirms that the above-named game engine has undergone a rigorous Monte Carlo', pW / 2, descY, { align: 'center' });
+    doc.text(`statistical audit under the ${module.standard} standard. All ${done} betting positions were`, pW / 2, descY + 5, { align: 'center' });
+    doc.text(`simulated at ${module.rounds.toLocaleString()} rounds per bet using a certified 32-card randomised engine.`, pW / 2, descY + 10, { align: 'center' });
+    doc.text(`The Return to Player values fall within the declared range of ${module.rtpLow}%–${module.rtpHigh}%.`, pW / 2, descY + 15, { align: 'center' });
+
+    // Divider
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(0.3);
+    doc.line(25, descY + 22, pW - 25, descY + 22);
+
+    // Results summary table (compact)
+    const tY = descY + 28;
+    doc.setFillColor(20, 30, 60);
+    doc.rect(15, tY - 5, pW - 30, 7, 'F');
+    doc.setTextColor(197, 160, 89);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    const thX = [15, 70, 100, 122, 145, 165];
+    const thLabels = ['Bet', 'Wins', 'Win %', 'RTP', 'Odds', 'Result'];
+    thLabels.forEach((h, i) => doc.text(h, thX[i] + 1, tY));
+
+    let ty = tY + 5;
+    ALL_BETS.forEach((bet, idx) => {
+      const key = `${bet.betType}:${bet.betKey}`;
+      const r = storedResults[key];
+      if (!r) return;
+      if (ty > pH - 35) { doc.addPage(); ty = 20; }
+      const rtp = parseFloat(r.rtp);
+      const ok = rtp >= module.rtpLow && rtp <= module.rtpHigh;
+      doc.setFillColor(idx % 2 === 0 ? 15 : 22, idx % 2 === 0 ? 22 : 30, idx % 2 === 0 ? 42 : 55);
+      doc.rect(15, ty - 4, pW - 30, 5.5, 'F');
+      doc.setTextColor(200, 200, 220);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(plainLabel(bet).slice(0, 32), thX[0] + 1, ty);
+      doc.text(r.wins.toLocaleString(), thX[1] + 1, ty);
+      doc.text(r.winFrequency + '%', thX[2] + 1, ty);
+      doc.setTextColor(ok ? 100 : 200, ok ? 200 : 80, ok ? 100 : 80);
+      doc.text(parseFloat(r.rtp).toFixed(2) + '%', thX[3] + 1, ty);
+      doc.setTextColor(200, 200, 220);
+      doc.text(getLivePayout(bet.betType, bet.betKey) + ':1', thX[4] + 1, ty);
+      doc.setTextColor(ok ? 80 : 200, ok ? 200 : 80, ok ? 80 : 80);
+      doc.setFont('helvetica', 'bold');
+      doc.text(ok ? 'PASS' : 'FAIL', thX[5] + 1, ty);
+      ty += 5.5;
+    });
+
+    // Signature / seal area
+    const sigY = pH - 52;
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(0.3);
+    doc.line(25, sigY, pW - 25, sigY);
+
+    doc.setTextColor(160, 160, 180);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Certificate No.:', 20, sigY + 8);
+    doc.setTextColor(250, 220, 100);
+    doc.setFont('helvetica', 'bold');
+    doc.text(certNo, 55, sigY + 8);
+
+    doc.setTextColor(160, 160, 180);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Issue Date:', 20, sigY + 15);
+    doc.setTextColor(250, 220, 100);
+    doc.setFont('helvetica', 'bold');
+    doc.text(dateStr, 55, sigY + 15);
+
+    doc.setTextColor(160, 160, 180);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Simulation Engine:', 20, sigY + 22);
+    doc.setTextColor(250, 220, 100);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Rapid Fire Texas 10 — In-Browser Monte Carlo v1.0', 55, sigY + 22);
+
+    // Seal circle
+    doc.setFillColor(20, 30, 60);
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(0.8);
+    doc.circle(pW - 35, sigY + 15, 14, 'FD');
+    doc.setLineWidth(0.3);
+    doc.circle(pW - 35, sigY + 15, 11, 'S');
+    doc.setTextColor(197, 160, 89);
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CERTIFIED', pW - 35, sigY + 13, { align: 'center' });
+    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', pW - 35, sigY + 18, { align: 'center' });
+
+    // Footer
+    doc.setTextColor(80, 80, 100);
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+      `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}`,
+      pW / 2, pH - 14, { align: 'center' }
+    );
+    doc.text(
+      'This document was generated by automated simulation and is for internal compliance purposes.',
+      pW / 2, pH - 10, { align: 'center' }
+    );
+
+    doc.save(`RapidFire_Certificate_${module.id}_${now.toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
@@ -1024,6 +1264,7 @@ export default function CertificationAudit() {
           module={module}
           bets={ALL_BETS}
           onResultsChange={handleResultsChange}
+          onExportCertificate={exportModuleCertificate}
         />
       ))}
 
