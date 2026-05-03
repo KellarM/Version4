@@ -1028,191 +1028,491 @@ export default function CertificationAudit() {
     const pW = doc.internal.pageSize.getWidth();
     const pH = doc.internal.pageSize.getHeight();
 
-    // Background
-    doc.setFillColor(10, 15, 30);
-    doc.rect(0, 0, pW, pH, 'F');
-
-    // Outer gold border
-    doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(1.5);
-    doc.rect(8, 8, pW - 16, pH - 16);
-    doc.setLineWidth(0.4);
-    doc.rect(11, 11, pW - 22, pH - 22);
-
-    // Header band
-    doc.setFillColor(20, 30, 60);
-    doc.rect(11, 11, pW - 22, 28, 'F');
-
-    // Logo text
-    doc.setTextColor(197, 160, 89);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('RAPID FIRE TEXAS HOLD\'EM', pW / 2, 22, { align: 'center' });
-    doc.setFontSize(7);
-    doc.setTextColor(180, 180, 200);
-    doc.text('32-Card Certified Game Engine  ·  Monte Carlo Simulation Platform', pW / 2, 29, { align: 'center' });
-    doc.setFontSize(7);
-    doc.setTextColor(130, 130, 150);
-    doc.text('Gaming Compliance & Certification Division', pW / 2, 35, { align: 'center' });
-
-    // Certificate title
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(250, 204, 21);
-    doc.text('CERTIFICATE OF COMPLIANCE', pW / 2, 58, { align: 'center' });
-
-    doc.setFontSize(11);
-    doc.setTextColor(197, 160, 89);
-    doc.text(`${module.name.toUpperCase()} AUDIT`, pW / 2, 67, { align: 'center' });
-
-    // Decorative line
-    doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(0.6);
-    doc.line(25, 71, pW - 25, 71);
-    doc.setLineWidth(0.2);
-    doc.line(25, 73, pW - 25, 73);
-
-    // Status stamp
-    const stampColor = allPass ? [0, 140, 60] : [180, 30, 30];
-    doc.setFillColor(...stampColor);
-    doc.roundedRect(pW / 2 - 28, 77, 56, 14, 3, 3, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(allPass ? '✓  ALL BETS PASSED' : `⚠  ${failed} BET(S) FAILED`, pW / 2, 86.5, { align: 'center' });
-
-    // Summary boxes
-    const boxY = 98;
-    const boxW = 38;
-    const boxH = 20;
-    const boxes = [
-      { label: 'Standard', value: module.standard, color: [30, 50, 100] },
-      { label: 'Blended RTP', value: blendedRtp + '%', color: allPass ? [20, 80, 40] : [100, 20, 20] },
-      { label: 'Bets Passed', value: `${passed} / ${done}`, color: [30, 50, 80] },
-      { label: 'RTP Range', value: `${module.rtpLow}% – ${module.rtpHigh}%`, color: [50, 40, 10] },
-    ];
-    boxes.forEach((b, i) => {
-      const bx = 20 + i * (boxW + 5);
-      doc.setFillColor(...b.color);
-      doc.roundedRect(bx, boxY, boxW, boxH, 2, 2, 'F');
+    // ─── Helper: draw page background + border ───────────────────────────────
+    const drawPageChrome = () => {
+      // Deep navy background
+      doc.setFillColor(10, 14, 28);
+      doc.rect(0, 0, pW, pH, 'F');
+      // Subtle gradient overlay — lighter centre
+      doc.setFillColor(18, 24, 48);
+      doc.rect(15, 15, pW - 30, pH - 30, 'F');
+      // Outer gold border
       doc.setDrawColor(197, 160, 89);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(bx, boxY, boxW, boxH, 2, 2, 'S');
-      doc.setTextColor(160, 160, 180);
-      doc.setFontSize(6.5);
+      doc.setLineWidth(2);
+      doc.rect(7, 7, pW - 14, pH - 14);
+      // Inner thin border
+      doc.setLineWidth(0.5);
+      doc.setDrawColor(220, 185, 110);
+      doc.rect(10, 10, pW - 20, pH - 20);
+      // Corner accent squares
+      const corners = [[7,7],[pW-14,7],[7,pH-14],[pW-14,pH-14]];
+      corners.forEach(([cx,cy]) => {
+        doc.setFillColor(197, 160, 89);
+        doc.rect(cx - 2, cy - 2, 9, 9, 'F');
+        doc.setFillColor(10, 14, 28);
+        doc.rect(cx, cy, 5, 5, 'F');
+      });
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE 1 — COVER / SUMMARY
+    // ═══════════════════════════════════════════════════════════
+    drawPageChrome();
+
+    // Header band (dark blue)
+    doc.setFillColor(14, 22, 50);
+    doc.rect(10, 10, pW - 20, 32, 'F');
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(0.4);
+    doc.line(10, 42, pW - 10, 42);
+
+    // Title text
+    doc.setTextColor(197, 160, 89);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RAPID FIRE TEXAS HOLD\'EM', pW / 2, 21, { align: 'center' });
+    doc.setFontSize(7.5);
+    doc.setTextColor(180, 185, 210);
+    doc.setFont('helvetica', 'normal');
+    doc.text('32-Card Certified Game Engine  ·  Monte Carlo Simulation Platform', pW / 2, 29, { align: 'center' });
+    doc.setFontSize(6.5);
+    doc.setTextColor(120, 130, 160);
+    doc.text('Gaming Compliance & Certification Division', pW / 2, 36, { align: 'center' });
+
+    // Main certificate title
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(250, 210, 40);
+    doc.text('CERTIFICATE OF COMPLIANCE', pW / 2, 60, { align: 'center' });
+
+    // Module subtitle
+    doc.setFontSize(12);
+    doc.setTextColor(197, 160, 89);
+    doc.text(`${module.name.toUpperCase()} AUDIT`, pW / 2, 70, { align: 'center' });
+
+    // Gold double rule
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(0.8);
+    doc.line(22, 74, pW - 22, 74);
+    doc.setLineWidth(0.25);
+    doc.line(22, 76.5, pW - 22, 76.5);
+
+    // PASS / FAIL stamp
+    if (allPass) {
+      doc.setFillColor(20, 120, 55);
+    } else {
+      doc.setFillColor(160, 25, 25);
+    }
+    doc.roundedRect(pW / 2 - 42, 80, 84, 16, 4, 4, 'F');
+    doc.setDrawColor(allPass ? 80 : 220, allPass ? 220 : 80, allPass ? 80 : 80);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(pW / 2 - 42, 80, 84, 16, 4, 4, 'S');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text(allPass ? '✓   ALL BETS PASSED' : `⚠   ${failed} BET(S) FAILED`, pW / 2, 90.5, { align: 'center' });
+
+    // ── 4 Summary info boxes ──────────────────────────────────
+    const bx0 = 14, bY = 103, bW = 42, bH = 22, bGap = 3.5;
+    const summaryBoxes = [
+      { label: 'Standard',    value: module.standard,                     bg: [20, 35, 80],  border: [100, 130, 200] },
+      { label: 'Blended RTP', value: blendedRtp + '%',                    bg: allPass ? [18, 90, 45] : [100, 20, 20], border: allPass ? [60, 200, 100] : [220, 80, 80] },
+      { label: 'Bets Passed', value: `${passed} / ${done}`,               bg: [20, 35, 80],  border: [100, 130, 200] },
+      { label: 'RTP Range',   value: `${module.rtpLow}% – ${module.rtpHigh}%`, bg: [55, 42, 10], border: [197, 160, 89] },
+    ];
+    summaryBoxes.forEach((b, i) => {
+      const x = bx0 + i * (bW + bGap);
+      doc.setFillColor(...b.bg);
+      doc.roundedRect(x, bY, bW, bH, 3, 3, 'F');
+      doc.setDrawColor(...b.border);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(x, bY, bW, bH, 3, 3, 'S');
+      doc.setTextColor(160, 170, 200);
+      doc.setFontSize(6);
       doc.setFont('helvetica', 'normal');
-      doc.text(b.label, bx + boxW / 2, boxY + 6, { align: 'center' });
+      doc.text(b.label, x + bW / 2, bY + 7, { align: 'center' });
       doc.setTextColor(250, 220, 100);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text(b.value, bx + boxW / 2, boxY + 14, { align: 'center' });
+      // wrap long strings
+      const val = b.value.length > 16 ? b.value : b.value;
+      doc.text(val, x + bW / 2, bY + 16, { align: 'center' });
     });
 
-    // Description block
-    doc.setTextColor(180, 180, 200);
+    // ── Compliance statement ──────────────────────────────────
+    const stY = 133;
+    doc.setTextColor(170, 175, 205);
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
-    const descY = 128;
-    doc.text('This certificate confirms that the above-named game engine has undergone a rigorous Monte Carlo', pW / 2, descY, { align: 'center' });
-    doc.text(`statistical audit under the ${module.standard} standard. All ${done} betting positions were`, pW / 2, descY + 5, { align: 'center' });
-    doc.text(`simulated at ${module.rounds.toLocaleString()} rounds per bet using a certified 32-card randomised engine.`, pW / 2, descY + 10, { align: 'center' });
-    doc.text(`The Return to Player values fall within the declared range of ${module.rtpLow}%–${module.rtpHigh}%.`, pW / 2, descY + 15, { align: 'center' });
+    const lines = [
+      `This certificate confirms that the above-named game engine has undergone a rigorous`,
+      `Monte Carlo statistical audit under the ${module.standard} standard.`,
+      `All ${done} betting positions were simulated at ${module.rounds.toLocaleString()} rounds per bet`,
+      `using a certified 32-card randomised engine.`,
+      `The Return to Player values fall within the declared range of ${module.rtpLow}%–${module.rtpHigh}%.`,
+    ];
+    lines.forEach((l, i) => doc.text(l, pW / 2, stY + i * 5.5, { align: 'center' }));
 
-    // Divider
-    doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(0.3);
-    doc.line(25, descY + 22, pW - 25, descY + 22);
+    // ── Blended RTP per group (Pic 2 style boxes) ─────────────
+    const groupBoxY = stY + 36;
+    const gbW = 54, gbH = 22, gbGap = 4;
+    const gbStartX = (pW - (3 * gbW + 2 * gbGap)) / 2;
 
-    // Results summary table (compact)
-    const tY = descY + 28;
-    doc.setFillColor(20, 30, 60);
-    doc.rect(15, tY - 5, pW - 30, 7, 'F');
-    doc.setTextColor(197, 160, 89);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    const thX = [15, 70, 100, 122, 145, 165];
-    const thLabels = ['Bet', 'Wins', 'Win %', 'RTP', 'Odds', 'Result'];
-    thLabels.forEach((h, i) => doc.text(h, thX[i] + 1, tY));
-
-    let ty = tY + 5;
-    ALL_BETS.forEach((bet, idx) => {
-      const key = `${bet.betType}:${bet.betKey}`;
-      const r = storedResults[key];
-      if (!r) return;
-      if (ty > pH - 35) { doc.addPage(); ty = 20; }
-      const rtp = parseFloat(r.rtp);
-      const ok = rtp >= module.rtpLow && rtp <= module.rtpHigh;
-      doc.setFillColor(idx % 2 === 0 ? 15 : 22, idx % 2 === 0 ? 22 : 30, idx % 2 === 0 ? 42 : 55);
-      doc.rect(15, ty - 4, pW - 30, 5.5, 'F');
-      doc.setTextColor(200, 200, 220);
-      doc.setFontSize(6.5);
-      doc.setFont('helvetica', 'normal');
-      doc.text(plainLabel(bet).slice(0, 32), thX[0] + 1, ty);
-      doc.text(r.wins.toLocaleString(), thX[1] + 1, ty);
-      doc.text(r.winFrequency + '%', thX[2] + 1, ty);
-      doc.setTextColor(ok ? 100 : 200, ok ? 200 : 80, ok ? 100 : 80);
-      doc.text(parseFloat(r.rtp).toFixed(2) + '%', thX[3] + 1, ty);
-      doc.setTextColor(200, 200, 220);
-      doc.text(getLivePayout(bet.betType, bet.betKey) + ':1', thX[4] + 1, ty);
-      doc.setTextColor(ok ? 80 : 200, ok ? 200 : 80, ok ? 80 : 80);
-      doc.setFont('helvetica', 'bold');
-      doc.text(ok ? 'PASS' : 'FAIL', thX[5] + 1, ty);
-      ty += 5.5;
+    // Calculate group RTPs
+    const groupRTPs = {};
+    GROUPS.forEach(group => {
+      const groupBets = ALL_BETS.filter(b => b.group === group);
+      const groupResults = groupBets.map(b => storedResults[`${b.betType}:${b.betKey}`]).filter(Boolean);
+      if (groupResults.length === 0) return;
+      const avg = (groupResults.reduce((s, r) => s + parseFloat(r.rtp), 0) / groupResults.length).toFixed(2);
+      groupRTPs[group] = avg;
     });
 
-    // Signature / seal area
-    const sigY = pH - 52;
+    // Per-hand RTPs
+    const handRTPs = {};
+    for (let hid = 1; hid <= 10; hid++) {
+      const hBets = ALL_BETS.filter(b => b.betType === 'perHandRank' && b.handId === hid);
+      const hResults = hBets.map(b => storedResults[`${b.betType}:${b.betKey}`]).filter(Boolean);
+      if (hResults.length === 0) continue;
+      handRTPs[hid] = (hResults.reduce((s, r) => s + parseFloat(r.rtp), 0) / hResults.length).toFixed(2);
+    }
+
+    // Section header
     doc.setDrawColor(197, 160, 89);
     doc.setLineWidth(0.3);
-    doc.line(25, sigY, pW - 25, sigY);
-
-    doc.setTextColor(160, 160, 180);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Certificate No.:', 20, sigY + 8);
-    doc.setTextColor(250, 220, 100);
-    doc.setFont('helvetica', 'bold');
-    doc.text(certNo, 55, sigY + 8);
-
-    doc.setTextColor(160, 160, 180);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Issue Date:', 20, sigY + 15);
-    doc.setTextColor(250, 220, 100);
-    doc.setFont('helvetica', 'bold');
-    doc.text(dateStr, 55, sigY + 15);
-
-    doc.setTextColor(160, 160, 180);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Simulation Engine:', 20, sigY + 22);
-    doc.setTextColor(250, 220, 100);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Rapid Fire Texas 10 — In-Browser Monte Carlo v1.0', 55, sigY + 22);
-
-    // Seal circle
-    doc.setFillColor(20, 30, 60);
-    doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(0.8);
-    doc.circle(pW - 35, sigY + 15, 14, 'FD');
-    doc.setLineWidth(0.3);
-    doc.circle(pW - 35, sigY + 15, 11, 'S');
+    doc.line(22, groupBoxY - 5, pW - 22, groupBoxY - 5);
     doc.setTextColor(197, 160, 89);
-    doc.setFontSize(5.5);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('CERTIFIED', pW - 35, sigY + 13, { align: 'center' });
-    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', pW - 35, sigY + 18, { align: 'center' });
+    doc.text('BLENDED RTP BY CATEGORY', pW / 2, groupBoxY - 1, { align: 'center' });
 
-    // Footer
-    doc.setTextColor(80, 80, 100);
+    // Draw category boxes — row 1: Carded Hands, Color Board, River
+    const catBoxes = [
+      { label: 'Card Hand Blended RTP',  value: groupRTPs['Carded Hands'] || '—' },
+      { label: 'Color Board Blended RTP', value: groupRTPs['Color Board'] || '—' },
+      { label: 'River Board Blended RTP', value: groupRTPs['Low / High'] || '—' },
+    ];
+    catBoxes.forEach((b, i) => {
+      const x = gbStartX + i * (gbW + gbGap);
+      const y = groupBoxY + 4;
+      const rtpVal = parseFloat(b.value);
+      const isOk = !isNaN(rtpVal) && rtpVal >= module.rtpLow && rtpVal <= module.rtpHigh;
+      doc.setFillColor(isOk ? 18 : 90, isOk ? 90 : 18, isOk ? 40 : 18);
+      doc.roundedRect(x, y, gbW, gbH, 3, 3, 'F');
+      doc.setDrawColor(isOk ? 80 : 220, isOk ? 200 : 80, isOk ? 80 : 80);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(x, y, gbW, gbH, 3, 3, 'S');
+      doc.setTextColor(200, 220, 200);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(b.label, x + gbW / 2, y + 7, { align: 'center' });
+      doc.setTextColor(isOk ? 100 : 255, isOk ? 255 : 100, isOk ? 100 : 100);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(b.value + (isNaN(rtpVal) ? '' : '%'), x + gbW / 2, y + 15.5, { align: 'center' });
+    });
+
+    // Per-hand rank boxes — up to 10 hands, 3 per row
+    const handEntries = Object.entries(handRTPs);
+    const HAND_LABELS_SHORT = {
+      1:'A/10 Card/Rank Hand', 2:'K/K Card/Rank Hand', 3:'Q/J Card/Rank Hand',
+      4:'Q/10 Card/Rank Hand', 5:'J/9 Card/Rank Hand',  6:'8/6 Card/Rank Hand',
+      7:'7/7 Card/Rank Hand',  8:'4/2 Card/Rank Hand',  9:'3/3 Card/Rank Hand',
+      10:'A/5 Card/Rank Hand',
+    };
+    const hbY0 = groupBoxY + 4 + gbH + 4;
+    const hbW = 54, hbH = 22;
+    const hbCols = 3;
+    const hbGap = 4;
+    const hbStartX = (pW - (hbCols * hbW + (hbCols - 1) * hbGap)) / 2;
+
+    handEntries.forEach(([hid, rtp], idx) => {
+      const col = idx % hbCols;
+      const row = Math.floor(idx / hbCols);
+      const x = hbStartX + col * (hbW + hbGap);
+      const y = hbY0 + row * (hbH + 4);
+      const rtpVal = parseFloat(rtp);
+      const isOk = rtpVal >= module.rtpLow && rtpVal <= module.rtpHigh;
+
+      // Page overflow check
+      if (y + hbH > pH - 40) return; // skip if overflow — will be on data pages
+
+      doc.setFillColor(isOk ? 18 : 90, isOk ? 90 : 18, isOk ? 40 : 18);
+      doc.roundedRect(x, y, hbW, hbH, 3, 3, 'F');
+      doc.setDrawColor(isOk ? 80 : 220, isOk ? 200 : 80, isOk ? 80 : 80);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(x, y, hbW, hbH, 3, 3, 'S');
+      doc.setTextColor(200, 220, 200);
+      doc.setFontSize(6);
+      doc.setFont('helvetica', 'normal');
+      doc.text(HAND_LABELS_SHORT[parseInt(hid)] || `Hand ${hid}`, x + hbW / 2, y + 7, { align: 'center' });
+      doc.setTextColor(isOk ? 120 : 255, isOk ? 255 : 120, isOk ? 120 : 120);
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(rtp + '%', x + hbW / 2, y + 16, { align: 'center' });
+    });
+
+    // ── Certificate footer (Page 1) ───────────────────────────
+    const sigY = pH - 38;
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(0.25);
+    doc.line(22, sigY, pW - 22, sigY);
+
+    // Left: cert details
+    doc.setTextColor(130, 135, 165);
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Certificate No.:', 14, sigY + 7);
+    doc.setTextColor(220, 195, 100);
+    doc.setFont('helvetica', 'bold');
+    doc.text(certNo, 45, sigY + 7);
+
+    doc.setTextColor(130, 135, 165);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Issue Date:', 14, sigY + 14);
+    doc.setTextColor(220, 195, 100);
+    doc.setFont('helvetica', 'bold');
+    doc.text(dateStr, 45, sigY + 14);
+
+    doc.setTextColor(130, 135, 165);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Engine:', 14, sigY + 21);
+    doc.setTextColor(220, 195, 100);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Rapid Fire Texas 10 — In-Browser Monte Carlo v1.0', 45, sigY + 21);
+
+    // Right: certification seal
+    const sealX = pW - 32, sealY = sigY + 12;
+    doc.setFillColor(14, 22, 50);
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(1);
+    doc.circle(sealX, sealY, 14, 'FD');
+    doc.setLineWidth(0.3);
+    doc.circle(sealX, sealY, 11, 'S');
+    doc.setTextColor(197, 160, 89);
+    doc.setFontSize(5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CERTIFIED', sealX, sealY - 2, { align: 'center' });
+    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', sealX, sealY + 3, { align: 'center' });
+    doc.text(String(now.getFullYear()), sealX, sealY + 8, { align: 'center' });
+
+    // Bottom tagline
+    doc.setTextColor(70, 75, 100);
     doc.setFontSize(6);
     doc.setFont('helvetica', 'normal');
     doc.text(
-      `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}`,
-      pW / 2, pH - 14, { align: 'center' }
+      `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page 1`,
+      pW / 2, pH - 12, { align: 'center' }
     );
-    doc.text(
-      'This document was generated by automated simulation and is for internal compliance purposes.',
-      pW / 2, pH - 10, { align: 'center' }
-    );
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGES 2+ — DETAILED RESULTS (professional dark table)
+    // ═══════════════════════════════════════════════════════════
+    const COL = {
+      bet:  12,
+      wins: 100,
+      winPct: 122,
+      rtp:  142,
+      odds: 158,
+      for965: 172,
+      result: 186,
+    };
+    const ROW_H = 7;
+    const TABLE_LEFT = 12;
+    const TABLE_RIGHT = pW - 12;
+    const TABLE_W = TABLE_RIGHT - TABLE_LEFT;
+
+    let pageNum = 2;
+    let curY = 0;
+
+    const startDataPage = () => {
+      doc.addPage();
+      drawPageChrome();
+
+      // Page header band
+      doc.setFillColor(14, 22, 50);
+      doc.rect(10, 10, pW - 20, 20, 'F');
+      doc.setDrawColor(197, 160, 89);
+      doc.setLineWidth(0.4);
+      doc.line(10, 30, pW - 10, 30);
+
+      doc.setTextColor(197, 160, 89);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RAPID FIRE TEXAS HOLD\'EM — DETAILED AUDIT RESULTS', pW / 2, 18, { align: 'center' });
+      doc.setTextColor(140, 148, 175);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${module.name}  ·  ${module.standard}  ·  ${module.rounds.toLocaleString()} rounds/bet  ·  Cert No. ${certNo}`, pW / 2, 25, { align: 'center' });
+
+      curY = 36;
+    };
+
+    const drawTableHeader = () => {
+      // Header background
+      doc.setFillColor(28, 40, 80);
+      doc.rect(TABLE_LEFT, curY, TABLE_W, ROW_H, 'F');
+      doc.setDrawColor(197, 160, 89);
+      doc.setLineWidth(0.4);
+      doc.line(TABLE_LEFT, curY, TABLE_RIGHT, curY);
+      doc.line(TABLE_LEFT, curY + ROW_H, TABLE_RIGHT, curY + ROW_H);
+
+      doc.setTextColor(197, 160, 89);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Bet / Position', COL.bet + 1, curY + 5);
+      doc.text('Wins', COL.wins, curY + 5, { align: 'right' });
+      doc.text('Win %', COL.winPct, curY + 5, { align: 'right' });
+      doc.text('Actual RTP', COL.rtp, curY + 5, { align: 'right' });
+      doc.text('Live Odds', COL.odds, curY + 5, { align: 'right' });
+      doc.text('For 96.5%', COL.for965, curY + 5, { align: 'right' });
+      doc.text('Result', COL.result + 8, curY + 5, { align: 'center' });
+      curY += ROW_H;
+    };
+
+    const drawGroupHeader = (label) => {
+      if (curY > pH - 30) { startDataPage(); drawTableHeader(); }
+      doc.setFillColor(20, 30, 65);
+      doc.rect(TABLE_LEFT, curY, TABLE_W, ROW_H - 1, 'F');
+      doc.setDrawColor(100, 120, 180);
+      doc.setLineWidth(0.3);
+      doc.line(TABLE_LEFT, curY + ROW_H - 1, TABLE_RIGHT, curY + ROW_H - 1);
+      doc.setTextColor(160, 180, 240);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.text(label.toUpperCase(), COL.bet + 2, curY + 5);
+      curY += ROW_H;
+    };
+
+    const drawDataRow = (bet, r, rowIdx) => {
+      if (curY > pH - 22) { startDataPage(); drawTableHeader(); }
+      const rtp = parseFloat(r.rtp);
+      const ok = rtp >= module.rtpLow && rtp <= module.rtpHigh;
+      const livePayout = getLivePayout(bet.betType, bet.betKey);
+
+      // Alternating row fill
+      if (rowIdx % 2 === 0) {
+        doc.setFillColor(18, 26, 52);
+      } else {
+        doc.setFillColor(22, 32, 62);
+      }
+      doc.rect(TABLE_LEFT, curY, TABLE_W, ROW_H, 'F');
+
+      // Left accent bar for pass/fail
+      doc.setFillColor(ok ? 30 : 160, ok ? 160 : 30, ok ? 60 : 30);
+      doc.rect(TABLE_LEFT, curY, 2, ROW_H, 'F');
+
+      // Bottom rule (subtle)
+      doc.setDrawColor(35, 45, 80);
+      doc.setLineWidth(0.15);
+      doc.line(TABLE_LEFT + 2, curY + ROW_H, TABLE_RIGHT, curY + ROW_H);
+
+      const textY = curY + 5;
+
+      // Bet label
+      doc.setTextColor(210, 215, 235);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(plainLabel(bet).slice(0, 38), COL.bet + 4, textY);
+
+      // Wins
+      doc.setTextColor(190, 195, 220);
+      doc.text(r.wins.toLocaleString(), COL.wins, textY, { align: 'right' });
+
+      // Win %
+      doc.text(r.winFrequency + '%', COL.winPct, textY, { align: 'right' });
+
+      // RTP — coloured
+      if (ok) doc.setTextColor(80, 220, 120);
+      else if (rtp > module.rtpHigh) doc.setTextColor(255, 160, 50);
+      else doc.setTextColor(255, 90, 90);
+      doc.setFont('helvetica', 'bold');
+      doc.text(rtp.toFixed(2) + '%', COL.rtp, textY, { align: 'right' });
+
+      // Live odds
+      doc.setTextColor(190, 195, 220);
+      doc.setFont('helvetica', 'normal');
+      doc.text(livePayout + ':1', COL.odds, textY, { align: 'right' });
+
+      // For 96.5%
+      doc.setTextColor(220, 185, 80);
+      doc.text(r.for965 + ':1', COL.for965, textY, { align: 'right' });
+
+      // PASS / FAIL pill
+      const pillX = COL.result + 1;
+      const pillW = 14, pillH = 4.5;
+      if (ok) {
+        doc.setFillColor(20, 130, 60);
+        doc.setDrawColor(60, 200, 100);
+      } else {
+        doc.setFillColor(140, 20, 20);
+        doc.setDrawColor(220, 70, 70);
+      }
+      doc.roundedRect(pillX, textY - 3.5, pillW, pillH, 1, 1, 'FD');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(ok ? 'PASS' : 'FAIL', pillX + pillW / 2, textY - 0.2, { align: 'center' });
+
+      curY += ROW_H;
+    };
+
+    // Start first data page
+    startDataPage();
+    drawTableHeader();
+
+    let rowIdx = 0;
+    GROUPS.forEach(group => {
+      const groupBets = ALL_BETS.filter(b => b.group === group);
+      const hasAny = groupBets.some(b => storedResults[`${b.betType}:${b.betKey}`]);
+      if (!hasAny) return;
+
+      drawGroupHeader(group);
+
+      groupBets.forEach(bet => {
+        const key = `${bet.betType}:${bet.betKey}`;
+        const r = storedResults[key];
+        if (!r) return;
+        drawDataRow(bet, r, rowIdx++);
+      });
+
+      // Small gap between groups
+      curY += 2;
+    });
+
+    // Summary footer on last data page
+    if (curY < pH - 30) {
+      curY += 4;
+      doc.setDrawColor(197, 160, 89);
+      doc.setLineWidth(0.3);
+      doc.line(TABLE_LEFT, curY, TABLE_RIGHT, curY);
+      curY += 5;
+
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(197, 160, 89);
+      doc.text(`Total Bets Tested: ${done}`, TABLE_LEFT + 2, curY);
+      doc.text(`Passed: ${passed}`, TABLE_LEFT + 50, curY);
+      if (failed > 0) {
+        doc.setTextColor(255, 100, 100);
+        doc.text(`Failed: ${failed}`, TABLE_LEFT + 85, curY);
+      }
+      doc.setTextColor(allPass ? 80 : 220, allPass ? 220 : 80, allPass ? 80 : 80);
+      doc.text(`Blended RTP: ${blendedRtp}%`, TABLE_LEFT + 120, curY);
+    }
+
+    // Page numbers across all data pages
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 2; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(6);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(70, 75, 100);
+      doc.text(
+        `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page ${i} of ${totalPages}`,
+        pW / 2, pH - 12, { align: 'center' }
+      );
+    }
 
     doc.save(`RapidFire_Certificate_${module.id}_${now.toISOString().slice(0, 10)}.pdf`);
   };
