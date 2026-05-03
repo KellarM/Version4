@@ -1071,112 +1071,116 @@ export default function CertificationAudit() {
     // ══════════════════════════════════════════════════════════════════════
     drawPageChrome(pW, pH);
 
-    // ── Header band ──────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
+    // LAYOUT MAP (all Y values in mm, page height = 210mm)
+    //  10–28   Header band          (18mm)
+    //  30–46   Title block          (16mm)
+    //  47–55   PASS/FAIL banner     ( 8mm)
+    //  57–71   4 summary boxes      (14mm)
+    //  73–83   Compliance text      (10mm)
+    //  84      Divider line
+    //  85–90   Category heading     ( 5mm)
+    //  91–103  3 category RTP boxes (12mm)
+    //  105–130 10 hand rank boxes   (25mm — 2 rows × 12mm)
+    //  131     Footer divider
+    //  133–196 Footer (cert meta + seal)
+    //  198     Bottom tagline
+    // ─────────────────────────────────────────────────────────────────────
+
+    // ── Header band (compact) ─────────────────────────────────────────────
     doc.setFillColor(12, 18, 48);
-    doc.rect(10, 10, pW - 20, 30, 'F');
+    doc.rect(10, 10, pW - 20, 18, 'F');
     doc.setDrawColor(197, 160, 89);
     doc.setLineWidth(0.5);
-    doc.line(10, 40, pW - 10, 40);
+    doc.line(10, 28, pW - 10, 28);
 
     doc.setTextColor(197, 160, 89);
-    doc.setFontSize(12);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text("RAPID FIRE TEXAS HOLD'EM", pW / 2, 22, { align: 'center' });
-    doc.setFontSize(8);
-    doc.setTextColor(170, 178, 210);
+    doc.text("RAPID FIRE TEXAS HOLD'EM", pW / 2, 17, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setTextColor(165, 174, 210);
     doc.setFont('helvetica', 'normal');
-    doc.text('32-Card Certified Game Engine  ·  Monte Carlo Simulation Platform', pW / 2, 30, { align: 'center' });
-    doc.setFontSize(6.5);
-    doc.setTextColor(110, 120, 158);
-    doc.text('Gaming Compliance & Certification Division', pW / 2, 37, { align: 'center' });
+    doc.text('32-Card Certified Game Engine  ·  Monte Carlo Simulation Platform', pW / 2, 23, { align: 'center' });
+    doc.setFontSize(6);
+    doc.setTextColor(108, 118, 158);
+    doc.text('Gaming Compliance & Certification Division', pW / 2, 27, { align: 'center' });
 
     // ── Main title block ──────────────────────────────────────────────────
-    doc.setFontSize(28);
+    doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(250, 210, 40);
-    doc.text('CERTIFICATE OF COMPLIANCE', pW / 2, 57, { align: 'center' });
+    doc.text('CERTIFICATE OF COMPLIANCE', pW / 2, 38, { align: 'center' });
 
-    doc.setFontSize(13);
+    doc.setFontSize(10);
     doc.setTextColor(197, 160, 89);
-    doc.text(`${module.name.toUpperCase()} AUDIT`, pW / 2, 67, { align: 'center' });
+    doc.text(`${module.name.toUpperCase()} AUDIT`, pW / 2, 45, { align: 'center' });
 
-    // Gold double rule under title
+    // Gold double rule
     doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(1);
-    doc.line(20, 71, pW - 20, 71);
-    doc.setLineWidth(0.3);
-    doc.line(20, 73.5, pW - 20, 73.5);
+    doc.setLineWidth(0.8);
+    doc.line(20, 47.5, pW - 20, 47.5);
+    doc.setLineWidth(0.25);
+    doc.line(20, 49.5, pW - 20, 49.5);
 
     // ── PASS / FAIL banner ────────────────────────────────────────────────
-    const bannerW = 100, bannerH = 13;
+    const bannerW = 90, bannerH = 10;
     const bannerX = pW / 2 - bannerW / 2;
-    if (allPass) {
-      doc.setFillColor(15, 110, 50);
-      doc.setDrawColor(50, 200, 90);
-    } else {
-      doc.setFillColor(150, 20, 20);
-      doc.setDrawColor(220, 60, 60);
-    }
+    if (allPass) { doc.setFillColor(15, 110, 50); doc.setDrawColor(50, 200, 90); }
+    else         { doc.setFillColor(150, 20, 20);  doc.setDrawColor(220, 60, 60); }
     doc.setLineWidth(0.5);
-    doc.roundedRect(bannerX, 77, bannerW, bannerH, 3, 3, 'FD');
+    doc.roundedRect(bannerX, 51, bannerW, bannerH, 2.5, 2.5, 'FD');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(11);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(
-      allPass ? 'ALL BETS PASSED' : `${failed} BET(S) FAILED`,
-      pW / 2, 85.5, { align: 'center' }
-    );
+    doc.text(allPass ? 'ALL BETS PASSED' : `${failed} BET(S) FAILED`, pW / 2, 57.5, { align: 'center' });
 
-    // ── 4 Summary info boxes (evenly distributed across full width) ───────
-    const sbCount = 4;
-    const sbW = 55, sbH = 22;
-    const sbTotalW = sbCount * sbW;
-    const sbGap = (pW - 20 - sbTotalW) / (sbCount + 1); // equal spacing incl. margins
-    const sbY = 94;
-
-    const summaryBoxes = [
-      { label: 'Standard',    value: module.standard,           bg: [18, 32, 82],  border: [90, 120, 210] },
-      { label: 'Blended RTP', value: blendedRtp + '%',          bg: allPass ? [14, 90, 42] : [100, 18, 18], border: allPass ? [50, 190, 90] : [210, 70, 70] },
-      { label: 'Bets Passed', value: `${passed} / ${done}`,    bg: [18, 32, 82],  border: [90, 120, 210] },
-      { label: 'RTP Range',   value: `${module.rtpLow}%–${module.rtpHigh}%`, bg: [55, 40, 8], border: [197, 160, 89] },
-    ];
-    summaryBoxes.forEach((b, i) => {
+    // ── 4 Summary info boxes ──────────────────────────────────────────────
+    const sbW = 58, sbH = 14;
+    const sbTotalW = 4 * sbW;
+    const sbGap = (pW - 20 - sbTotalW) / 5;
+    const sbY = 63;
+    [
+      { label: 'Standard',    value: module.standard,                          bg: [18, 32, 82],  border: [90, 120, 210] },
+      { label: 'Blended RTP', value: blendedRtp + '%',                         bg: allPass ? [14, 90, 42] : [100, 18, 18], border: allPass ? [50, 190, 90] : [210, 70, 70] },
+      { label: 'Bets Passed', value: `${passed} / ${done}`,                   bg: [18, 32, 82],  border: [90, 120, 210] },
+      { label: 'RTP Range',   value: `${module.rtpLow}%–${module.rtpHigh}%`, bg: [55, 40, 8],   border: [197, 160, 89] },
+    ].forEach((b, i) => {
       const bx = 10 + sbGap + i * (sbW + sbGap);
       doc.setFillColor(...b.bg);
-      doc.roundedRect(bx, sbY, sbW, sbH, 3, 3, 'F');
+      doc.roundedRect(bx, sbY, sbW, sbH, 2.5, 2.5, 'F');
       doc.setDrawColor(...b.border);
-      doc.setLineWidth(0.6);
-      doc.roundedRect(bx, sbY, sbW, sbH, 3, 3, 'S');
-      doc.setTextColor(150, 160, 200);
-      doc.setFontSize(6.5);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(bx, sbY, sbW, sbH, 2.5, 2.5, 'S');
+      doc.setTextColor(148, 158, 200);
+      doc.setFontSize(5.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(b.label, bx + sbW / 2, sbY + 7.5, { align: 'center' });
+      doc.text(b.label, bx + sbW / 2, sbY + 4.5, { align: 'center' });
       doc.setTextColor(250, 220, 100);
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text(b.value, bx + sbW / 2, sbY + 17, { align: 'center' });
+      doc.text(b.value, bx + sbW / 2, sbY + 11, { align: 'center' });
     });
 
-    // ── Compliance statement ──────────────────────────────────────────────
-    const stY = 123;
-    doc.setTextColor(165, 170, 205);
-    doc.setFontSize(7.5);
+    // ── Compliance statement (3 lines, tight leading) ─────────────────────
+    const stY = 82;
+    doc.setTextColor(160, 168, 205);
+    doc.setFontSize(6.5);
     doc.setFont('helvetica', 'normal');
     [
-      `This certificate confirms that the above-named game engine has undergone a rigorous Monte Carlo statistical audit`,
-      `under the ${module.standard} standard. All ${done} betting positions were simulated at ${module.rounds.toLocaleString()} rounds per bet`,
-      `using a certified 32-card randomised engine. The Return to Player values fall within the declared range of ${module.rtpLow}%–${module.rtpHigh}%.`,
-    ].forEach((l, i) => doc.text(l, pW / 2, stY + i * 5.5, { align: 'center' }));
+      `This certificate confirms that the above-named game engine has undergone a rigorous Monte Carlo statistical audit under the ${module.standard} standard.`,
+      `All ${done} betting positions were simulated at ${module.rounds.toLocaleString()} rounds per bet using a certified 32-card randomised engine.`,
+      `The Return to Player values fall within the declared range of ${module.rtpLow}%–${module.rtpHigh}%.`,
+    ].forEach((l, i) => doc.text(l, pW / 2, stY + i * 5, { align: 'center' }));
 
-    // ── Section divider + category heading ───────────────────────────────
-    const divY = 140;
+    // ── Section divider ───────────────────────────────────────────────────
     doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(0.35);
-    doc.line(20, divY, pW - 20, divY);
+    doc.setLineWidth(0.3);
+    doc.line(20, 97, pW - 20, 97);
     doc.setTextColor(197, 160, 89);
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
-    doc.text('BLENDED RTP BY CATEGORY', pW / 2, 145, { align: 'center' });
+    doc.text('BLENDED RTP BY CATEGORY', pW / 2, 101, { align: 'center' });
 
     // Calculate group RTPs
     const groupRTPs = {};
@@ -1186,7 +1190,6 @@ export default function CertificationAudit() {
       if (!gr.length) return;
       groupRTPs[grp] = (gr.reduce((s, r) => s + parseFloat(r.rtp), 0) / gr.length).toFixed(2);
     });
-
     const handRTPs = {};
     for (let hid = 1; hid <= 10; hid++) {
       const hb = ALL_BETS.filter(b => b.betType === 'perHandRank' && b.handId === hid);
@@ -1202,11 +1205,11 @@ export default function CertificationAudit() {
       handRank:   { bg: [38, 18, 80],  border: [125, 75, 220] },
     };
 
-    // ── Row 1: 3 category RTP boxes ─────────────────────────────────────
-    const cbW = 70, cbH = 18, cbGap = 8;
+    // ── 3 category RTP boxes ──────────────────────────────────────────────
+    const cbW = 72, cbH = 13, cbGap = 10;
     const cbTotalW = 3 * cbW + 2 * cbGap;
     const cbStartX = (pW - cbTotalW) / 2;
-    const cbY = 148;
+    const cbY = 103;
     [
       { label: 'Card Hand Blended RTP',   value: groupRTPs['Carded Hands'] || '—', colors: CAT_COLORS.cardHand },
       { label: 'Color Board Blended RTP', value: groupRTPs['Color Board']   || '—', colors: CAT_COLORS.colorBoard },
@@ -1219,99 +1222,97 @@ export default function CertificationAudit() {
       doc.setDrawColor(...b.colors.border);
       doc.setLineWidth(0.5);
       doc.roundedRect(bx, cbY, cbW, cbH, 2, 2, 'S');
-      doc.setTextColor(170, 195, 220);
-      doc.setFontSize(6);
+      doc.setTextColor(168, 194, 220);
+      doc.setFontSize(5.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(b.label, bx + cbW / 2, cbY + 6, { align: 'center' });
+      doc.text(b.label, bx + cbW / 2, cbY + 5, { align: 'center' });
       doc.setTextColor(240, 218, 100);
-      doc.setFontSize(9.5);
+      doc.setFontSize(8.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(b.value + (isNaN(rtpNum) ? '' : '%'), bx + cbW / 2, cbY + 14, { align: 'center' });
+      doc.text(b.value + (isNaN(rtpNum) ? '' : '%'), bx + cbW / 2, cbY + 11, { align: 'center' });
     });
 
-    // ── Row 2: 10 hand/rank RTP boxes (5 per row × 2 rows) ──────────────
+    // ── 10 hand/rank RTP boxes (5 per row × 2 rows) ──────────────────────
     const HAND_SHORT = {
       1:'A/10 Rank Hand', 2:'K/K Rank Hand', 3:'Q/J Rank Hand', 4:'Q/10 Rank Hand', 5:'J/9 Rank Hand',
       6:'8/6 Rank Hand',  7:'7/7 Rank Hand', 8:'4/2 Rank Hand', 9:'3/3 Rank Hand',  10:'A/5 Rank Hand',
     };
-    const hbW2 = 49, hbH2 = 16, hbCols2 = 5, hbGap2 = 4;
-    const hbTotalW2 = hbCols2 * hbW2 + (hbCols2 - 1) * hbGap2;
-    const hbStartX2 = (pW - hbTotalW2) / 2;
-    const hbY2 = cbY + cbH + 4;
+    const hbW = 50, hbH = 12, hbCols = 5, hbGap = 3.5;
+    const hbTotalW = hbCols * hbW + (hbCols - 1) * hbGap;
+    const hbStartX = (pW - hbTotalW) / 2;
+    const hbY0 = cbY + cbH + 3;
 
     for (let hid = 1; hid <= 10; hid++) {
       const rtp = handRTPs[hid];
       if (!rtp) continue;
       const idx = hid - 1;
-      const col = idx % hbCols2;
-      const row = Math.floor(idx / hbCols2);
-      const bx = hbStartX2 + col * (hbW2 + hbGap2);
-      const by = hbY2 + row * (hbH2 + 3);
-
+      const col = idx % hbCols;
+      const row = Math.floor(idx / hbCols);
+      const bx = hbStartX + col * (hbW + hbGap);
+      const by = hbY0 + row * (hbH + 2.5);
       doc.setFillColor(...CAT_COLORS.handRank.bg);
-      doc.roundedRect(bx, by, hbW2, hbH2, 2, 2, 'F');
+      doc.roundedRect(bx, by, hbW, hbH, 1.5, 1.5, 'F');
       doc.setDrawColor(...CAT_COLORS.handRank.border);
-      doc.setLineWidth(0.4);
-      doc.roundedRect(bx, by, hbW2, hbH2, 2, 2, 'S');
-      doc.setTextColor(190, 172, 232);
-      doc.setFontSize(5.5);
+      doc.setLineWidth(0.35);
+      doc.roundedRect(bx, by, hbW, hbH, 1.5, 1.5, 'S');
+      doc.setTextColor(185, 168, 230);
+      doc.setFontSize(5);
       doc.setFont('helvetica', 'normal');
-      doc.text(HAND_SHORT[hid], bx + hbW2 / 2, by + 5.5, { align: 'center' });
-      doc.setFontSize(4.5);
-      doc.text('Blended RTP', bx + hbW2 / 2, by + 9.5, { align: 'center' });
-      doc.setTextColor(212, 182, 255);
-      doc.setFontSize(8.5);
+      doc.text(HAND_SHORT[hid], bx + hbW / 2, by + 4, { align: 'center' });
+      doc.setFontSize(4);
+      doc.text('Blended RTP', bx + hbW / 2, by + 7, { align: 'center' });
+      doc.setTextColor(210, 178, 255);
+      doc.setFontSize(7.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(rtp + '%', bx + hbW2 / 2, by + 14.5, { align: 'center' });
+      doc.text(rtp + '%', bx + hbW / 2, by + 10.5, { align: 'center' });
     }
 
     // ── Footer strip ──────────────────────────────────────────────────────
-    const footerY = pH - 32;
+    // Sits just below the hand rank rows. Row 2 bottom = hbY0 + 1*(hbH+2.5) + hbH
+    const footerY = hbY0 + 2 * hbH + 2 * 2.5 + 3;
     doc.setDrawColor(197, 160, 89);
     doc.setLineWidth(0.3);
     doc.line(20, footerY, pW - 20, footerY);
 
-    // Left side: cert metadata
-    const fL = 14;
-    const fData = [
+    // Left: cert metadata
+    [
       { label: 'Certificate No.:', value: certNo },
       { label: 'Issue Date:',       value: dateStr },
       { label: 'Engine:',           value: 'Rapid Fire Texas 10 — In-Browser Monte Carlo v1.0' },
-    ];
-    fData.forEach((f, i) => {
-      const fy = footerY + 6 + i * 7;
-      doc.setTextColor(120, 128, 165);
-      doc.setFontSize(6.5);
+    ].forEach((f, i) => {
+      const fy = footerY + 5.5 + i * 6;
+      doc.setTextColor(115, 125, 165);
+      doc.setFontSize(6);
       doc.setFont('helvetica', 'normal');
-      doc.text(f.label, fL, fy);
-      doc.setTextColor(220, 195, 100);
+      doc.text(f.label, 14, fy);
+      doc.setTextColor(218, 192, 98);
       doc.setFont('helvetica', 'bold');
-      doc.text(f.value, fL + 26, fy);
+      doc.text(f.value, 14 + 26, fy);
     });
 
-    // Right side: certification seal circle
-    const sX = pW - 30, sY = footerY + 14;
+    // Right: certification seal
+    const sX = pW - 30, sY = footerY + 12;
     doc.setFillColor(12, 18, 50);
     doc.setDrawColor(197, 160, 89);
     doc.setLineWidth(1.2);
-    doc.circle(sX, sY, 14, 'FD');
+    doc.circle(sX, sY, 13, 'FD');
     doc.setDrawColor(220, 185, 110);
     doc.setLineWidth(0.4);
-    doc.circle(sX, sY, 11, 'S');
+    doc.circle(sX, sY, 10, 'S');
     doc.setTextColor(197, 160, 89);
-    doc.setFontSize(5.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CERTIFIED', sX, sY - 3.5, { align: 'center' });
-    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', sX, sY + 2.5, { align: 'center' });
     doc.setFontSize(5);
-    doc.text(String(now.getFullYear()), sX, sY + 8, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.text('CERTIFIED', sX, sY - 3, { align: 'center' });
+    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', sX, sY + 2.5, { align: 'center' });
+    doc.setFontSize(4.5);
+    doc.text(String(now.getFullYear()), sX, sY + 7, { align: 'center' });
 
     // Bottom tagline
-    doc.setTextColor(70, 75, 100);
-    doc.setFontSize(5.5);
+    doc.setTextColor(68, 74, 100);
+    doc.setFontSize(5);
     doc.setFont('helvetica', 'normal');
     doc.text(
-      `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page 1 of ${1}`,
+      `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page 1 of 1`,
       pW / 2, pH - 8, { align: 'center' }
     );
 
@@ -1522,9 +1523,9 @@ export default function CertificationAudit() {
     // Update cover page tagline with correct total
     doc.setPage(1);
     doc.setFillColor(8, 12, 30);
-    doc.rect(0, pH - 14, pW, 14, 'F'); // blank out old tagline
-    doc.setTextColor(70, 75, 100);
-    doc.setFontSize(5.5);
+    doc.rect(0, pH - 13, pW, 13, 'F');
+    doc.setTextColor(68, 74, 100);
+    doc.setFontSize(5);
     doc.setFont('helvetica', 'normal');
     doc.text(
       `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page 1 of ${totalPages}`,
