@@ -1234,11 +1234,9 @@ export default function CertificationAudit() {
       6:'8/6 Rank Hand',  7:'7/7 Rank Hand', 8:'4/2 Rank Hand', 9:'3/3 Rank Hand',  10:'A/5 Rank Hand',
     };
     const footerDivY = 172;
-    const hbW = sbW; // same width as the yellow summary box (58mm)
-    const hbH = 20, hbCols = 5;
-    const hbTotalW = hbCols * hbW;
-    const hbGap = (pW - 20 - hbTotalW) / (hbCols + 1); // even gaps including borders
-    const hbStartX = 10 + hbGap; // start after left border + first gap
+    const hbW = 52, hbH = 20, hbCols = 5, hbGap = 4;
+    const hbTotalW = hbCols * hbW + (hbCols - 1) * hbGap;
+    const hbStartX = (pW - hbTotalW) / 2;
     const hbY0 = cbY + cbH + 4; // = 116
 
     for (let hid = 1; hid <= 10; hid++) {
@@ -1247,7 +1245,7 @@ export default function CertificationAudit() {
       const idx = hid - 1;
       const col = idx % hbCols;
       const row = Math.floor(idx / hbCols);
-      const bx = hbStartX + col * (hbW + hbGap); // evenly spaced with equal gaps
+      const bx = hbStartX + col * (hbW + hbGap);
       const by = hbY0 + row * (hbH + 5); // row 0: y116, row 1: y141 — 5mm gap between rows
       doc.setFillColor(...CAT_COLORS.handRank.bg);
       doc.roundedRect(bx, by, hbW, hbH, 1.5, 1.5, 'F');
