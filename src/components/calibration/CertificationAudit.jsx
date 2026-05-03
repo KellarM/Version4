@@ -212,6 +212,8 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
   const [redoingKey, setRedoingKey] = useState(null);
   const [progress, setProgress] = useState(() => loadFromStorage(module.id).progress);
   const [results, setResults] = useState(() => loadFromStorage(module.id).results);
+  const onResultsChangeRef = useRef(onResultsChange);
+  useEffect(() => { onResultsChangeRef.current = onResultsChange; }, [onResultsChange]);
   const [currentBet, setCurrentBet] = useState('');
   const [betProgress, setBetProgress] = useState(0);
   const [betDone, setBetDone] = useState(0);
@@ -233,11 +235,13 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
 
   const startBetTimer = useCallback(() => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    betStartTimeRef.current = Date.now();
+    const startTime = Date.now();
+    betStartTimeRef.current = startTime;
     setElapsedSeconds(0);
     timerIntervalRef.current = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - betStartTimeRef.current) / 1000));
-    }, 1000);
+      const start = betStartTimeRef.current;
+      if (start) setElapsedSeconds(Math.floor((Date.now() - start) / 1000));
+    }, 500);
   }, []);
 
   const stopBetTimer = useCallback(() => {
@@ -331,7 +335,7 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
             try {
               localStorage.setItem(getStorageKeys(module.id).results, JSON.stringify(updated));
             } catch {}
-            onResultsChange?.(module.id, updated);
+            onResultsChangeRef.current?.(module.id, updated);
             return updated;
           });
           const newProgress = i + 1;
@@ -417,7 +421,7 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
         setResults(prev => {
           const updated = { ...prev, [betKey]: res };
           try { localStorage.setItem(getStorageKeys(module.id).results, JSON.stringify(updated)); } catch {}
-          onResultsChange?.(module.id, updated);
+          onResultsChangeRef.current?.(module.id, updated);
           return updated;
         });
         showSaving();
