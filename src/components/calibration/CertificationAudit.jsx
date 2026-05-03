@@ -1103,14 +1103,14 @@ export default function CertificationAudit() {
     } else {
       doc.setFillColor(160, 25, 25);
     }
-    doc.roundedRect(pW / 2 - 42, 80, 84, 16, 4, 4, 'F');
+    doc.roundedRect(pW / 2 - 40, 80, 80, 14, 3, 3, 'F');
     doc.setDrawColor(allPass ? 80 : 220, allPass ? 220 : 80, allPass ? 80 : 80);
     doc.setLineWidth(0.4);
-    doc.roundedRect(pW / 2 - 42, 80, 84, 16, 4, 4, 'S');
+    doc.roundedRect(pW / 2 - 40, 80, 80, 14, 3, 3, 'S');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(13);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(allPass ? '✓   ALL BETS PASSED' : `⚠   ${failed} BET(S) FAILED`, pW / 2, 90.5, { align: 'center' });
+    doc.text(allPass ? 'ALL BETS PASSED' : `${failed} BET(S) FAILED`, pW / 2, 89, { align: 'center' });
 
     // ── 4 Summary info boxes ──────────────────────────────────
     const bx0 = 14, bY = 103, bW = 42, bH = 22, bGap = 3.5;
@@ -1153,10 +1153,8 @@ export default function CertificationAudit() {
     ];
     lines.forEach((l, i) => doc.text(l, pW / 2, stY + i * 5.5, { align: 'center' }));
 
-    // ── Blended RTP per group (Pic 2 style boxes) ─────────────
-    const groupBoxY = stY + 36;
-    const gbW = 54, gbH = 22, gbGap = 4;
-    const gbStartX = (pW - (3 * gbW + 2 * gbGap)) / 2;
+    // ── Blended RTP per group ─────────────────────────────────
+    const groupBoxY = stY + 34;
 
     // Calculate group RTPs
     const groupRTPs = {};
@@ -1168,7 +1166,7 @@ export default function CertificationAudit() {
       groupRTPs[group] = avg;
     });
 
-    // Per-hand RTPs
+    // Per-hand RTPs — always all 10
     const handRTPs = {};
     for (let hid = 1; hid <= 10; hid++) {
       const hBets = ALL_BETS.filter(b => b.betType === 'perHandRank' && b.handId === hid);
@@ -1180,77 +1178,86 @@ export default function CertificationAudit() {
     // Section header
     doc.setDrawColor(197, 160, 89);
     doc.setLineWidth(0.3);
-    doc.line(22, groupBoxY - 5, pW - 22, groupBoxY - 5);
+    doc.line(22, groupBoxY - 4, pW - 22, groupBoxY - 4);
     doc.setTextColor(197, 160, 89);
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('BLENDED RTP BY CATEGORY', pW / 2, groupBoxY - 1, { align: 'center' });
+    doc.text('BLENDED RTP BY CATEGORY', pW / 2, groupBoxY, { align: 'center' });
 
-    // Draw category boxes — row 1: Carded Hands, Color Board, River
+    // ── Colors per category ──
+    // Card Hand = steel blue
+    // Hand/Rank = deep indigo/purple
+    // Color Board = teal
+    // River = burnt orange/brown
+    const CAT_COLORS = {
+      cardHand: { bg: [20, 45, 90], border: [80, 130, 220] },
+      handRank: { bg: [40, 20, 80], border: [130, 80, 220] },
+      colorBoard: { bg: [10, 60, 65], border: [50, 180, 190] },
+      river: { bg: [70, 35, 10], border: [200, 120, 40] },
+    };
+
+    // Row 1: 3 category boxes — smaller to fit everything
+    const gbW = 54, gbH = 17, gbGap = 4;
+    const gbStartX = (pW - (3 * gbW + 2 * gbGap)) / 2;
     const catBoxes = [
-      { label: 'Card Hand Blended RTP',  value: groupRTPs['Carded Hands'] || '—' },
-      { label: 'Color Board Blended RTP', value: groupRTPs['Color Board'] || '—' },
-      { label: 'River Board Blended RTP', value: groupRTPs['Low / High'] || '—' },
+      { label: 'Card Hand Blended RTP',  value: groupRTPs['Carded Hands'] || '—', colors: CAT_COLORS.cardHand },
+      { label: 'Color Board Blended RTP', value: groupRTPs['Color Board'] || '—', colors: CAT_COLORS.colorBoard },
+      { label: 'River Board Blended RTP', value: groupRTPs['Low / High'] || '—', colors: CAT_COLORS.river },
     ];
+    const catRowY = groupBoxY + 4;
     catBoxes.forEach((b, i) => {
       const x = gbStartX + i * (gbW + gbGap);
-      const y = groupBoxY + 4;
       const rtpVal = parseFloat(b.value);
-      const isOk = !isNaN(rtpVal) && rtpVal >= module.rtpLow && rtpVal <= module.rtpHigh;
-      doc.setFillColor(isOk ? 18 : 90, isOk ? 90 : 18, isOk ? 40 : 18);
-      doc.roundedRect(x, y, gbW, gbH, 3, 3, 'F');
-      doc.setDrawColor(isOk ? 80 : 220, isOk ? 200 : 80, isOk ? 80 : 80);
+      doc.setFillColor(...b.colors.bg);
+      doc.roundedRect(x, catRowY, gbW, gbH, 2, 2, 'F');
+      doc.setDrawColor(...b.colors.border);
       doc.setLineWidth(0.5);
-      doc.roundedRect(x, y, gbW, gbH, 3, 3, 'S');
-      doc.setTextColor(200, 220, 200);
-      doc.setFontSize(6.5);
+      doc.roundedRect(x, catRowY, gbW, gbH, 2, 2, 'S');
+      doc.setTextColor(180, 200, 220);
+      doc.setFontSize(5.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(b.label, x + gbW / 2, y + 7, { align: 'center' });
-      doc.setTextColor(isOk ? 100 : 255, isOk ? 255 : 100, isOk ? 100 : 100);
-      doc.setFontSize(9);
+      doc.text(b.label, x + gbW / 2, catRowY + 5.5, { align: 'center' });
+      doc.setTextColor(240, 220, 100);
+      doc.setFontSize(8.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(b.value + (isNaN(rtpVal) ? '' : '%'), x + gbW / 2, y + 15.5, { align: 'center' });
+      doc.text(b.value + (isNaN(rtpVal) ? '' : '%'), x + gbW / 2, catRowY + 13, { align: 'center' });
     });
 
-    // Per-hand rank boxes — up to 10 hands, 3 per row
-    const handEntries = Object.entries(handRTPs);
+    // Rows 2–5: 10 hand/rank boxes — 4 cols × 3 rows (4+4+2) to fit all 10, smaller boxes
     const HAND_LABELS_SHORT = {
-      1:'A/10 Card/Rank Hand', 2:'K/K Card/Rank Hand', 3:'Q/J Card/Rank Hand',
-      4:'Q/10 Card/Rank Hand', 5:'J/9 Card/Rank Hand',  6:'8/6 Card/Rank Hand',
-      7:'7/7 Card/Rank Hand',  8:'4/2 Card/Rank Hand',  9:'3/3 Card/Rank Hand',
-      10:'A/5 Card/Rank Hand',
+      1:'A/10 Rank Hand', 2:'K/K Rank Hand', 3:'Q/J Rank Hand',
+      4:'Q/10 Rank Hand', 5:'J/9 Rank Hand',  6:'8/6 Rank Hand',
+      7:'7/7 Rank Hand',  8:'4/2 Rank Hand',  9:'3/3 Rank Hand',
+      10:'A/5 Rank Hand',
     };
-    const hbY0 = groupBoxY + 4 + gbH + 4;
-    const hbW = 54, hbH = 22;
-    const hbCols = 3;
-    const hbGap = 4;
+    const hbW = 40, hbH = 16, hbCols = 4, hbGap = 3;
     const hbStartX = (pW - (hbCols * hbW + (hbCols - 1) * hbGap)) / 2;
+    const hbY0 = catRowY + gbH + 4;
 
-    handEntries.forEach(([hid, rtp], idx) => {
+    for (let hid = 1; hid <= 10; hid++) {
+      const rtp = handRTPs[hid];
+      if (!rtp) continue;
+      const idx = hid - 1;
       const col = idx % hbCols;
       const row = Math.floor(idx / hbCols);
       const x = hbStartX + col * (hbW + hbGap);
-      const y = hbY0 + row * (hbH + 4);
+      const y = hbY0 + row * (hbH + 3);
       const rtpVal = parseFloat(rtp);
-      const isOk = rtpVal >= module.rtpLow && rtpVal <= module.rtpHigh;
 
-      // Page overflow check
-      if (y + hbH > pH - 40) return; // skip if overflow — will be on data pages
-
-      doc.setFillColor(isOk ? 18 : 90, isOk ? 90 : 18, isOk ? 40 : 18);
-      doc.roundedRect(x, y, hbW, hbH, 3, 3, 'F');
-      doc.setDrawColor(isOk ? 80 : 220, isOk ? 200 : 80, isOk ? 80 : 80);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(x, y, hbW, hbH, 3, 3, 'S');
-      doc.setTextColor(200, 220, 200);
-      doc.setFontSize(6);
+      doc.setFillColor(...CAT_COLORS.handRank.bg);
+      doc.roundedRect(x, y, hbW, hbH, 2, 2, 'F');
+      doc.setDrawColor(...CAT_COLORS.handRank.border);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(x, y, hbW, hbH, 2, 2, 'S');
+      doc.setTextColor(190, 175, 230);
+      doc.setFontSize(5);
       doc.setFont('helvetica', 'normal');
-      doc.text(HAND_LABELS_SHORT[parseInt(hid)] || `Hand ${hid}`, x + hbW / 2, y + 7, { align: 'center' });
-      doc.setTextColor(isOk ? 120 : 255, isOk ? 255 : 120, isOk ? 120 : 120);
-      doc.setFontSize(9.5);
+      doc.text(HAND_LABELS_SHORT[hid], x + hbW / 2, y + 5.5, { align: 'center' });
+      doc.setTextColor(210, 180, 255);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text(rtp + '%', x + hbW / 2, y + 16, { align: 'center' });
-    });
+      doc.text(rtp + '%', x + hbW / 2, y + 12.5, { align: 'center' });
+    }
 
     // ── Certificate footer (Page 1) ───────────────────────────
     const sigY = pH - 38;
@@ -1308,21 +1315,23 @@ export default function CertificationAudit() {
     // ═══════════════════════════════════════════════════════════
     // PAGES 2+ — DETAILED RESULTS (professional dark table)
     // ═══════════════════════════════════════════════════════════
+    // Columns — shifted left to keep PASS/FAIL pill fully within the page
     const COL = {
-      bet:  12,
-      wins: 100,
-      winPct: 122,
-      rtp:  142,
-      odds: 158,
-      for965: 172,
+      bet:    12,
+      wins:   88,
+      rounds: 108,
+      winPct: 128,
+      rtp:    146,
+      odds:   161,
+      for965: 175,
       result: 186,
     };
+    const PILL_W = 13;
     const ROW_H = 7;
     const TABLE_LEFT = 12;
     const TABLE_RIGHT = pW - 12;
     const TABLE_W = TABLE_RIGHT - TABLE_LEFT;
 
-    let pageNum = 2;
     let curY = 0;
 
     const startDataPage = () => {
@@ -1349,7 +1358,6 @@ export default function CertificationAudit() {
     };
 
     const drawTableHeader = () => {
-      // Header background
       doc.setFillColor(28, 40, 80);
       doc.rect(TABLE_LEFT, curY, TABLE_W, ROW_H, 'F');
       doc.setDrawColor(197, 160, 89);
@@ -1358,15 +1366,16 @@ export default function CertificationAudit() {
       doc.line(TABLE_LEFT, curY + ROW_H, TABLE_RIGHT, curY + ROW_H);
 
       doc.setTextColor(197, 160, 89);
-      doc.setFontSize(6.5);
+      doc.setFontSize(6);
       doc.setFont('helvetica', 'bold');
       doc.text('Bet / Position', COL.bet + 1, curY + 5);
       doc.text('Wins', COL.wins, curY + 5, { align: 'right' });
+      doc.text('# Rounds', COL.rounds, curY + 5, { align: 'right' });
       doc.text('Win %', COL.winPct, curY + 5, { align: 'right' });
       doc.text('Actual RTP', COL.rtp, curY + 5, { align: 'right' });
       doc.text('Live Odds', COL.odds, curY + 5, { align: 'right' });
       doc.text('For 96.5%', COL.for965, curY + 5, { align: 'right' });
-      doc.text('Result', COL.result + 8, curY + 5, { align: 'center' });
+      doc.text('Result', COL.result + PILL_W / 2, curY + 5, { align: 'center' });
       curY += ROW_H;
     };
 
@@ -1389,37 +1398,39 @@ export default function CertificationAudit() {
       const rtp = parseFloat(r.rtp);
       const ok = rtp >= module.rtpLow && rtp <= module.rtpHigh;
       const livePayout = getLivePayout(bet.betType, bet.betKey);
+      const isHandRank = bet.betType === 'perHandRank';
 
-      // Alternating row fill
-      if (rowIdx % 2 === 0) {
-        doc.setFillColor(18, 26, 52);
-      } else {
-        doc.setFillColor(22, 32, 62);
-      }
+      // Alternating row fill — no accent bar
+      doc.setFillColor(rowIdx % 2 === 0 ? 18 : 22, rowIdx % 2 === 0 ? 26 : 32, rowIdx % 2 === 0 ? 52 : 62);
       doc.rect(TABLE_LEFT, curY, TABLE_W, ROW_H, 'F');
 
-      // Left accent bar for pass/fail
-      doc.setFillColor(ok ? 30 : 160, ok ? 160 : 30, ok ? 60 : 30);
-      doc.rect(TABLE_LEFT, curY, 2, ROW_H, 'F');
-
-      // Bottom rule (subtle)
+      // Subtle bottom rule
       doc.setDrawColor(35, 45, 80);
       doc.setLineWidth(0.15);
-      doc.line(TABLE_LEFT + 2, curY + ROW_H, TABLE_RIGHT, curY + ROW_H);
+      doc.line(TABLE_LEFT, curY + ROW_H, TABLE_RIGHT, curY + ROW_H);
 
       const textY = curY + 5;
 
       // Bet label
       doc.setTextColor(210, 215, 235);
-      doc.setFontSize(6.5);
+      doc.setFontSize(6);
       doc.setFont('helvetica', 'normal');
-      doc.text(plainLabel(bet).slice(0, 38), COL.bet + 4, textY);
+      doc.text(plainLabel(bet).slice(0, 40), COL.bet + 1, textY);
 
       // Wins
       doc.setTextColor(190, 195, 220);
+      doc.setFontSize(6);
       doc.text(r.wins.toLocaleString(), COL.wins, textY, { align: 'right' });
 
+      // # Rounds — show actualRounds for perHandRank, else module rounds
+      const roundsDisplay = isHandRank && r.actualRounds
+        ? r.actualRounds.toLocaleString()
+        : module.rounds.toLocaleString();
+      doc.setTextColor(isHandRank ? 180 : 150, isHandRank ? 160 : 150, isHandRank ? 220 : 175);
+      doc.text(roundsDisplay, COL.rounds, textY, { align: 'right' });
+
       // Win %
+      doc.setTextColor(190, 195, 220);
       doc.text(r.winFrequency + '%', COL.winPct, textY, { align: 'right' });
 
       // RTP — coloured
@@ -1438,9 +1449,9 @@ export default function CertificationAudit() {
       doc.setTextColor(220, 185, 80);
       doc.text(r.for965 + ':1', COL.for965, textY, { align: 'right' });
 
-      // PASS / FAIL pill
-      const pillX = COL.result + 1;
-      const pillW = 14, pillH = 4.5;
+      // PASS / FAIL pill — kept within table boundary
+      const pillX = COL.result;
+      const pillH = 4.5;
       if (ok) {
         doc.setFillColor(20, 130, 60);
         doc.setDrawColor(60, 200, 100);
@@ -1448,11 +1459,11 @@ export default function CertificationAudit() {
         doc.setFillColor(140, 20, 20);
         doc.setDrawColor(220, 70, 70);
       }
-      doc.roundedRect(pillX, textY - 3.5, pillW, pillH, 1, 1, 'FD');
+      doc.roundedRect(pillX, textY - 3.5, PILL_W, pillH, 1, 1, 'FD');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(5.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(ok ? 'PASS' : 'FAIL', pillX + pillW / 2, textY - 0.2, { align: 'center' });
+      doc.text(ok ? 'PASS' : 'FAIL', pillX + PILL_W / 2, textY - 0.2, { align: 'center' });
 
       curY += ROW_H;
     };
