@@ -357,14 +357,19 @@ function ModulePanel({ module, bets, onResultsChange }) {
     workerRef.current = null;
   };
 
-  const redoSingleBet = async (bet) => {
+  const redoSingleBet = async (bet, fromCheckpoint) => {
     if (running || redoingKey) return;
     const betKey = `${bet.betType}:${bet.betKey}`;
+
+    // Load checkpoint: use passed-in checkpoint or check stored one
+    const savedCheckpoint = fromCheckpoint || loadCheckpoint(module.id);
+    const resumeFrom = (savedCheckpoint && savedCheckpoint.betKey === betKey) ? savedCheckpoint : null;
+
     setRedoingKey(betKey);
     setCurrentBet(bet.label);
-    setBetProgress(0);
-    setBetWins(0);
-    setBetDone(0);
+    setBetProgress(resumeFrom ? (resumeFrom.totalRounds ?? 0) / module.rounds : 0);
+    setBetWins(resumeFrom ? (resumeFrom.totalWins ?? 0) : 0);
+    setBetDone(resumeFrom ? (resumeFrom.totalRounds ?? 0) : 0);
     setBetTotal(module.rounds);
     startBetTimer();
     abortRef.current = false;
@@ -381,6 +386,16 @@ function ModulePanel({ module, bets, onResultsChange }) {
           lhPayout: livePayouts.lhPayout,
           perHandRankPayouts: livePayouts.perHandRankPayouts,
           captureLog: false,
+          resumeFrom: resumeFrom ? {
+            totalRounds: resumeFrom.totalRounds,
+            totalWins: resumeFrom.totalWins,
+            totalPaid: resumeFrom.totalPaid,
+            totalCardedHandWins: resumeFrom.totalCardedHandWins,
+            totalRankNonExceptionWins: resumeFrom.totalRankNonExceptionWins,
+            totalLostToHouseWins: resumeFrom.totalLostToHouseWins,
+            perHandRankHandWins: resumeFrom.perHandRankHandWins,
+            rankBreakdownCounts: resumeFrom.rankBreakdownCounts,
+          } : undefined,
         },
         (pct, done, total) => {
           setBetProgress(pct);
@@ -388,6 +403,8 @@ function ModulePanel({ module, bets, onResultsChange }) {
           if (total !== undefined) setBetTotal(total);
         },
         (checkpointAt, data) => {
+          // Save checkpoint so a glitch during redo can be resumed
+          saveCheckpoint(module.id, betKey, data);
           setBetWins(data.totalWins ?? 0);
         }
       );
@@ -396,6 +413,7 @@ function ModulePanel({ module, bets, onResultsChange }) {
       workerRef.current = null;
       stopBetTimer();
       if (res.success) {
+        clearCheckpoint(module.id);
         setResults(prev => {
           const updated = { ...prev, [betKey]: res };
           try { localStorage.setItem(getStorageKeys(module.id).results, JSON.stringify(updated)); } catch {}
@@ -640,6 +658,12 @@ function ModulePanel({ module, bets, onResultsChange }) {
                           const status = rtpV >= module.rtpLow && rtpV <= module.rtpHigh ? 'pass' : 'fail';
                           const livePayout = getLivePayout(bet.betType, bet.betKey);
                           const isRedoing = redoingKey === key;
+                          // Check if there's a saved redo checkpoint for this specific bet
+                          const redoCheckpoint = (() => {
+                            const cp = loadCheckpoint(module.id);
+                            return cp && cp.betKey === key ? cp : null;
+                          })();
+                          const canContinueRedo = !running && !redoingKey && redoCheckpoint && redoCheckpoint.totalRounds > 0 && redoCheckpoint.totalRounds < module.rounds;
                           return (
                            <motion.tr
                              key={key}
@@ -667,8 +691,25 @@ function ModulePanel({ module, bets, onResultsChange }) {
                              <td className="py-1.5 px-3 text-right text-gray-400">{livePayout}:1</td>
                              <td className="py-1.5 px-3 text-right text-yellow-300 font-semibold">{r.for965}:1</td>
                              <td className="py-1.5 px-3 text-center">
-                               {status === 'pass' ? (
-                                 isRedoing ? (
+                               <div className="flex flex-col items-center gap-1">
+                                 {status === 'pass' ? (
+                                   isRedoing ? (
+                                     <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400">
+                                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                       RUNNING
+                                     </span>
+                                   ) : (
+                                     <button
+                                       onClick={() => redoSingleBet(bet)}
+                                       disabled={!!(running || redoingKey)}
+                                       title="Click to re-run this passed test"
+                                       className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-900/40 text-green-400 hover:bg-green-700/50 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                     >
+                                       <CheckCircle2 className="w-4 h-4" />
+                                       PASS
+                                     </button>
+                                   )
+                                 ) : isRedoing ? (
                                    <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400">
                                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                                      RUNNING
@@ -677,29 +718,24 @@ function ModulePanel({ module, bets, onResultsChange }) {
                                    <button
                                      onClick={() => redoSingleBet(bet)}
                                      disabled={!!(running || redoingKey)}
-                                     title="Click to re-run this passed test"
-                                     className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-900/40 text-green-400 hover:bg-green-700/50 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                     title="Click to re-run this failed test"
+                                     className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-red-900/40 text-red-400 hover:bg-red-700/50 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                                    >
-                                     <CheckCircle2 className="w-4 h-4" />
-                                     PASS
+                                     <XCircle className="w-4 h-4" />
+                                     FAIL
                                    </button>
-                                 )
-                               ) : isRedoing ? (
-                                 <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400">
-                                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                   RUNNING
-                                 </span>
-                               ) : (
-                                 <button
-                                   onClick={() => redoSingleBet(bet)}
-                                   disabled={!!(running || redoingKey)}
-                                   title="Click to re-run this failed test"
-                                   className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-red-900/40 text-red-400 hover:bg-red-700/50 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                                 >
-                                   <XCircle className="w-4 h-4" />
-                                   FAIL
-                                 </button>
-                               )}
+                                 )}
+                                 {canContinueRedo && (
+                                   <button
+                                     onClick={() => redoSingleBet(bet, redoCheckpoint)}
+                                     title={`Continue redo from ${redoCheckpoint.totalRounds?.toLocaleString()} rounds`}
+                                     className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400 hover:bg-yellow-700/50 hover:text-white transition-all cursor-pointer whitespace-nowrap"
+                                   >
+                                     <SkipForward className="w-3 h-3" />
+                                     Continue Redo
+                                   </button>
+                                 )}
+                               </div>
                              </td>
                            </motion.tr>
                           );
