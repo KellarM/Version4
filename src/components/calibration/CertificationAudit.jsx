@@ -668,10 +668,22 @@ function ModulePanel({ module, bets, onResultsChange }) {
                              <td className="py-1.5 px-3 text-right text-yellow-300 font-semibold">{r.for965}:1</td>
                              <td className="py-1.5 px-3 text-center">
                                {status === 'pass' ? (
-                                 <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-900/40 text-green-400">
-                                   <CheckCircle2 className="w-4 h-4" />
-                                   PASS
-                                 </span>
+                                 isRedoing ? (
+                                   <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400">
+                                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                     RUNNING
+                                   </span>
+                                 ) : (
+                                   <button
+                                     onClick={() => redoSingleBet(bet)}
+                                     disabled={!!(running || redoingKey)}
+                                     title="Click to re-run this passed test"
+                                     className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-900/40 text-green-400 hover:bg-green-700/50 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                   >
+                                     <CheckCircle2 className="w-4 h-4" />
+                                     PASS
+                                   </button>
+                                 )
                                ) : isRedoing ? (
                                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400">
                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
