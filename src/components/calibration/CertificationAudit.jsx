@@ -1233,13 +1233,13 @@ export default function CertificationAudit() {
       1:'A/10 Rank Hand', 2:'K/K Rank Hand', 3:'Q/J Rank Hand', 4:'Q/10 Rank Hand', 5:'J/9 Rank Hand',
       6:'8/6 Rank Hand',  7:'7/7 Rank Hand', 8:'4/2 Rank Hand', 9:'3/3 Rank Hand',  10:'A/5 Rank Hand',
     };
-    // Available vertical space: from cbY+cbH+2 down to footerDivider at ~152
-    // = (99+13+2) to 152 = 114 to 152 = 38mm for 2 rows
-    // Each row = (38 - 2gap) / 2 = 18mm tall
-    const hbW = 52, hbH = 17, hbCols = 5, hbGap = 3;
+    // Hand boxes fill from cbY+cbH+4 down to footerDivY-4
+    // footerDivY = 172 (reduced from 152), giving more room here
+    const footerDivY = 172;
+    const hbW = 52, hbH = 20, hbCols = 5, hbGap = 4;
     const hbTotalW = hbCols * hbW + (hbCols - 1) * hbGap;
     const hbStartX = (pW - hbTotalW) / 2;
-    const hbY0 = cbY + cbH + 2; // = 114
+    const hbY0 = cbY + cbH + 4; // = 116
 
     for (let hid = 1; hid <= 10; hid++) {
       const rtp = handRTPs[hid];
@@ -1248,7 +1248,7 @@ export default function CertificationAudit() {
       const col = idx % hbCols;
       const row = Math.floor(idx / hbCols);
       const bx = hbStartX + col * (hbW + hbGap);
-      const by = hbY0 + row * (hbH + 2); // row 0: y114, row 1: y133
+      const by = hbY0 + row * (hbH + 5); // row 0: y116, row 1: y141 — 5mm gap between rows
       doc.setFillColor(...CAT_COLORS.handRank.bg);
       doc.roundedRect(bx, by, hbW, hbH, 1.5, 1.5, 'F');
       doc.setDrawColor(...CAT_COLORS.handRank.border);
@@ -1257,32 +1257,30 @@ export default function CertificationAudit() {
       doc.setTextColor(185, 168, 230);
       doc.setFontSize(5.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(HAND_SHORT[hid], bx + hbW / 2, by + 5, { align: 'center' });
+      doc.text(HAND_SHORT[hid], bx + hbW / 2, by + 5.5, { align: 'center' });
       doc.setFontSize(4.5);
-      doc.text('Blended RTP', bx + hbW / 2, by + 9, { align: 'center' });
+      doc.text('Blended RTP', bx + hbW / 2, by + 10, { align: 'center' });
       doc.setTextColor(210, 178, 255);
-      doc.setFontSize(8);
+      doc.setFontSize(8.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(rtp + '%', bx + hbW / 2, by + 14.5, { align: 'center' });
+      doc.text(rtp + '%', bx + hbW / 2, by + 16.5, { align: 'center' });
     }
 
-    // ── Footer strip — anchored to fixed Y so no gap ──────────────────────
-    // row 2 ends at: hbY0 + 1*(hbH+2) + hbH = 114 + 19 + 17 = 150
-    const footerDivY = 152;
+    // ── Footer strip — ~50% shorter than before (~28mm vs ~52mm) ─────────
     doc.setDrawColor(197, 160, 89);
     doc.setLineWidth(0.3);
     doc.line(20, footerDivY, pW - 20, footerDivY);
 
-    // Left: cert metadata — evenly spaced in remaining height (~152 to 198)
-    const metaLineH = 8;
+    // Left: cert metadata — tighter spacing to fit reduced height
+    const metaLineH = 6;
     [
       { label: 'Certificate No.:', value: certNo },
       { label: 'Issue Date:',       value: dateStr },
       { label: 'Engine:',           value: 'Rapid Fire Texas 10 — In-Browser Monte Carlo v1.0' },
     ].forEach((f, i) => {
-      const fy = footerDivY + 8 + i * metaLineH;
+      const fy = footerDivY + 6 + i * metaLineH;
       doc.setTextColor(115, 125, 165);
-      doc.setFontSize(6.5);
+      doc.setFontSize(6);
       doc.setFont('helvetica', 'normal');
       doc.text(f.label, 14, fy);
       doc.setTextColor(218, 192, 98);
@@ -1290,23 +1288,23 @@ export default function CertificationAudit() {
       doc.text(f.value, 14 + 28, fy);
     });
 
-    // Right: certification seal — centred in remaining footer height
+    // Right: smaller seal to fit reduced footer height
     const sX = pW - 32;
-    const sY = footerDivY + 24; // vertically centred in footer area
+    const sY = footerDivY + 14; // centred in ~28mm footer
     doc.setFillColor(12, 18, 50);
     doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(1.2);
-    doc.circle(sX, sY, 15, 'FD');
+    doc.setLineWidth(1.0);
+    doc.circle(sX, sY, 10, 'FD');
     doc.setDrawColor(220, 185, 110);
     doc.setLineWidth(0.4);
-    doc.circle(sX, sY, 12, 'S');
+    doc.circle(sX, sY, 7.5, 'S');
     doc.setTextColor(197, 160, 89);
-    doc.setFontSize(5.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CERTIFIED', sX, sY - 4, { align: 'center' });
-    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', sX, sY + 2, { align: 'center' });
     doc.setFontSize(5);
-    doc.text(String(now.getFullYear()), sX, sY + 8, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.text('CERTIFIED', sX, sY - 2.5, { align: 'center' });
+    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', sX, sY + 2, { align: 'center' });
+    doc.setFontSize(4.5);
+    doc.text(String(now.getFullYear()), sX, sY + 6, { align: 'center' });
 
     // Bottom tagline — inside the inner border (y=198 max, border is at y=200)
     doc.setTextColor(68, 74, 100);
