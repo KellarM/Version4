@@ -1028,28 +1028,29 @@ export default function CertificationAudit() {
     const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const certNo = `RF-${moduleId.toUpperCase()}-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
 
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pW = doc.internal.pageSize.getWidth();
-    const pH = doc.internal.pageSize.getHeight();
+    // Page 1 (cover) = landscape A4; pages 2+ (detail) = portrait A4
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pW = doc.internal.pageSize.getWidth();  // 297mm landscape
+    const pH = doc.internal.pageSize.getHeight(); // 210mm landscape
 
     // ─── Helper: draw page background + border ───────────────────────────────
-    const drawPageChrome = () => {
+    const drawPageChrome = (w = pW, h = pH) => {
       // Deep navy background
       doc.setFillColor(10, 14, 28);
-      doc.rect(0, 0, pW, pH, 'F');
+      doc.rect(0, 0, w, h, 'F');
       // Subtle gradient overlay — lighter centre
       doc.setFillColor(18, 24, 48);
-      doc.rect(15, 15, pW - 30, pH - 30, 'F');
+      doc.rect(15, 15, w - 30, h - 30, 'F');
       // Outer gold border
       doc.setDrawColor(197, 160, 89);
       doc.setLineWidth(2);
-      doc.rect(7, 7, pW - 14, pH - 14);
+      doc.rect(7, 7, w - 14, h - 14);
       // Inner thin border
       doc.setLineWidth(0.5);
       doc.setDrawColor(220, 185, 110);
-      doc.rect(10, 10, pW - 20, pH - 20);
+      doc.rect(10, 10, w - 20, h - 20);
       // Corner accent squares
-      const corners = [[7,7],[pW-14,7],[7,pH-14],[pW-14,pH-14]];
+      const corners = [[7,7],[w-14,7],[7,h-14],[w-14,h-14]];
       corners.forEach(([cx,cy]) => {
         doc.setFillColor(197, 160, 89);
         doc.rect(cx - 2, cy - 2, 9, 9, 'F');
@@ -1314,19 +1315,20 @@ export default function CertificationAudit() {
     doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', sealX, sealY + 3, { align: 'center' });
     doc.text(String(now.getFullYear()), sealX, sealY + 8, { align: 'center' });
 
-    // Bottom tagline
+    // Bottom tagline (landscape cover page)
     doc.setTextColor(70, 75, 100);
     doc.setFontSize(6);
     doc.setFont('helvetica', 'normal');
     doc.text(
       `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page 1`,
-      pW / 2, pH - 12, { align: 'center' }
+      pW / 2, pH - 8, { align: 'center' }
     );
 
     // ═══════════════════════════════════════════════════════════
     // PAGES 2+ — DETAILED RESULTS (professional dark table)
     // ═══════════════════════════════════════════════════════════
-    // Columns — shifted left to keep PASS/FAIL pill fully within the page
+    // Columns — portrait A4 (210mm wide) for detail pages
+    const dpW = 210, dpH = 297;
     const COL = {
       bet:    12,
       wins:   88,
@@ -1340,30 +1342,31 @@ export default function CertificationAudit() {
     const PILL_W = 13;
     const ROW_H = 7;
     const TABLE_LEFT = 12;
-    const TABLE_RIGHT = pW - 12;
+    const TABLE_RIGHT = dpW - 12;
     const TABLE_W = TABLE_RIGHT - TABLE_LEFT;
 
     let curY = 0;
 
     const startDataPage = () => {
-      doc.addPage();
-      drawPageChrome();
+      doc.addPage([210, 297], 'portrait'); // portrait A4 for detail pages
+      const dpW = 210, dpH = 297;
+      drawPageChrome(dpW, dpH);
 
       // Page header band
       doc.setFillColor(14, 22, 50);
-      doc.rect(10, 10, pW - 20, 20, 'F');
+      doc.rect(10, 10, dpW - 20, 20, 'F');
       doc.setDrawColor(197, 160, 89);
       doc.setLineWidth(0.4);
-      doc.line(10, 30, pW - 10, 30);
+      doc.line(10, 30, dpW - 10, 30);
 
       doc.setTextColor(197, 160, 89);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text('RAPID FIRE TEXAS HOLD\'EM — DETAILED AUDIT RESULTS', pW / 2, 18, { align: 'center' });
+      doc.text('RAPID FIRE TEXAS HOLD\'EM — DETAILED AUDIT RESULTS', dpW / 2, 18, { align: 'center' });
       doc.setTextColor(140, 148, 175);
       doc.setFontSize(6.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(`${module.name}  ·  ${module.standard}  ·  ${module.rounds.toLocaleString()} rounds/bet  ·  Cert No. ${certNo}`, pW / 2, 25, { align: 'center' });
+      doc.text(`${module.name}  ·  ${module.standard}  ·  ${module.rounds.toLocaleString()} rounds/bet  ·  Cert No. ${certNo}`, dpW / 2, 25, { align: 'center' });
 
       curY = 36;
     };
@@ -1391,7 +1394,7 @@ export default function CertificationAudit() {
     };
 
     const drawGroupHeader = (label) => {
-      if (curY > pH - 30) { startDataPage(); drawTableHeader(); }
+      if (curY > dpH - 30) { startDataPage(); drawTableHeader(); }
       doc.setFillColor(20, 30, 65);
       doc.rect(TABLE_LEFT, curY, TABLE_W, ROW_H - 1, 'F');
       doc.setDrawColor(100, 120, 180);
@@ -1405,7 +1408,7 @@ export default function CertificationAudit() {
     };
 
     const drawDataRow = (bet, r, rowIdx) => {
-      if (curY > pH - 22) { startDataPage(); drawTableHeader(); }
+      if (curY > dpH - 22) { startDataPage(); drawTableHeader(); }
       const rtp = parseFloat(r.rtp);
       const ok = rtp >= module.rtpLow && rtp <= module.rtpHigh;
       const livePayout = getLivePayout(bet.betType, bet.betKey);
@@ -1503,7 +1506,7 @@ export default function CertificationAudit() {
     });
 
     // Summary footer on last data page
-    if (curY < pH - 30) {
+    if (curY < dpH - 30) {
       curY += 4;
       doc.setDrawColor(197, 160, 89);
       doc.setLineWidth(0.3);
@@ -1523,7 +1526,7 @@ export default function CertificationAudit() {
       doc.text(`Blended RTP: ${blendedRtp}%`, TABLE_LEFT + 120, curY);
     }
 
-    // Page numbers across all data pages
+    // Page numbers across all data pages (portrait)
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 2; i <= totalPages; i++) {
       doc.setPage(i);
@@ -1532,7 +1535,7 @@ export default function CertificationAudit() {
       doc.setTextColor(70, 75, 100);
       doc.text(
         `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page ${i} of ${totalPages}`,
-        pW / 2, pH - 12, { align: 'center' }
+        dpW / 2, dpH - 12, { align: 'center' }
       );
     }
 
