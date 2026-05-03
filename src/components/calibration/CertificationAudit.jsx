@@ -1028,299 +1028,290 @@ export default function CertificationAudit() {
     const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const certNo = `RF-${moduleId.toUpperCase()}-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
 
-    // Page 1 (cover) = landscape A4; pages 2+ (detail) = portrait A4
+    // Page 1 (cover) = landscape A4 (297 × 210); pages 2+ (detail) = portrait A4 (210 × 297)
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const pW = doc.internal.pageSize.getWidth();  // 297mm landscape
-    const pH = doc.internal.pageSize.getHeight(); // 210mm landscape
+    const pW = 297; // landscape width
+    const pH = 210; // landscape height
 
-    // ─── Helper: draw page background + border ───────────────────────────────
-    const drawPageChrome = (w = pW, h = pH) => {
-      // Deep navy background
-      doc.setFillColor(10, 14, 28);
+    // ─── Shared helper: dark navy chrome with double gold border + corner ornaments ───
+    const drawPageChrome = (w, h) => {
+      doc.setFillColor(8, 12, 30);
       doc.rect(0, 0, w, h, 'F');
-      // Subtle gradient overlay — lighter centre
-      doc.setFillColor(18, 24, 48);
-      doc.rect(15, 15, w - 30, h - 30, 'F');
-      // Outer gold border
+      doc.setFillColor(14, 20, 45);
+      doc.rect(12, 12, w - 24, h - 24, 'F');
+      // Outer thick gold border
       doc.setDrawColor(197, 160, 89);
-      doc.setLineWidth(2);
-      doc.rect(7, 7, w - 14, h - 14);
-      // Inner thin border
-      doc.setLineWidth(0.5);
+      doc.setLineWidth(2.2);
+      doc.rect(6, 6, w - 12, h - 12);
+      // Inner thin gold border
       doc.setDrawColor(220, 185, 110);
+      doc.setLineWidth(0.5);
       doc.rect(10, 10, w - 20, h - 20);
-      // Corner accent squares
-      const corners = [[7,7],[w-14,7],[7,h-14],[w-14,h-14]];
-      corners.forEach(([cx,cy]) => {
+      // Corner ornaments (filled gold square + dark hollow)
+      [[6,6],[w-13,6],[6,h-13],[w-13,h-13]].forEach(([cx, cy]) => {
         doc.setFillColor(197, 160, 89);
-        doc.rect(cx - 2, cy - 2, 9, 9, 'F');
-        doc.setFillColor(10, 14, 28);
-        doc.rect(cx, cy, 5, 5, 'F');
+        doc.rect(cx - 1, cy - 1, 8, 8, 'F');
+        doc.setFillColor(14, 20, 45);
+        doc.rect(cx + 1, cy + 1, 4, 4, 'F');
       });
     };
 
-    // ═══════════════════════════════════════════════════════════
-    // PAGE 1 — COVER / SUMMARY
-    // ═══════════════════════════════════════════════════════════
-    drawPageChrome();
+    // ══════════════════════════════════════════════════════════════════════
+    // PAGE 1 — POLISHED LANDSCAPE COVER CERTIFICATE
+    // Layout zones (mm, top-to-bottom within 210mm height):
+    //   Header band:    y 6–42     (36mm)
+    //   Title block:    y 44–78    (34mm)
+    //   PASS banner:    y 80–95    (15mm)
+    //   Summary boxes:  y 97–121   (24mm)
+    //   Statement:      y 124–140  (16mm)
+    //   Divider:        y 141
+    //   Category RTPs:  y 143–164  (21mm)
+    //   Hand rank RTPs: y 165–197  (32mm — 2 rows × 5 cols)
+    //   Footer strip:   y 169–204  (35mm — overlaps hand ranks section when fewer hands)
+    // ══════════════════════════════════════════════════════════════════════
+    drawPageChrome(pW, pH);
 
-    // Header band (dark blue)
-    doc.setFillColor(14, 22, 50);
-    doc.rect(10, 10, pW - 20, 32, 'F');
+    // ── Header band ──────────────────────────────────────────────────────
+    doc.setFillColor(12, 18, 48);
+    doc.rect(10, 10, pW - 20, 30, 'F');
     doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(0.4);
-    doc.line(10, 42, pW - 10, 42);
+    doc.setLineWidth(0.5);
+    doc.line(10, 40, pW - 10, 40);
 
-    // Title text
     doc.setTextColor(197, 160, 89);
-    doc.setFontSize(10);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('RAPID FIRE TEXAS HOLD\'EM', pW / 2, 21, { align: 'center' });
-    doc.setFontSize(7.5);
-    doc.setTextColor(180, 185, 210);
+    doc.text("RAPID FIRE TEXAS HOLD'EM", pW / 2, 22, { align: 'center' });
+    doc.setFontSize(8);
+    doc.setTextColor(170, 178, 210);
     doc.setFont('helvetica', 'normal');
-    doc.text('32-Card Certified Game Engine  ·  Monte Carlo Simulation Platform', pW / 2, 29, { align: 'center' });
+    doc.text('32-Card Certified Game Engine  ·  Monte Carlo Simulation Platform', pW / 2, 30, { align: 'center' });
     doc.setFontSize(6.5);
-    doc.setTextColor(120, 130, 160);
-    doc.text('Gaming Compliance & Certification Division', pW / 2, 36, { align: 'center' });
+    doc.setTextColor(110, 120, 158);
+    doc.text('Gaming Compliance & Certification Division', pW / 2, 37, { align: 'center' });
 
-    // Main certificate title
-    doc.setFontSize(24);
+    // ── Main title block ──────────────────────────────────────────────────
+    doc.setFontSize(28);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(250, 210, 40);
-    doc.text('CERTIFICATE OF COMPLIANCE', pW / 2, 60, { align: 'center' });
+    doc.text('CERTIFICATE OF COMPLIANCE', pW / 2, 57, { align: 'center' });
 
-    // Module subtitle
-    doc.setFontSize(12);
+    doc.setFontSize(13);
     doc.setTextColor(197, 160, 89);
-    doc.text(`${module.name.toUpperCase()} AUDIT`, pW / 2, 70, { align: 'center' });
+    doc.text(`${module.name.toUpperCase()} AUDIT`, pW / 2, 67, { align: 'center' });
 
-    // Gold double rule
+    // Gold double rule under title
     doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(0.8);
-    doc.line(22, 74, pW - 22, 74);
-    doc.setLineWidth(0.25);
-    doc.line(22, 76.5, pW - 22, 76.5);
+    doc.setLineWidth(1);
+    doc.line(20, 71, pW - 20, 71);
+    doc.setLineWidth(0.3);
+    doc.line(20, 73.5, pW - 20, 73.5);
 
-    // PASS / FAIL stamp
+    // ── PASS / FAIL banner ────────────────────────────────────────────────
+    const bannerW = 100, bannerH = 13;
+    const bannerX = pW / 2 - bannerW / 2;
     if (allPass) {
-      doc.setFillColor(20, 120, 55);
+      doc.setFillColor(15, 110, 50);
+      doc.setDrawColor(50, 200, 90);
     } else {
-      doc.setFillColor(160, 25, 25);
+      doc.setFillColor(150, 20, 20);
+      doc.setDrawColor(220, 60, 60);
     }
-    doc.roundedRect(pW / 2 - 40, 80, 80, 14, 3, 3, 'F');
-    doc.setDrawColor(allPass ? 80 : 220, allPass ? 220 : 80, allPass ? 80 : 80);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(pW / 2 - 40, 80, 80, 14, 3, 3, 'S');
+    doc.setLineWidth(0.5);
+    doc.roundedRect(bannerX, 77, bannerW, bannerH, 3, 3, 'FD');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text(allPass ? 'ALL BETS PASSED' : `${failed} BET(S) FAILED`, pW / 2, 89, { align: 'center' });
+    doc.text(
+      allPass ? 'ALL BETS PASSED' : `${failed} BET(S) FAILED`,
+      pW / 2, 85.5, { align: 'center' }
+    );
 
-    // ── 4 Summary info boxes ──────────────────────────────────
-    const bx0 = 14, bY = 103, bW = 42, bH = 22, bGap = 3.5;
+    // ── 4 Summary info boxes (evenly distributed across full width) ───────
+    const sbCount = 4;
+    const sbW = 55, sbH = 22;
+    const sbTotalW = sbCount * sbW;
+    const sbGap = (pW - 20 - sbTotalW) / (sbCount + 1); // equal spacing incl. margins
+    const sbY = 94;
+
     const summaryBoxes = [
-      { label: 'Standard',    value: module.standard,                     bg: [20, 35, 80],  border: [100, 130, 200] },
-      { label: 'Blended RTP', value: blendedRtp + '%',                    bg: allPass ? [18, 90, 45] : [100, 20, 20], border: allPass ? [60, 200, 100] : [220, 80, 80] },
-      { label: 'Bets Passed', value: `${passed} / ${done}`,               bg: [20, 35, 80],  border: [100, 130, 200] },
-      { label: 'RTP Range',   value: `${module.rtpLow}% – ${module.rtpHigh}%`, bg: [55, 42, 10], border: [197, 160, 89] },
+      { label: 'Standard',    value: module.standard,           bg: [18, 32, 82],  border: [90, 120, 210] },
+      { label: 'Blended RTP', value: blendedRtp + '%',          bg: allPass ? [14, 90, 42] : [100, 18, 18], border: allPass ? [50, 190, 90] : [210, 70, 70] },
+      { label: 'Bets Passed', value: `${passed} / ${done}`,    bg: [18, 32, 82],  border: [90, 120, 210] },
+      { label: 'RTP Range',   value: `${module.rtpLow}%–${module.rtpHigh}%`, bg: [55, 40, 8], border: [197, 160, 89] },
     ];
     summaryBoxes.forEach((b, i) => {
-      const x = bx0 + i * (bW + bGap);
+      const bx = 10 + sbGap + i * (sbW + sbGap);
       doc.setFillColor(...b.bg);
-      doc.roundedRect(x, bY, bW, bH, 3, 3, 'F');
+      doc.roundedRect(bx, sbY, sbW, sbH, 3, 3, 'F');
       doc.setDrawColor(...b.border);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(x, bY, bW, bH, 3, 3, 'S');
-      doc.setTextColor(160, 170, 200);
-      doc.setFontSize(6);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(bx, sbY, sbW, sbH, 3, 3, 'S');
+      doc.setTextColor(150, 160, 200);
+      doc.setFontSize(6.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(b.label, x + bW / 2, bY + 7, { align: 'center' });
+      doc.text(b.label, bx + sbW / 2, sbY + 7.5, { align: 'center' });
       doc.setTextColor(250, 220, 100);
-      doc.setFontSize(9);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      // wrap long strings
-      const val = b.value.length > 16 ? b.value : b.value;
-      doc.text(val, x + bW / 2, bY + 16, { align: 'center' });
+      doc.text(b.value, bx + sbW / 2, sbY + 17, { align: 'center' });
     });
 
-    // ── Compliance statement ──────────────────────────────────
-    const stY = 133;
-    doc.setTextColor(170, 175, 205);
+    // ── Compliance statement ──────────────────────────────────────────────
+    const stY = 123;
+    doc.setTextColor(165, 170, 205);
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
-    const lines = [
-      `This certificate confirms that the above-named game engine has undergone a rigorous`,
-      `Monte Carlo statistical audit under the ${module.standard} standard.`,
-      `All ${done} betting positions were simulated at ${module.rounds.toLocaleString()} rounds per bet`,
-      `using a certified 32-card randomised engine.`,
-      `The Return to Player values fall within the declared range of ${module.rtpLow}%–${module.rtpHigh}%.`,
-    ];
-    lines.forEach((l, i) => doc.text(l, pW / 2, stY + i * 5.5, { align: 'center' }));
+    [
+      `This certificate confirms that the above-named game engine has undergone a rigorous Monte Carlo statistical audit`,
+      `under the ${module.standard} standard. All ${done} betting positions were simulated at ${module.rounds.toLocaleString()} rounds per bet`,
+      `using a certified 32-card randomised engine. The Return to Player values fall within the declared range of ${module.rtpLow}%–${module.rtpHigh}%.`,
+    ].forEach((l, i) => doc.text(l, pW / 2, stY + i * 5.5, { align: 'center' }));
 
-    // ── Blended RTP per group ─────────────────────────────────
-    const groupBoxY = stY + 34;
+    // ── Section divider + category heading ───────────────────────────────
+    const divY = 140;
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(0.35);
+    doc.line(20, divY, pW - 20, divY);
+    doc.setTextColor(197, 160, 89);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BLENDED RTP BY CATEGORY', pW / 2, 145, { align: 'center' });
 
     // Calculate group RTPs
     const groupRTPs = {};
-    GROUPS.forEach(group => {
-      const groupBets = ALL_BETS.filter(b => b.group === group);
-      const groupResults = groupBets.map(b => storedResults[`${b.betType}:${b.betKey}`]).filter(Boolean);
-      if (groupResults.length === 0) return;
-      const avg = (groupResults.reduce((s, r) => s + parseFloat(r.rtp), 0) / groupResults.length).toFixed(2);
-      groupRTPs[group] = avg;
+    GROUPS.forEach(grp => {
+      const gb = ALL_BETS.filter(b => b.group === grp);
+      const gr = gb.map(b => storedResults[`${b.betType}:${b.betKey}`]).filter(Boolean);
+      if (!gr.length) return;
+      groupRTPs[grp] = (gr.reduce((s, r) => s + parseFloat(r.rtp), 0) / gr.length).toFixed(2);
     });
 
-    // Per-hand RTPs — always all 10
     const handRTPs = {};
     for (let hid = 1; hid <= 10; hid++) {
-      const hBets = ALL_BETS.filter(b => b.betType === 'perHandRank' && b.handId === hid);
-      const hResults = hBets.map(b => storedResults[`${b.betType}:${b.betKey}`]).filter(Boolean);
-      if (hResults.length === 0) continue;
-      handRTPs[hid] = (hResults.reduce((s, r) => s + parseFloat(r.rtp), 0) / hResults.length).toFixed(2);
+      const hb = ALL_BETS.filter(b => b.betType === 'perHandRank' && b.handId === hid);
+      const hr = hb.map(b => storedResults[`${b.betType}:${b.betKey}`]).filter(Boolean);
+      if (!hr.length) continue;
+      handRTPs[hid] = (hr.reduce((s, r) => s + parseFloat(r.rtp), 0) / hr.length).toFixed(2);
     }
 
-    // Section header
-    doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(0.3);
-    doc.line(22, groupBoxY - 4, pW - 22, groupBoxY - 4);
-    doc.setTextColor(197, 160, 89);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text('BLENDED RTP BY CATEGORY', pW / 2, groupBoxY, { align: 'center' });
-
-    // ── Colors per category ──
-    // Card Hand = steel blue
-    // Hand/Rank = deep indigo/purple
-    // Color Board = teal
-    // River = burnt orange/brown
     const CAT_COLORS = {
-      cardHand: { bg: [20, 45, 90], border: [80, 130, 220] },
-      handRank: { bg: [40, 20, 80], border: [130, 80, 220] },
-      colorBoard: { bg: [10, 60, 65], border: [50, 180, 190] },
-      river: { bg: [70, 35, 10], border: [200, 120, 40] },
+      cardHand:   { bg: [18, 42, 90],  border: [75, 125, 220] },
+      colorBoard: { bg: [8,  58, 62],  border: [45, 175, 185] },
+      river:      { bg: [68, 32, 8],   border: [195, 115, 38] },
+      handRank:   { bg: [38, 18, 80],  border: [125, 75, 220] },
     };
 
-    // Row 1: 3 category boxes — smaller to fit everything
-    const gbW = 54, gbH = 17, gbGap = 4;
-    const gbStartX = (pW - (3 * gbW + 2 * gbGap)) / 2;
-    const catBoxes = [
-      { label: 'Card Hand Blended RTP',  value: groupRTPs['Carded Hands'] || '—', colors: CAT_COLORS.cardHand },
-      { label: 'Color Board Blended RTP', value: groupRTPs['Color Board'] || '—', colors: CAT_COLORS.colorBoard },
-      { label: 'River Board Blended RTP', value: groupRTPs['Low / High'] || '—', colors: CAT_COLORS.river },
-    ];
-    const catRowY = groupBoxY + 4;
-    catBoxes.forEach((b, i) => {
-      const x = gbStartX + i * (gbW + gbGap);
-      const rtpVal = parseFloat(b.value);
+    // ── Row 1: 3 category RTP boxes ─────────────────────────────────────
+    const cbW = 70, cbH = 18, cbGap = 8;
+    const cbTotalW = 3 * cbW + 2 * cbGap;
+    const cbStartX = (pW - cbTotalW) / 2;
+    const cbY = 148;
+    [
+      { label: 'Card Hand Blended RTP',   value: groupRTPs['Carded Hands'] || '—', colors: CAT_COLORS.cardHand },
+      { label: 'Color Board Blended RTP', value: groupRTPs['Color Board']   || '—', colors: CAT_COLORS.colorBoard },
+      { label: 'River Board Blended RTP', value: groupRTPs['Low / High']    || '—', colors: CAT_COLORS.river },
+    ].forEach((b, i) => {
+      const bx = cbStartX + i * (cbW + cbGap);
+      const rtpNum = parseFloat(b.value);
       doc.setFillColor(...b.colors.bg);
-      doc.roundedRect(x, catRowY, gbW, gbH, 2, 2, 'F');
+      doc.roundedRect(bx, cbY, cbW, cbH, 2, 2, 'F');
       doc.setDrawColor(...b.colors.border);
       doc.setLineWidth(0.5);
-      doc.roundedRect(x, catRowY, gbW, gbH, 2, 2, 'S');
-      doc.setTextColor(180, 200, 220);
-      doc.setFontSize(5.5);
+      doc.roundedRect(bx, cbY, cbW, cbH, 2, 2, 'S');
+      doc.setTextColor(170, 195, 220);
+      doc.setFontSize(6);
       doc.setFont('helvetica', 'normal');
-      doc.text(b.label, x + gbW / 2, catRowY + 5.5, { align: 'center' });
-      doc.setTextColor(240, 220, 100);
-      doc.setFontSize(8.5);
+      doc.text(b.label, bx + cbW / 2, cbY + 6, { align: 'center' });
+      doc.setTextColor(240, 218, 100);
+      doc.setFontSize(9.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(b.value + (isNaN(rtpVal) ? '' : '%'), x + gbW / 2, catRowY + 13, { align: 'center' });
+      doc.text(b.value + (isNaN(rtpNum) ? '' : '%'), bx + cbW / 2, cbY + 14, { align: 'center' });
     });
 
-    // Rows 2–5: 10 hand/rank boxes — 4 cols × 3 rows (4+4+2) to fit all 10, smaller boxes
-    const HAND_LABELS_SHORT = {
-      1:'A/10 Rank Hand', 2:'K/K Rank Hand', 3:'Q/J Rank Hand',
-      4:'Q/10 Rank Hand', 5:'J/9 Rank Hand',  6:'8/6 Rank Hand',
-      7:'7/7 Rank Hand',  8:'4/2 Rank Hand',  9:'3/3 Rank Hand',
-      10:'A/5 Rank Hand',
+    // ── Row 2: 10 hand/rank RTP boxes (5 per row × 2 rows) ──────────────
+    const HAND_SHORT = {
+      1:'A/10 Rank Hand', 2:'K/K Rank Hand', 3:'Q/J Rank Hand', 4:'Q/10 Rank Hand', 5:'J/9 Rank Hand',
+      6:'8/6 Rank Hand',  7:'7/7 Rank Hand', 8:'4/2 Rank Hand', 9:'3/3 Rank Hand',  10:'A/5 Rank Hand',
     };
-    const hbW = 40, hbH = 18, hbCols = 4, hbGap = 3;
-    const hbStartX = (pW - (hbCols * hbW + (hbCols - 1) * hbGap)) / 2;
-    const hbY0 = catRowY + gbH + 4;
+    const hbW2 = 49, hbH2 = 16, hbCols2 = 5, hbGap2 = 4;
+    const hbTotalW2 = hbCols2 * hbW2 + (hbCols2 - 1) * hbGap2;
+    const hbStartX2 = (pW - hbTotalW2) / 2;
+    const hbY2 = cbY + cbH + 4;
 
     for (let hid = 1; hid <= 10; hid++) {
       const rtp = handRTPs[hid];
       if (!rtp) continue;
       const idx = hid - 1;
-
-      // Rows 0-1: 4 cols each (hands 1-8). Last row (hands 9-10): shift right by 1 col gap
-      const col = idx % hbCols;
-      const row = Math.floor(idx / hbCols);
-      const lastRow = row === Math.floor(9 / hbCols); // row index of hands 9-10
-      const lastRowOffset = lastRow ? (hbW + hbGap) : 0; // shift right by one box width
-      const x = hbStartX + col * (hbW + hbGap) + lastRowOffset;
-      const y = hbY0 + row * (hbH + 3);
+      const col = idx % hbCols2;
+      const row = Math.floor(idx / hbCols2);
+      const bx = hbStartX2 + col * (hbW2 + hbGap2);
+      const by = hbY2 + row * (hbH2 + 3);
 
       doc.setFillColor(...CAT_COLORS.handRank.bg);
-      doc.roundedRect(x, y, hbW, hbH, 2, 2, 'F');
+      doc.roundedRect(bx, by, hbW2, hbH2, 2, 2, 'F');
       doc.setDrawColor(...CAT_COLORS.handRank.border);
       doc.setLineWidth(0.4);
-      doc.roundedRect(x, y, hbW, hbH, 2, 2, 'S');
-      doc.setTextColor(190, 175, 230);
-      doc.setFontSize(4.8);
+      doc.roundedRect(bx, by, hbW2, hbH2, 2, 2, 'S');
+      doc.setTextColor(190, 172, 232);
+      doc.setFontSize(5.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(HAND_LABELS_SHORT[hid], x + hbW / 2, y + 5.5, { align: 'center' });
-      doc.setTextColor(190, 175, 230);
-      doc.setFontSize(4.2);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Blended RTP', x + hbW / 2, y + 9.5, { align: 'center' });
-      doc.setTextColor(210, 180, 255);
-      doc.setFontSize(8);
+      doc.text(HAND_SHORT[hid], bx + hbW2 / 2, by + 5.5, { align: 'center' });
+      doc.setFontSize(4.5);
+      doc.text('Blended RTP', bx + hbW2 / 2, by + 9.5, { align: 'center' });
+      doc.setTextColor(212, 182, 255);
+      doc.setFontSize(8.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(rtp + '%', x + hbW / 2, y + 15.5, { align: 'center' });
+      doc.text(rtp + '%', bx + hbW2 / 2, by + 14.5, { align: 'center' });
     }
 
-    // ── Certificate footer (Page 1) ───────────────────────────
-    const sigY = pH - 38;
+    // ── Footer strip ──────────────────────────────────────────────────────
+    const footerY = pH - 32;
     doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(0.25);
-    doc.line(22, sigY, pW - 22, sigY);
-
-    // Left: cert details
-    doc.setTextColor(130, 135, 165);
-    doc.setFontSize(6.5);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Certificate No.:', 14, sigY + 7);
-    doc.setTextColor(220, 195, 100);
-    doc.setFont('helvetica', 'bold');
-    doc.text(certNo, 45, sigY + 7);
-
-    doc.setTextColor(130, 135, 165);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Issue Date:', 14, sigY + 14);
-    doc.setTextColor(220, 195, 100);
-    doc.setFont('helvetica', 'bold');
-    doc.text(dateStr, 45, sigY + 14);
-
-    doc.setTextColor(130, 135, 165);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Engine:', 14, sigY + 21);
-    doc.setTextColor(220, 195, 100);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Rapid Fire Texas 10 — In-Browser Monte Carlo v1.0', 45, sigY + 21);
-
-    // Right: certification seal
-    const sealX = pW - 32, sealY = sigY + 12;
-    doc.setFillColor(14, 22, 50);
-    doc.setDrawColor(197, 160, 89);
-    doc.setLineWidth(1);
-    doc.circle(sealX, sealY, 14, 'FD');
     doc.setLineWidth(0.3);
-    doc.circle(sealX, sealY, 11, 'S');
-    doc.setTextColor(197, 160, 89);
-    doc.setFontSize(5);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CERTIFIED', sealX, sealY - 2, { align: 'center' });
-    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', sealX, sealY + 3, { align: 'center' });
-    doc.text(String(now.getFullYear()), sealX, sealY + 8, { align: 'center' });
+    doc.line(20, footerY, pW - 20, footerY);
 
-    // Bottom tagline (landscape cover page)
+    // Left side: cert metadata
+    const fL = 14;
+    const fData = [
+      { label: 'Certificate No.:', value: certNo },
+      { label: 'Issue Date:',       value: dateStr },
+      { label: 'Engine:',           value: 'Rapid Fire Texas 10 — In-Browser Monte Carlo v1.0' },
+    ];
+    fData.forEach((f, i) => {
+      const fy = footerY + 6 + i * 7;
+      doc.setTextColor(120, 128, 165);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(f.label, fL, fy);
+      doc.setTextColor(220, 195, 100);
+      doc.setFont('helvetica', 'bold');
+      doc.text(f.value, fL + 26, fy);
+    });
+
+    // Right side: certification seal circle
+    const sX = pW - 30, sY = footerY + 14;
+    doc.setFillColor(12, 18, 50);
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(1.2);
+    doc.circle(sX, sY, 14, 'FD');
+    doc.setDrawColor(220, 185, 110);
+    doc.setLineWidth(0.4);
+    doc.circle(sX, sY, 11, 'S');
+    doc.setTextColor(197, 160, 89);
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CERTIFIED', sX, sY - 3.5, { align: 'center' });
+    doc.text(allPass ? 'COMPLIANT' : 'REVIEWED', sX, sY + 2.5, { align: 'center' });
+    doc.setFontSize(5);
+    doc.text(String(now.getFullYear()), sX, sY + 8, { align: 'center' });
+
+    // Bottom tagline
     doc.setTextColor(70, 75, 100);
-    doc.setFontSize(6);
+    doc.setFontSize(5.5);
     doc.setFont('helvetica', 'normal');
     doc.text(
-      `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page 1`,
+      `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page 1 of ${1}`,
       pW / 2, pH - 8, { align: 'center' }
     );
 
@@ -1526,8 +1517,20 @@ export default function CertificationAudit() {
       doc.text(`Blended RTP: ${blendedRtp}%`, TABLE_LEFT + 120, curY);
     }
 
-    // Page numbers across all data pages (portrait)
+    // Page numbers — cover (page 1) and all detail pages
     const totalPages = doc.internal.getNumberOfPages();
+    // Update cover page tagline with correct total
+    doc.setPage(1);
+    doc.setFillColor(8, 12, 30);
+    doc.rect(0, pH - 14, pW, 14, 'F'); // blank out old tagline
+    doc.setTextColor(70, 75, 100);
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+      `Rapid Fire Texas 10  ·  ${module.name} Certification  ·  ${module.standard}  ·  ${dateStr}  ·  Page 1 of ${totalPages}`,
+      pW / 2, pH - 8, { align: 'center' }
+    );
+    // Portrait detail pages
     for (let i = 2; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(6);
