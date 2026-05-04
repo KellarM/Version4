@@ -53,7 +53,7 @@ export const PER_HAND_RANK_PAYOUTS = {
     'Full House':      4.74,
     'Three of a Kind': 10.81,
     'Two Pair':        20.25,
-    'Four of a Kind':  54.65,
+    'Four of a Kind':  54.0,
   },
 
   // Hand 6: 8♦ / 6♦
@@ -99,7 +99,7 @@ export const PER_HAND_RANK_PAYOUTS = {
     'Three of a Kind': 4.79,
     'Two Pair':        4.97,
     'Flush':           7.71,
-    'Four of a Kind':  25.66,
+    'Four of a Kind':  26.4,
   },
 };
 
