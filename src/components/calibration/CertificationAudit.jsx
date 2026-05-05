@@ -1234,7 +1234,7 @@ export default function CertificationAudit() {
       6:'8/6 Rank Hand',  7:'7/7 Rank Hand', 8:'4/2 Rank Hand', 9:'3/3 Rank Hand',  10:'A/5 Rank Hand',
     };
     const footerDivY = 172;
-    const hbW = 52, hbH = 20, hbCols = 5, hbGap = 4;
+    const hbW = 46.8, hbH = 18, hbCols = 5, hbGap = 4;
     const hbTotalW = hbCols * hbW + (hbCols - 1) * hbGap;
     const hbStartX = (pW - hbTotalW) / 2;
     const hbY0 = cbY + cbH + 4; // = 116
@@ -1246,22 +1246,23 @@ export default function CertificationAudit() {
       const col = idx % hbCols;
       const row = Math.floor(idx / hbCols);
       const bx = hbStartX + col * (hbW + hbGap);
-      const by = hbY0 + row * (hbH + 5); // row 0: y116, row 1: y141 — 5mm gap between rows
-      doc.setFillColor(...CAT_COLORS.handRank.bg);
+      const by = hbY0 + row * (hbH + 5);
+      // Gold background
+      doc.setFillColor(197, 160, 89);
       doc.roundedRect(bx, by, hbW, hbH, 1.5, 1.5, 'F');
-      doc.setDrawColor(...CAT_COLORS.handRank.border);
-      doc.setLineWidth(0.35);
+      // Black border
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.4);
       doc.roundedRect(bx, by, hbW, hbH, 1.5, 1.5, 'S');
-      doc.setTextColor(185, 168, 230);
+      // Black bold text
+      doc.setTextColor(0, 0, 0);
       doc.setFontSize(5.5);
-      doc.setFont('helvetica', 'normal');
-      doc.text(HAND_SHORT[hid], bx + hbW / 2, by + 5.5, { align: 'center' });
-      doc.setFontSize(4.5);
-      doc.text('Blended RTP', bx + hbW / 2, by + 10, { align: 'center' });
-      doc.setTextColor(210, 178, 255);
-      doc.setFontSize(8.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(rtp + '%', bx + hbW / 2, by + 16.5, { align: 'center' });
+      doc.text(HAND_SHORT[hid], bx + hbW / 2, by + 5, { align: 'center' });
+      doc.setFontSize(4.5);
+      doc.text('Blended RTP', bx + hbW / 2, by + 9, { align: 'center' });
+      doc.setFontSize(8.5);
+      doc.text(rtp + '%', bx + hbW / 2, by + 15, { align: 'center' });
     }
 
     // ── Footer strip — ~50% shorter than before (~28mm vs ~52mm) ─────────
