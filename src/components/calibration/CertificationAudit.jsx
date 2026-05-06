@@ -5,6 +5,7 @@ import { runBetAuditWithAbort } from '@/lib/workerBridge';
 import { CARDED_HAND_PAYOUTS, HAND_RANK_PAYOUTS, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
 import { PER_HAND_RANK_PAYOUTS } from '@/lib/perHandRankPayouts';
 import { jsPDF } from 'jspdf';
+import { base44 } from '@/api/base44Client';
 
 const HAND_LABELS = {
   1:'Hand 1 — A♦10♥', 2:'Hand 2 — K♣K♠', 3:'Hand 3 — Q♣J♠', 4:'Hand 4 — Q♠10♠',
@@ -174,6 +175,71 @@ function clearFromStorage(moduleId) {
   localStorage.removeItem(keys.checkpoint);
 }
 
+// ── Database persistence helpers ──────────────────────────────────────────────
+async function saveResultToDb(moduleId, betKey, result) {
+  try {
+    const existing = await base44.entities.CertAuditResult.filter({ module_id: moduleId, bet_key: betKey });
+    if (existing && existing.length > 0) {
+      await base44.entities.CertAuditResult.update(existing[0].id, { result_json: JSON.stringify(result) });
+    } else {
+      await base44.entities.CertAuditResult.create({ module_id: moduleId, bet_key: betKey, result_json: JSON.stringify(result) });
+    }
+  } catch (e) { /* silent — localStorage is still the primary cache */ }
+}
+
+async function saveProgressToDb(moduleId, progress) {
+  try {
+    const existing = await base44.entities.CertAuditResult.filter({ module_id: moduleId, bet_key: '__progress__' });
+    if (existing && existing.length > 0) {
+      await base44.entities.CertAuditResult.update(existing[0].id, { progress });
+    } else {
+      await base44.entities.CertAuditResult.create({ module_id: moduleId, bet_key: '__progress__', result_json: '{}', progress });
+    }
+  } catch (e) {}
+}
+
+async function loadFromDb(moduleId) {
+  try {
+    const rows = await base44.entities.CertAuditResult.filter({ module_id: moduleId });
+    if (!rows || rows.length === 0) return null;
+    const results = {};
+    let progress = 0;
+    rows.forEach(row => {
+      if (row.bet_key === '__progress__') {
+        progress = row.progress || 0;
+      } else {
+        try { results[row.bet_key] = JSON.parse(row.result_json); } catch {}
+      }
+    });
+    return { results, progress };
+  } catch (e) { return null; }
+}
+
+async function clearFromDb(moduleId) {
+  try {
+    const rows = await base44.entities.CertAuditResult.filter({ module_id: moduleId });
+    if (rows && rows.length > 0) {
+      await Promise.all(rows.map(r => base44.entities.CertAuditResult.delete(r.id)));
+    }
+  } catch (e) {}
+}
+
+async function migrateLocalStorageToDb(moduleId) {
+  const { results, progress } = loadFromStorage(moduleId);
+  if (Object.keys(results).length === 0) return;
+  // Check if DB already has data for this module
+  try {
+    const existing = await base44.entities.CertAuditResult.filter({ module_id: moduleId });
+    if (existing && existing.length > 0) return; // already migrated
+  } catch { return; }
+  // Save each result to DB
+  for (const [betKey, result] of Object.entries(results)) {
+    await saveResultToDb(moduleId, betKey, result);
+  }
+  await saveProgressToDb(moduleId, progress);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function StatusIcon({ status }) {
   if (status === 'pass') return <CheckCircle2 className="w-4 h-4 text-green-400" />;
   if (status === 'fail') return <XCircle className="w-4 h-4 text-red-400" />;
@@ -214,6 +280,31 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
   const [results, setResults] = useState(() => loadFromStorage(module.id).results);
   const onResultsChangeRef = useRef(onResultsChange);
   useEffect(() => { onResultsChangeRef.current = onResultsChange; }, [onResultsChange]);
+
+  // On mount: migrate localStorage → DB, then load from DB if localStorage is empty
+  useEffect(() => {
+    const init = async () => {
+      const local = loadFromStorage(module.id);
+      if (Object.keys(local.results).length > 0) {
+        // Migrate existing local data to DB silently
+        migrateLocalStorageToDb(module.id);
+      } else {
+        // localStorage empty — try loading from DB
+        const dbData = await loadFromDb(module.id);
+        if (dbData && Object.keys(dbData.results).length > 0) {
+          setResults(dbData.results);
+          setProgress(dbData.progress);
+          // Restore to localStorage
+          try {
+            localStorage.setItem(getStorageKeys(module.id).results, JSON.stringify(dbData.results));
+            localStorage.setItem(getStorageKeys(module.id).progress, String(dbData.progress));
+          } catch {}
+          onResultsChangeRef.current?.(module.id, dbData.results);
+        }
+      }
+    };
+    init();
+  }, [module.id]);
   const [currentBet, setCurrentBet] = useState('');
   const [betProgress, setBetProgress] = useState(0);
   const [betDone, setBetDone] = useState(0);
@@ -338,12 +429,15 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
             onResultsChangeRef.current?.(module.id, updated);
             return updated;
           });
+          // Also persist to database
+          saveResultToDb(module.id, betKey, res);
           const newProgress = i + 1;
           setProgress(newProgress);
           setBetProgress(0);
           setBetWins(0);
           setBetDone(0);
           try { localStorage.setItem(getStorageKeys(module.id).progress, String(newProgress)); } catch {}
+          saveProgressToDb(module.id, newProgress);
           showSaving();
         }
       } catch (err) {
@@ -424,6 +518,8 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
           onResultsChangeRef.current?.(module.id, updated);
           return updated;
         });
+        // Also persist to database
+        saveResultToDb(module.id, betKey, res);
         showSaving();
       }
     } catch (err) {
@@ -460,6 +556,7 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
     setResults({});
     setProgress(0);
     clearFromStorage(module.id);
+    clearFromDb(module.id);
     onResultsChange?.(module.id, {});
   };
 
@@ -814,7 +911,7 @@ export default function CertificationAudit() {
   const hasAnyResults = totalDone > 0;
 
   const clearAll = () => {
-    MODULES.forEach(m => clearFromStorage(m.id));
+    MODULES.forEach(m => { clearFromStorage(m.id); clearFromDb(m.id); });
     setModuleResults(() => {
       const out = {};
       MODULES.forEach(m => { out[m.id] = { results: {}, progress: 0 }; });

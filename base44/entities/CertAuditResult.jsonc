@@ -1,0 +1,27 @@
+{
+  "name": "CertAuditResult",
+  "type": "object",
+  "properties": {
+    "module_id": {
+      "type": "string",
+      "description": "Module identifier: quick, presubmission, gli, full"
+    },
+    "bet_key": {
+      "type": "string",
+      "description": "Bet key e.g. hand:1, perHandRank:1:Full House, color:3R"
+    },
+    "result_json": {
+      "type": "string",
+      "description": "JSON stringified result object"
+    },
+    "progress": {
+      "type": "number",
+      "description": "Number of bets completed for this module"
+    }
+  },
+  "required": [
+    "module_id",
+    "bet_key",
+    "result_json"
+  ]
+}
