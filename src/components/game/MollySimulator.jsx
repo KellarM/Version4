@@ -104,12 +104,12 @@ function ModulePanel({ module }) {
   async function loadJobFromDb() {
     setLoading(true);
     try {
-      const res = await base44.functions.manageSimulationJob({ action: 'list' });
+      const res = await base44.functions.invoke('manageSimulationJob', { action: 'list' });
       const existing = res.jobs?.find(j => j.module_id === module.id);
       if (existing) {
         setJob(existing);
         // Load bet results
-        const statusRes = await base44.functions.manageSimulationJob({ action: 'status', job_id: existing.id });
+        const statusRes = await base44.functions.invoke('manageSimulationJob', { action: 'status', job_id: existing.id });
         const resultMap = {};
         for (const r of (statusRes.results || [])) {
           resultMap[r.bet_key] = r;
@@ -143,7 +143,7 @@ function ModulePanel({ module }) {
     // Create job if doesn't exist
     if (!currentJob) {
       try {
-        const res = await base44.functions.manageSimulationJob({
+        const res = await base44.functions.invoke('manageSimulationJob', {
           action: 'create',
           module_id: module.id,
           module_name: module.name,
@@ -163,7 +163,7 @@ function ModulePanel({ module }) {
       }
     } else {
       // Mark as running
-      await base44.functions.manageSimulationJob({
+      await base44.functions.invoke('manageSimulationJob', {
         action: 'update', job_id: currentJob.id, status: 'running',
       });
     }
@@ -206,7 +206,7 @@ function ModulePanel({ module }) {
 
       while (!complete && !abortRef.current) {
         try {
-          const res = await base44.functions.runSimulationBet({
+          const res = await base44.functions.invoke('runSimulationBet', {
             job_id: currentJob.id,
             bet_result_id: betResultId,
             rounds: module.rounds,
@@ -264,7 +264,7 @@ function ModulePanel({ module }) {
 
         // Update job progress
         const blendedRtp = betsComplete > 0 ? totalRtp / betsComplete : null;
-        await base44.functions.manageSimulationJob({
+        await base44.functions.invoke('manageSimulationJob', {
           action: 'update',
           job_id: currentJob.id,
           status: abortRef.current ? 'paused' : 'running',
@@ -287,7 +287,7 @@ function ModulePanel({ module }) {
     // Finalize job
     if (!abortRef.current && betsComplete === ALL_BETS.length) {
       const blendedRtp = betsComplete > 0 ? totalRtp / betsComplete : null;
-      await base44.functions.manageSimulationJob({
+      await base44.functions.invoke('manageSimulationJob', {
         action: 'update',
         job_id: currentJob.id,
         status: 'complete',
@@ -299,7 +299,7 @@ function ModulePanel({ module }) {
       });
       setJob(prev => ({ ...prev, status: 'complete', blended_rtp: blendedRtp }));
     } else if (abortRef.current) {
-      await base44.functions.manageSimulationJob({
+      await base44.functions.invoke('manageSimulationJob', {
         action: 'update', job_id: currentJob.id, status: 'paused',
       });
       setJob(prev => ({ ...prev, status: 'paused' }));
@@ -318,7 +318,7 @@ function ModulePanel({ module }) {
   async function deleteJob() {
     if (!job) return;
     if (!confirm(`Delete all ${module.name} results? This cannot be undone.`)) return;
-    await base44.functions.manageSimulationJob({ action: 'delete', job_id: job.id });
+    await base44.functions.invoke('manageSimulationJob', { action: 'delete', job_id: job.id });
     setJob(null);
     setResults({});
   }
