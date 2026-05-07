@@ -567,36 +567,56 @@ Deno.serve(async (req) => {
       // ── 4-HAND PLAYERS ────────────────────────────────────────────
 
       KS4_SteadyHolder: {
-        name: 'KS4: Steady Holder (same 4 hands every round)',
-        execute: (balance) => {
-          // Always bets the same 4 hands — no adaptation, pure coverage
-          // Hands: H1(14.51x) H3(10.98x) H10(9.30x) H4(6.75x) — top 4 by payout
+        name: 'KS4: Steady Holder (rotates 4 combination sets each round)',
+        execute: (balance, game) => {
+          // Cycles through 4 predefined combination-heavy hand sets each round.
+          // Combos favour suited/connected hands rather than pure payout ranking.
+          // Set 0: H2(KK) H6(8♦6♦) H7(77) H8(42)
+          // Set 1: H4(Q♠10♠) H5(J♣9♣) H6(8♦6♦) H8(42)
+          // Set 2: H2(KK) H7(77) H8(42) H9(33)
+          // Set 3: H6(8♦6♦) H7(77) H8(42) H9(33)
+          const COMBOS = [
+            [2, 6, 7, 8],
+            [4, 5, 6, 8],
+            [2, 7, 8, 9],
+            [6, 7, 8, 9],
+          ];
           if (balance < 5) return null;
           const unit = balance < 200 ? Math.floor(balance / 5) : 40;
           if (unit < 1 || balance < unit * 4) return null;
+          const combo = COMBOS[game % 4]; // rotate set each round
           const bets = {};
-          [1, 3, 10, 4].forEach(id => { bets[`h${id}`] = unit; });
-          bets._killSwitch = true; // flag for settlement enforcement
+          combo.forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
           return { bets, balance };
         },
       },
 
       KS4_SteadySwapper: {
-        name: 'KS4: Steady Swapper (holds 4, swaps 1 based on last win)',
+        name: 'KS4: Steady Swapper (H1+H10 anchor, slots 3&4 chase last 2 winners)',
         execute: (balance, game, wins, losses, history) => {
-          // Holds a core set of 3 high-payout hands, swaps the 4th slot
-          // to whichever hand won last round (chasing recent heat)
+          // Core anchor: H1(A♦10♥) + H10(A♥5♦) — both aces, locked in every round.
+          // Slots 3 & 4 filled by the last 2 different winning hand IDs seen.
+          // Falls back to H4 then H5 if history is thin.
           if (balance < 5) return null;
           const unit = balance < 200 ? Math.floor(balance / 5) : 40;
           if (unit < 1 || balance < unit * 4) return null;
+          const core = [1, 10];
+          // Track last 2 distinct winning hand IDs (stored on history array)
+          const h = history as any;
+          const lastWin1 = h._lastWinHandId  || 4;
+          const lastWin2 = h._lastWinHandId2 || 5;
+          // Build swap slots — must not duplicate core or each other
+          const swapCandidates = [lastWin1, lastWin2, 4, 5, 3, 6, 7, 8, 9, 2];
+          const slots: number[] = [];
+          for (const id of swapCandidates) {
+            if (!core.includes(id) && !slots.includes(id)) {
+              slots.push(id);
+              if (slots.length === 2) break;
+            }
+          }
           const bets = {};
-          // Core 3: H1, H3, H10 (top 3 by payout odds)
-          const core = [1, 3, 10];
-          // Swap slot: default H4, but track last winning hand via history
-          // We encode last winning hand id as a property on the history array
-          const lastWinId = (history as any)._lastWinHandId || 4;
-          const swapId = core.includes(lastWinId) ? 4 : lastWinId;
-          [...core, swapId].forEach(id => { bets[`h${id}`] = unit; });
+          [...core, ...slots].forEach(id => { bets[`h${id}`] = unit; });
           bets._killSwitch = true;
           return { bets, balance };
         },
@@ -968,7 +988,14 @@ Deno.serve(async (req) => {
       }
 
       // Track last winning hand + kill-switch loss streaks for adaptive strategies
-      (recentGameHistory as any)._lastWinHandId = gameWon ? winningHand : ((recentGameHistory as any)._lastWinHandId || 1);
+      // Track last 2 distinct winning hand IDs for adaptive strategies
+      if (gameWon) {
+        const prev1 = (recentGameHistory as any)._lastWinHandId || null;
+        if (prev1 !== winningHand) {
+          (recentGameHistory as any)._lastWinHandId2 = prev1; // shift old #1 to #2
+        }
+        (recentGameHistory as any)._lastWinHandId = winningHand;
+      }
       if (killSwitchActive) {
         if (gameWon) {
           (recentGameHistory as any)._lossStreak4 = 0;
