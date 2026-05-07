@@ -35,6 +35,7 @@ import { useGreedEngineState } from '@/components/game/GreedEngine';
 import MollySimulator from '@/components/game/MollySimulator';
 import ArchetypeBattle from '@/components/game/ArchetypeBattle';
 import ExploitHunter from '@/components/game/IndividualStrategyTest';
+import KillSwitchStrategyTest from '@/components/game/KillSwitchStrategyTest';
 import RegulatoryComplianceReport from '@/components/game/TwoHandRankTest';
 
 import GameTimingModal from '@/components/game/GameTimingModal';
@@ -102,6 +103,7 @@ export default function RapidFireGame() {
   const [showArchetypeBattle, setShowArchetypeBattle] = useState(false);
   const [showExploitHunter, setShowExploitHunter] = useState(false);
   const [showComplianceReport, setShowComplianceReport] = useState(false);
+  const [showKsStrategyTest, setShowKsStrategyTest] = useState(false);
   
   const [showGameTiming, setShowGameTiming] = useState(false);
   const [toolbarVisible, setToolbarVisible] = useState(false);
@@ -1425,10 +1427,10 @@ export default function RapidFireGame() {
         }
       </AnimatePresence>
 
-      {/* (placeholder kept for layout) */}
+      {/* Kill-Switch Strategy Test */}
       <AnimatePresence>
-        
-        
+        {showKsStrategyTest &&
+        <KillSwitchStrategyTest onClose={() => setShowKsStrategyTest(false)} />
         }
       </AnimatePresence>
 
@@ -1638,7 +1640,7 @@ export default function RapidFireGame() {
             )}
 
             {/* Tools */}
-            <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenMollySimulator={() => setShowMollySimulator(true)} onOpenArchetypeBattle={() => setShowArchetypeBattle(true)} onOpenExploitHunter={() => setShowExploitHunter(true)} onOpenComplianceReport={() => setShowComplianceReport(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
+            <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenMollySimulator={() => setShowMollySimulator(true)} onOpenArchetypeBattle={() => setShowArchetypeBattle(true)} onOpenExploitHunter={() => setShowExploitHunter(true)} onOpenComplianceReport={() => setShowComplianceReport(true)} onOpenKsStrategyTest={() => setShowKsStrategyTest(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
 
             {/* Game Rules — far right */}
             <div className="border-l border-yellow-700/20 pl-2 flex-shrink-0">

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Wrench, BarChart2, Award, PieChart, Layers, Database, Timer, Users, ShieldAlert, FileText } from 'lucide-react';
+import { Wrench, BarChart2, Award, PieChart, Layers, Database, Timer, Users, ShieldAlert, FileText, Swords } from 'lucide-react';
 
 const TOOLS = [
   { icon: BarChart2,  label: 'Player Stats',               type: 'stats'           },
@@ -8,6 +8,7 @@ const TOOLS = [
   { icon: Users,      label: 'Archetype Battle',           type: 'archetypeBattle', badge: 'NEW', badgeColor: 'bg-purple-700/60 text-purple-300 border-purple-600/40' },
   { icon: ShieldAlert,label: 'Exploit Hunter',             type: 'exploitHunter',  badge: 'NEW', badgeColor: 'bg-red-700/60 text-red-300 border-red-600/40' },
   { icon: FileText,   label: 'Compliance Report',          type: 'complianceReport', badge: 'NEW', badgeColor: 'bg-green-700/60 text-green-300 border-green-600/40' },
+  { icon: Swords,     label: 'KS Strategy Test',            type: 'ksStrategyTest',   badge: 'NEW', badgeColor: 'bg-purple-700/60 text-purple-300 border-purple-600/40' },
   { icon: Award,      label: 'Gaming License Calibration', href: '/gaming-license' },
   { icon: PieChart,   label: 'Game Stats',                 href: '/game-stats'     },
   { icon: Layers,     label: 'Deck Inspector',             href: '/deck-inspector' },
@@ -20,6 +21,7 @@ export default function ToolsMenu({
   onOpenArchetypeBattle,
   onOpenExploitHunter,
   onOpenComplianceReport,
+  onOpenKsStrategyTest,
   onOpenGameTiming,
   toolsVisible = true,
 }) {
@@ -44,8 +46,9 @@ export default function ToolsMenu({
     mollySimulator:   onOpenMollySimulator,
     archetypeBattle:  onOpenArchetypeBattle,
     exploitHunter:    onOpenExploitHunter,
-    complianceReport: onOpenComplianceReport,
-    gameTiming:       onOpenGameTiming,
+    complianceReport:  onOpenComplianceReport,
+    ksStrategyTest:   onOpenKsStrategyTest,
+    gameTiming:        onOpenGameTiming,
   };
 
   return (
