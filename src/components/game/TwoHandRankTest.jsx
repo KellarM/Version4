@@ -51,9 +51,9 @@ export default function RegulatoryComplianceReport({ onClose }) {
     setLoading(true);
     try {
       const res = await base44.functions.invoke('manageSimulationJob', { action: 'list' });
-      setJobs(res.jobs || []);
+      setJobs(res.data?.jobs || []);
       // Auto-select most complete job
-      const best = (res.jobs||[]).sort((a,b)=>(b.bets_complete||0)-(a.bets_complete||0))[0];
+      const best = (res.data?.jobs||[]).sort((a,b)=>(b.bets_complete||0)-(a.bets_complete||0))[0];
       if (best) selectJob(best);
     } catch(e) { console.error(e); }
     setLoading(false);
@@ -64,7 +64,7 @@ export default function RegulatoryComplianceReport({ onClose }) {
     setJobDetail(null);
     try {
       const res = await base44.functions.invoke('manageSimulationJob', { action:'status', job_id: job.id });
-      setJobDetail(res);
+      setJobDetail(res.data);
     } catch(e) { console.error(e); }
   }
 
