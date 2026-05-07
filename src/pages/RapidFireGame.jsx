@@ -30,10 +30,13 @@ import DetailedPayoutDisplay from '@/components/game/DetailedPayoutDisplay';
 import HandBetLimitAlert from '@/components/game/HandBetLimitAlert';
 import RankBetLimitAlert from '@/components/game/RankBetLimitAlert';
 import InsufficientFundsAlert from '@/components/game/InsufficientFundsAlert';
-import { useGreedEngineState } from '@/components/game/GreedEngine';
 import AutoTrimToast from '@/components/game/AutoTrimToast';
-import IndividualStrategyTest from '@/components/game/IndividualStrategyTest';
-import TwoHandRankTest from '@/components/game/TwoHandRankTest';
+import { useGreedEngineState } from '@/components/game/GreedEngine';
+import MollySimulator from '@/components/game/MollySimulator';
+import ArchetypeBattle from '@/components/game/ArchetypeBattle';
+import ExploitHunter from '@/components/game/IndividualStrategyTest';
+import RegulatoryComplianceReport from '@/components/game/TwoHandRankTest';
+
 import GameTimingModal from '@/components/game/GameTimingModal';
 import CountdownClock from '@/components/game/CountdownClock';
 import { useGameTiming } from '@/hooks/useGameTiming';
@@ -95,8 +98,11 @@ export default function RapidFireGame() {
   const [history, setHistory] = useState([]);
   const [playerStats, setPlayerStats] = useState({});
   const [showStatsPanel, setShowStatsPanel] = useState(false);
-  const [showStrategyTest, setShowStrategyTest] = useState(false);
-  const [showTwoHandTest, setShowTwoHandTest] = useState(false);
+  const [showMollySimulator, setShowMollySimulator] = useState(false);
+  const [showArchetypeBattle, setShowArchetypeBattle] = useState(false);
+  const [showExploitHunter, setShowExploitHunter] = useState(false);
+  const [showComplianceReport, setShowComplianceReport] = useState(false);
+  
   const [showGameTiming, setShowGameTiming] = useState(false);
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const [showPlayerSelector, setShowPlayerSelector] = useState(true);
@@ -1391,17 +1397,38 @@ export default function RapidFireGame() {
         playerCount={playerCount} />
       
 
-      {/* Individual Strategy Test */}
+      {/* Molly Simulator */}
       <AnimatePresence>
-        {showStrategyTest &&
-        <IndividualStrategyTest onClose={() => setShowStrategyTest(false)} />
+        {showMollySimulator &&
+        <MollySimulator onClose={() => setShowMollySimulator(false)} />
         }
       </AnimatePresence>
 
-      {/* 2 Hand/Rank Test */}
+      {/* Archetype Battle */}
       <AnimatePresence>
-        {showTwoHandTest &&
-        <TwoHandRankTest onClose={() => setShowTwoHandTest(false)} />
+        {showArchetypeBattle &&
+        <ArchetypeBattle onClose={() => setShowArchetypeBattle(false)} />
+        }
+      </AnimatePresence>
+
+      {/* Exploit Hunter */}
+      <AnimatePresence>
+        {showExploitHunter &&
+        <ExploitHunter onClose={() => setShowExploitHunter(false)} />
+        }
+      </AnimatePresence>
+
+      {/* Compliance Report */}
+      <AnimatePresence>
+        {showComplianceReport &&
+        <RegulatoryComplianceReport onClose={() => setShowComplianceReport(false)} />
+        }
+      </AnimatePresence>
+
+      {/* (placeholder kept for layout) */}
+      <AnimatePresence>
+        
+        
         }
       </AnimatePresence>
 
@@ -1611,7 +1638,7 @@ export default function RapidFireGame() {
             )}
 
             {/* Tools */}
-            <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenStrategyTest={() => setShowStrategyTest(true)} onOpenTwoHandTest={() => setShowTwoHandTest(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
+            <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenMollySimulator={() => setShowMollySimulator(true)} onOpenArchetypeBattle={() => setShowArchetypeBattle(true)} onOpenExploitHunter={() => setShowExploitHunter(true)} onOpenComplianceReport={() => setShowComplianceReport(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
 
             {/* Game Rules — far right */}
             <div className="border-l border-yellow-700/20 pl-2 flex-shrink-0">
