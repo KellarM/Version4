@@ -557,6 +557,209 @@ Deno.serve(async (req) => {
           return { bets, balance };
         },
       },
+    // ═══════════════════════════════════════════════════════════════
+      // KILL-SWITCH SUITE — 3 and 4 hand players
+      // Rank / Color / River boards are LOCKED when handCount >= 3.
+      // These players know this and play hand-only coverage strategies.
+      // Kill switch is enforced in settlement below.
+      // ═══════════════════════════════════════════════════════════════
+
+      // ── 4-HAND PLAYERS ────────────────────────────────────────────
+
+      KS4_SteadyHolder: {
+        name: 'KS4: Steady Holder (same 4 hands every round)',
+        execute: (balance) => {
+          // Always bets the same 4 hands — no adaptation, pure coverage
+          // Hands: H1(14.51x) H3(10.98x) H10(9.30x) H4(6.75x) — top 4 by payout
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 5) : 40;
+          if (unit < 1 || balance < unit * 4) return null;
+          const bets = {};
+          [1, 3, 10, 4].forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true; // flag for settlement enforcement
+          return { bets, balance };
+        },
+      },
+
+      KS4_SteadySwapper: {
+        name: 'KS4: Steady Swapper (holds 4, swaps 1 based on last win)',
+        execute: (balance, game, wins, losses, history) => {
+          // Holds a core set of 3 high-payout hands, swaps the 4th slot
+          // to whichever hand won last round (chasing recent heat)
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 5) : 40;
+          if (unit < 1 || balance < unit * 4) return null;
+          const bets = {};
+          // Core 3: H1, H3, H10 (top 3 by payout odds)
+          const core = [1, 3, 10];
+          // Swap slot: default H4, but track last winning hand via history
+          // We encode last winning hand id as a property on the history array
+          const lastWinId = (history as any)._lastWinHandId || 4;
+          const swapId = core.includes(lastWinId) ? 4 : lastWinId;
+          [...core, swapId].forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
+          return { bets, balance };
+        },
+      },
+
+      KS4_TopPayoutAdaptive: {
+        name: 'KS4: Top Payout Adaptive (top 4 payouts, rotates on last win)',
+        execute: (balance, game, wins, losses, history) => {
+          // Ranks hands by payout. Picks top 4. After each loss, drops the
+          // lowest-payout hand in the set and tries the next one down.
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 5) : 40;
+          if (unit < 1 || balance < unit * 4) return null;
+          const HAND_PAYOUTS = [
+            {id:1,p:14.51},{id:3,p:10.98},{id:10,p:9.30},{id:4,p:6.75},
+            {id:5,p:5.63},{id:8,p:4.69},{id:6,p:4.48},{id:9,p:4.11},
+            {id:7,p:4.04},{id:2,p:4.21},
+          ].sort((a,b) => b.p - a.p);
+          // Offset rotates after consecutive losses (shifts window down by 1)
+          const lossStreak = (history as any)._lossStreak4 || 0;
+          const offset = Math.min(lossStreak, 6); // max shift = 6
+          const selected = HAND_PAYOUTS.slice(offset, offset + 4).map(h => h.id);
+          const bets = {};
+          selected.forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
+          return { bets, balance };
+        },
+      },
+
+      KS4_RandomMixer: {
+        name: 'KS4: Random Mixer (shuffles 4 different hands each round)',
+        execute: (balance) => {
+          // Picks 4 completely random (non-repeating) hands each round
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 5) : 40;
+          if (unit < 1 || balance < unit * 4) return null;
+          const pool = [1,2,3,4,5,6,7,8,9,10];
+          for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+          }
+          const selected = pool.slice(0, 4);
+          const bets = {};
+          selected.forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
+          return { bets, balance };
+        },
+      },
+
+      KS4_FrequencyChaser: {
+        name: 'KS4: Frequency Chaser (4 hands by win-rate, not payout)',
+        execute: (balance) => {
+          // Bets hands most likely to WIN (highest win frequency), not highest payout.
+          // Pairs dominate win frequency on a 32-card deck.
+          // H2(KK), H7(77), H9(33), H6(8♦6♦) — all pairs, win more often
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 5) : 40;
+          if (unit < 1 || balance < unit * 4) return null;
+          const bets = {};
+          [2, 7, 9, 6].forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
+          return { bets, balance };
+        },
+      },
+
+      KS4_ValueBalance: {
+        name: 'KS4: Value Balance (2 high payout + 2 high frequency)',
+        execute: (balance) => {
+          // Hybrid: 2 high-payout hands (H1, H3) + 2 high-frequency pair hands (H2, H7)
+          // Attempts to balance big win probability with hit frequency
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 5) : 40;
+          if (unit < 1 || balance < unit * 4) return null;
+          const bets = {};
+          [1, 3, 2, 7].forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
+          return { bets, balance };
+        },
+      },
+
+      // ── 3-HAND PLAYERS ────────────────────────────────────────────
+
+      KS3_TopThreeSteady: {
+        name: 'KS3: Top 3 Steady (same top 3 payout hands every round)',
+        execute: (balance) => {
+          // Always bets H1(14.51x), H3(10.98x), H10(9.30x) — no deviation
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 4) : 50;
+          if (unit < 1 || balance < unit * 3) return null;
+          const bets = {};
+          [1, 3, 10].forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
+          return { bets, balance };
+        },
+      },
+
+      KS3_LastWinChaser: {
+        name: 'KS3: Last Win Chaser (holds 2 steady, chases last winner)',
+        execute: (balance, game, wins, losses, history) => {
+          // Core 2: H1, H3. 3rd slot = last round's winning hand (default H10)
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 4) : 50;
+          if (unit < 1 || balance < unit * 3) return null;
+          const lastWinId = (history as any)._lastWinHandId || 10;
+          const core = [1, 3];
+          const thirdId = core.includes(lastWinId) ? 10 : lastWinId;
+          const bets = {};
+          [...core, thirdId].forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
+          return { bets, balance };
+        },
+      },
+
+      KS3_RandomMixer: {
+        name: 'KS3: Random Mixer (3 random hands every round)',
+        execute: (balance) => {
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 4) : 50;
+          if (unit < 1 || balance < unit * 3) return null;
+          const pool = [1,2,3,4,5,6,7,8,9,10];
+          for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+          }
+          const bets = {};
+          pool.slice(0, 3).forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
+          return { bets, balance };
+        },
+      },
+
+      KS3_Payout3Adaptive: {
+        name: 'KS3: Payout Adaptive (rotates top 3 window after loss streaks)',
+        execute: (balance, game, wins, losses, history) => {
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 4) : 50;
+          if (unit < 1 || balance < unit * 3) return null;
+          const SORTED = [1,3,10,4,5,8,6,9,7,2]; // sorted by payout desc
+          const lossStreak = (history as any)._lossStreak3 || 0;
+          const offset = Math.min(lossStreak, 7);
+          const selected = SORTED.slice(offset, offset + 3);
+          const bets = {};
+          selected.forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
+          return { bets, balance };
+        },
+      },
+
+      KS3_PairSpecialist: {
+        name: 'KS3: Pair Specialist (3 pair hands for max win frequency)',
+        execute: (balance) => {
+          // All 3 pocket pairs: H2(KK 4.21x), H7(77 4.04x), H9(33 4.11x)
+          // Lowest payouts but highest win frequency — test pure hit-rate coverage
+          if (balance < 5) return null;
+          const unit = balance < 200 ? Math.floor(balance / 4) : 50;
+          if (unit < 1 || balance < unit * 3) return null;
+          const bets = {};
+          [2, 7, 9].forEach(id => { bets[`h${id}`] = unit; });
+          bets._killSwitch = true;
+          return { bets, balance };
+        },
+      },
+
     };
 
     const strategy = strategies[strategyName];
@@ -589,6 +792,20 @@ Deno.serve(async (req) => {
       const gameResult = strategy.execute(balance, game, winCount, lossCount, recentGameHistory);
       if (!gameResult || Object.keys(gameResult.bets).length === 0) break; // Strategy can't afford bets
       const { bets } = gameResult;
+
+      // ── Kill-switch enforcement ──────────────────────────────────
+      // Count how many hand slots are being bet (keys starting with 'h')
+      const handBetIds = Object.keys(bets).filter(k => k.startsWith('h') && typeof bets[k] === 'number' && bets[k] > 0);
+      const handCount = handBetIds.length;
+      const killSwitchActive = handCount >= 3; // 3+ hands = rank/color/river locked
+      if (killSwitchActive) {
+        // Zero out any rank/color/river bets — boards are locked
+        Object.keys(bets).forEach(k => {
+          if (k.startsWith('r') || k.startsWith('c') || k === 'riverHedge' || k === 'riverAggressive') {
+            bets[k] = 0;
+          }
+        });
+      }
 
       // Calculate total bet — all numeric values in bets (hands, ranks, colors, riverHedge, riverAggressive)
       let totalBet = 0;
@@ -750,6 +967,17 @@ Deno.serve(async (req) => {
         maxLossStreak = Math.max(maxLossStreak, currentLossStreak);
       }
 
+      // Track last winning hand + kill-switch loss streaks for adaptive strategies
+      (recentGameHistory as any)._lastWinHandId = gameWon ? winningHand : ((recentGameHistory as any)._lastWinHandId || 1);
+      if (killSwitchActive) {
+        if (gameWon) {
+          (recentGameHistory as any)._lossStreak4 = 0;
+          (recentGameHistory as any)._lossStreak3 = 0;
+        } else {
+          (recentGameHistory as any)._lossStreak4 = ((recentGameHistory as any)._lossStreak4 || 0) + 1;
+          (recentGameHistory as any)._lossStreak3 = ((recentGameHistory as any)._lossStreak3 || 0) + 1;
+        }
+      }
       recentGameHistory.push(gameWon);
       if (recentGameHistory.length > 100) recentGameHistory.shift();
 
@@ -787,6 +1015,8 @@ Deno.serve(async (req) => {
              turn: `${turn.rank}${SUITS[turn.suit]}`,
              river: `${river.rank}${SUITS[river.suit]}`,
            },
+           killSwitchActive,
+           handCount,
            winningPositions: {
              hand: `H${winningHand} ${winningHand_.cards[0].rank}${SUITS[winningHand_.cards[0].suit]} / ${winningHand_.cards[1].rank}${SUITS[winningHand_.cards[1].suit]}`,
              rank: gameRank,
@@ -805,6 +1035,13 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       strategyName,
+      strategyFriendlyName: strategy.name,
+      killSwitchSuite: strategyName.startsWith('KS'),
+      availableStrategies: Object.entries(strategies).map(([k, s]) => ({
+        key: k,
+        name: (s as any).name,
+        killSwitch: k.startsWith('KS'),
+      })),
       gamesToSimulate,
       gamesActuallyPlayed,
       stoppedEarly: gamesActuallyPlayed < gamesToSimulate,
