@@ -158,7 +158,7 @@ const RANK_CAT_MAP: Record<string,number> = {
 };
 
 const RANK_NAMES = [
-  'One Pair (no bet)','Two Pair','Three of a Kind','Straight','Flush',
+  'One Pair','Two Pair','Three of a Kind','Straight','Flush',
   'Full House','Four of a Kind','Straight Flush (no bet)','Royal Flush',
 ];
 

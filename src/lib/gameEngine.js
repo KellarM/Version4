@@ -397,11 +397,12 @@ export function isKillSwitchActive(handBetCount) {
 }
 
 // Phase 4 Gate: Color Board and River are unlocked ONLY when
-// total rank bets === total hand bets (sum equivalence).
+// total rank bets EXACTLY EQUAL total hand bets (strict equality).
+// If rank < hand or rank > hand, the gate is closed.
 export function isSideBetGateOpen(handBets, rankBets) {
   const totalHand = Object.values(handBets || {}).reduce((s, v) => s + v, 0);
   const totalRank = Object.values(rankBets || {}).reduce((s, v) => s + v, 0);
-  return totalHand > 0 && totalRank >= totalHand;
+  return totalHand > 0 && totalRank === totalHand;
 }
 
 // ============================================================

@@ -162,27 +162,29 @@ Deno.serve(async (req) => {
 
     const STARTING_BALANCE = 1000;
 
-    // Poker hand rank frequencies (from Texas Hold'em) — One Pair removed 2026-04-14
+    // Rank frequencies from 32-card deck empirical simulation
+    // One Pair is now a valid rank bet (isolation rule removed 2026-05-06)
     const RANK_FREQS = {
-      'Two Pair': 0.04754,
+      'One Pair':        0.28,
+      'Two Pair':        0.04754,
       'Three of a Kind': 0.02113,
-      'Straight': 0.00462,
-      'Flush': 0.00327,
-      'Full House': 0.00261,
-      'Four of a Kind': 0.00168,
-      'Royal Flush': 0.000154,
+      'Straight':        0.00462,
+      'Flush':           0.00327,
+      'Full House':      0.00261,
+      'Four of a Kind':  0.00168,
     };
 
-    // Rank payouts — calibrated from 10M real engine run (32-card deck empirical frequencies)
-    // One Pair removed — Two Pair is minimum qualifying rank
+    // Rank payouts — per-hand rank model (global average approximations for strategy simulation)
+    // One Pair is now a valid rank bet (isolation rule removed 2026-05-06)
+    // Royal Flush / Straight Flush: not valid bet positions
     const RANK_PAYOUTS = {
+      'One Pair':        28.0,
       'Two Pair':        16.76,
       'Three of a Kind': 3.95,
       'Straight':        5.02,
       'Flush':           3.10,
       'Full House':      2.53,
       'Four of a Kind':  12.43,
-      'Royal Flush':     null,   // Progressive jackpot
     };
 
     const COLOR_PAYOUTS = {
@@ -223,94 +225,98 @@ Deno.serve(async (req) => {
 
     // Strategy implementations
     const strategies = {
-      ST1_Original: {
-        name: 'ST1: Original (Hands 2,5,6,7,8,9)',
+      ST1_TwoHandRankRiver: {
+        name: 'ST1: Two Hands + Matching Rank + River',
         execute: (balance, game) => {
           if (balance < 5) return null;
           const bets = {};
-          const handBet = balance < 300 ? Math.floor(balance / 6) : 50;
+          // 2 hands + 2 ranks (equal amounts = gate open) + river
+          const handBet = balance < 200 ? Math.floor(balance / 6) : 30;
           if (handBet < 1) return null;
-          if (balance < handBet * 6) return null;
-          [2, 5, 6, 7, 8, 9].forEach(id => { bets[`h${id}`] = handBet; });
-          bets.riverHedge = handBet; // actual dollar amount
+          if (balance < handBet * 5) return null;
+          bets['h6'] = handBet; bets['h8'] = handBet;
+          bets['rFull House'] = handBet; bets['rFlush'] = handBet; // rank total === hand total → gate open
+          bets.riverHedge = handBet;
           return { bets, balance };
         },
       },
       ConservativeHedger: {
-        name: 'Conservative Hedger (4 hands + all colors)',
+        name: 'Conservative Hedger (2 hands + rank match + color)',
         execute: (balance) => {
-          if (balance < 5) return null; // Bankrupt threshold
+          if (balance < 5) return null;
           const bets = {};
+          // 2 hands + 2 ranks (equal amounts = gate open) + moderate color bets
           const handBet = balance < 200 ? Math.floor(balance / 8) : 25;
-          if (handBet < 1) return null; // Can't place meaningful bets
-          const totalBetsNeeded = (4 + 4) * handBet; // 4 hands + 4 colors
-          if (balance < totalBetsNeeded) return null; // Signal bankrupt
-          
-          [3, 6, 8, 10].forEach(id => { bets[`h${id}`] = handBet; });
+          if (handBet < 1) return null;
+          const totalBetsNeeded = (2 + 2 + 4) * handBet; // 2 hands + 2 ranks + 4 colors
+          if (balance < totalBetsNeeded) return null;
+          bets['h3'] = handBet; bets['h10'] = handBet;
+          bets['rFull House'] = handBet; bets['rStraight'] = handBet; // rank === hand → gate open
           ['3R', '3B', '4R', '4B'].forEach(k => { bets[`c${k}`] = handBet; });
           return { bets, balance };
         },
       },
       RankStacker: {
-        name: 'Rank Stacker (High-freq ranks + 2 hands)',
+        name: 'Rank Stacker (2 hands + 2 high-freq ranks, gate open)',
         execute: (balance) => {
-          if (balance < 5) return null; // Bankrupt threshold
+          if (balance < 5) return null;
           const bets = {};
-          const handBet = balance < 200 ? Math.floor(balance / 7) : 30;
-          if (handBet < 1) return null; // Can't place meaningful bets
-          const totalBetsNeeded = (2 + 5) * handBet; // 2 hands + 5 ranks
+          // 2 hands × handBet, 2 ranks × handBet → rank total = hand total → gate open
+          const handBet = balance < 200 ? Math.floor(balance / 5) : 30;
+          if (handBet < 1) return null;
+          const totalBetsNeeded = 4 * handBet; // 2 hands + 2 ranks
           if (balance < totalBetsNeeded) return null;
-          
-          [6, 8].forEach(id => { bets[`h${id}`] = handBet; });
-          ['Two Pair', 'Three of a Kind', 'Straight', 'Full House'].forEach(r => {
-            bets[`r${r}`] = handBet;
-          });
+          bets['h6'] = handBet; bets['h8'] = handBet;
+          bets['rThree of a Kind'] = handBet; bets['rFull House'] = handBet;
           return { bets, balance };
         },
       },
       FlushHunter: {
-        name: 'Flush Hunter (Hands targeting flushes + Flush rank)',
+        name: 'Flush Hunter (1 hand + Flush rank match + river)',
         execute: (balance) => {
-          if (balance < 5) return null; // Bankrupt threshold
+          if (balance < 5) return null;
           const bets = {};
-          const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
-          if (handBet < 1) return null; // Can't place meaningful bets
-          const totalBetsNeeded = (2 + 1) * handBet; // 2 hands + 1 rank
+          // 1 hand + 1 rank (equal = gate open) + river
+          const handBet = balance < 150 ? Math.floor(balance / 4) : 50;
+          if (handBet < 1) return null;
+          const totalBetsNeeded = 3 * handBet; // 1 hand + 1 rank + 1 river
           if (balance < totalBetsNeeded) return null;
-          
-          [6, 8].forEach(id => { bets[`h${id}`] = handBet; });
-          bets['rFlush'] = handBet;
-          bets.riverHedge = handBet; // actual dollar amount
+          bets['h6'] = handBet;
+          bets['rFlush'] = handBet; // rank === hand → gate open
+          bets.riverHedge = handBet;
           return { bets, balance };
         },
       },
       StraightHunter: {
-        name: 'Straight Hunter (Hands targeting straights + Straight rank)',
+        name: 'Straight Hunter (2 hands + Straight rank split + river)',
         execute: (balance) => {
           if (balance < 5) return null;
           const bets = {};
-          const handBet = balance < 250 ? Math.floor(balance / 5) : 50;
-          if (handBet < 1) return null;
-          const totalBetsNeeded = (3 + 1) * handBet;
+          // 2 hands × half + 2 ranks × half = rank total === hand total → gate open
+          const halfBet = balance < 150 ? Math.floor(balance / 8) : 25;
+          if (halfBet < 1) return null;
+          const totalBetsNeeded = 4 * halfBet + halfBet; // 2h + 2r + river
           if (balance < totalBetsNeeded) return null;
-          [1, 5, 10].forEach(id => { bets[`h${id}`] = handBet; });
-          bets['rStraight'] = handBet;
-          bets.riverHedge = handBet; // actual dollar amount
+          bets['h1'] = halfBet; bets['h5'] = halfBet;
+          bets['rStraight'] = halfBet; bets['rTwo Pair'] = halfBet; // rank total === hand total → gate open
+          bets.riverHedge = halfBet;
           return { bets, balance };
         },
       },
       ColorBoardSpecialist: {
-        name: 'Color Specialist (Light hands + all colors)',
+        name: 'Color Specialist (2 hands + rank match + all colors + river)',
         execute: (balance) => {
           if (balance < 5) return null;
           const bets = {};
-          const handBet = balance < 200 ? Math.floor(balance / 9) : 20;
+          // 2 hands × handBet + 2 ranks × handBet (gate open) + all 6 colors + river
+          const handBet = balance < 200 ? Math.floor(balance / 11) : 20;
           if (handBet < 1) return null;
-          const totalBetsNeeded = (2 + 6) * handBet;
+          const totalBetsNeeded = (2 + 2 + 6 + 1) * handBet;
           if (balance < totalBetsNeeded) return null;
-          [1, 4].forEach(id => { bets[`h${id}`] = handBet; });
+          bets['h1'] = handBet; bets['h4'] = handBet;
+          bets['rFlush'] = handBet; bets['rStraight'] = handBet; // rank total === hand total → gate open
           ['3R', '3B', '4R', '4B', '5R', '5B'].forEach(c => { bets[`c${c}`] = handBet; });
-          bets.riverHedge = handBet; // actual dollar amount
+          bets.riverHedge = handBet;
           return { bets, balance };
         },
       },
@@ -332,48 +338,49 @@ Deno.serve(async (req) => {
         },
       },
       RiverFocused: {
-        name: 'River Focused (1 hand + aggressive river betting)',
+        name: 'River Focused (1 hand + rank match + aggressive river)',
         execute: (balance) => {
-          if (balance < 5) return null; // Bankrupt threshold
+          if (balance < 5) return null;
           const bets = {};
-          const handBet = balance < 100 ? Math.floor(balance / 2) : 50;
-          if (handBet < 1) return null; // Can't place meaningful bets
-          if (balance < handBet * 2) return null;
-          
+          // 1 hand + 1 rank (equal = gate open) + river
+          const handBet = balance < 100 ? Math.floor(balance / 3) : 50;
+          if (handBet < 1) return null;
+          if (balance < handBet * 3) return null;
           bets['h8'] = handBet;
-          bets.riverAggressive = handBet; // actual dollar amount
+          bets['rFull House'] = handBet; // rank total === hand total → gate open
+          bets.riverAggressive = handBet;
           return { bets, balance };
         },
       },
       BalancedSpread: {
-        name: 'Balanced Spread (Equal mix of all bets)',
+        name: 'Balanced Spread (2 hands + 2 ranks + 2 colors + river)',
         execute: (balance) => {
-          if (balance < 5) return null; // Bankrupt threshold
+          if (balance < 5) return null;
           const bets = {};
-          const smallBet = balance < 300 ? Math.floor(balance / 10) : 30;
-          if (smallBet < 1) return null; // Can't place meaningful bets
-          const totalBetsNeeded = (3 + 3 + 2) * smallBet; // 3 hands + 3 ranks + 2 colors
+          // 2 hands × smallBet + 2 ranks × smallBet (gate open) + 2 colors + river
+          const smallBet = balance < 300 ? Math.floor(balance / 8) : 30;
+          if (smallBet < 1) return null;
+          const totalBetsNeeded = (2 + 2 + 2 + 1) * smallBet;
           if (balance < totalBetsNeeded) return null;
-          
-          [2, 6, 8].forEach(id => { bets[`h${id}`] = smallBet; });
-          ['Flush', 'Straight'].forEach(r => { bets[`r${r}`] = smallBet; });
+          bets['h6'] = smallBet; bets['h8'] = smallBet;
+          bets['rFlush'] = smallBet; bets['rStraight'] = smallBet; // rank total === hand total → gate open
           ['3R', '4R'].forEach(c => { bets[`c${c}`] = smallBet; });
-          bets.riverHedge = smallBet; // actual dollar amount
+          bets.riverHedge = smallBet;
           return { bets, balance };
         },
       },
       DiversifiedHedge: {
-        name: 'Diversified Hedge (Many small bets, low variance)',
+        name: 'Diversified Hedge (2 hands + rank match + color, low variance)',
         execute: (balance) => {
-          if (balance < 5) return null; // Bankrupt threshold
+          if (balance < 5) return null;
           const bets = {};
-          const microBet = balance < 200 ? Math.floor(balance / 12) : 15;
-          if (microBet < 1) return null; // Can't place meaningful bets
-          const totalBetsNeeded = (6 + 2 + 2) * microBet; // 6 hands + 2 ranks + 2 colors
+          // 2 hands × microBet + 2 ranks × microBet (gate open) + 2 colors
+          const microBet = balance < 200 ? Math.floor(balance / 8) : 15;
+          if (microBet < 1) return null;
+          const totalBetsNeeded = (2 + 2 + 2) * microBet;
           if (balance < totalBetsNeeded) return null;
-          
-          [1, 3, 5, 7, 9, 10].forEach(id => { bets[`h${id}`] = microBet; });
-          ['Two Pair'].forEach(r => { bets[`r${r}`] = microBet; });
+          bets['h1'] = microBet; bets['h10'] = microBet;
+          bets['rTwo Pair'] = microBet; bets['rFull House'] = microBet; // rank total === hand total → gate open
           ['3R', '3B'].forEach(c => { bets[`c${c}`] = microBet; });
           return { bets, balance };
         },
@@ -385,26 +392,28 @@ Deno.serve(async (req) => {
           const bets = {};
           const winRate = previousWins + previousLosses > 0 ? previousWins / (previousWins + previousLosses) : 0;
           
-          // Hot streak: increase hand bets, reduce hedges
+          // Hot streak: 2 hands + matching rank (gate open) + river
           if (winRate > 0.55) {
-            const bet = Math.floor(balance / 4);
-            if (bet < 1 || balance < bet * 4) return null;
-            [2, 5, 6, 8].forEach(id => { bets[`h${id}`] = bet; });
+            const bet = Math.floor(balance / 5);
+            if (bet < 1 || balance < bet * 5) return null;
+            bets['h2'] = bet; bets['h8'] = bet;
+            bets['rFull House'] = bet; bets['rThree of a Kind'] = bet; // rank === hand → gate open
             bets.strategy = 'Hot Streak';
           }
-          // Cold streak: increase color/rank diversification
+          // Cold streak: 2 hands + rank match + color
           else if (winRate < 0.45) {
-            const bet = Math.floor(balance / 8);
-            if (bet < 1 || balance < bet * 8) return null;
-            [1, 4, 6, 9].forEach(id => { bets[`h${id}`] = bet; });
-            ['Two Pair'].forEach(r => { bets[`r${r}`] = bet; });
+            const bet = Math.floor(balance / 6);
+            if (bet < 1 || balance < bet * 6) return null;
+            bets['h6'] = bet; bets['h9'] = bet;
+            ['Two Pair', 'Full House'].forEach(r => { bets[`r${r}`] = bet; });
             bets.strategy = 'Cold Streak - Diversify';
           }
-          // Balanced: mix of hands and colors
+          // Balanced: 2 hands + rank match + color
           else {
             const bet = Math.floor(balance / 6);
             if (bet < 1 || balance < bet * 6) return null;
-            [2, 6, 8].forEach(id => { bets[`h${id}`] = bet; });
+            bets['h6'] = bet; bets['h8'] = bet;
+            bets['rFlush'] = bet; bets['rTwo Pair'] = bet; // rank total === hand total → gate open
             ['3R', '3B'].forEach(c => { bets[`c${c}`] = bet; });
             bets.strategy = 'Balanced';
           }

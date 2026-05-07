@@ -53,7 +53,8 @@ Deno.serve(async (req) => {
     ];
 
     const HAND_PAYOUTS = [14.51, 4.21, 10.98, 6.75, 5.63, 4.48, 4.04, 4.69, 4.11, 9.30];
-    // All ranks are fixed-odds — no progressives. Royal Flush and One Pair removed as betting positions.
+    // All ranks are fixed-odds — no progressives. Royal Flush and Straight Flush removed as betting positions.
+    // One Pair is now a valid rank bet (isolation rule removed 2026-05-06).
     const RANK_PAYOUTS_MAP = {
       'Four of a Kind':12.43,
       'Full House':2.53,'Flush':3.10,'Straight':5.02,
@@ -63,9 +64,9 @@ Deno.serve(async (req) => {
     const LH_PAYOUT = 0.93;
 
     // RANK_NAMES index matches hand evaluator output (0=OnePair … 8=RoyalFlush)
-    // One Pair (index 0) is no longer a valid bet position — Two Pair is minimum
+    // One Pair (index 0) is now a valid rank bet position
     const RANK_NAMES = [
-      'One Pair (no bet)','Two Pair','Three of a Kind','Straight','Flush',
+      'One Pair','Two Pair','Three of a Kind','Straight','Flush',
       'Full House','Four of a Kind','Straight Flush (no bet)','Royal Flush'
     ];
 

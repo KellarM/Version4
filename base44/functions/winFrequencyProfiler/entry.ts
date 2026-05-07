@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     ].map(h => h.map(c => encodeCard(RANK_NAMES_ARR.indexOf(c.r), ['spades','hearts','diamonds','clubs'].indexOf(c.s))));
 
     const CURRENT_HAND_PAYOUTS = [14.51,4.21,10.98,6.75,5.63,4.48,4.04,4.69,4.11,9.30];
-    // Royal Flush and One Pair removed as betting positions. Two Pair is minimum qualifying rank.
+    // Royal Flush and Straight Flush removed as betting positions. One Pair is now a valid rank bet (isolation rule removed 2026-05-06).
     const CURRENT_RANK_PAYOUTS_MAP = {
       'Two Pair':16.76,'Three of a Kind':3.95,
       'Straight':5.02,'Flush':3.10,'Full House':2.53,
@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     };
     const COLOR_PAYOUTS_MAP = {'3R':0.93,'4R':4.81,'5R':43.36,'3B':0.93,'4B':4.81,'5B':43.46};
 
-    const RANK_LABEL = ['High Card','One Pair (no bet)','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush (no bet)','Royal Flush'];
+    const RANK_LABEL = ['High Card','One Pair','Two Pair','Three of a Kind','Straight','Flush','Full House','Four of a Kind','Straight Flush (no bet)','Royal Flush'];
 
     // ── Ultra-fast 5-card evaluator (integer ops only, no arrays) ──
     function eval5(c0,c1,c2,c3,c4) {

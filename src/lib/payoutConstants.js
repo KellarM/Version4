@@ -12,12 +12,16 @@
  *   • Game Rules / How to Play modal
  *   • Simulation Worker (2-million-hand AGLC audit)
  *
- * BETTING CONSTRAINTS (Updated 2026-04-01):
- * - Max 2 Card Hand bets allowed when any Hand Rank bet is active
- * - 0 Card Hand bets: unlimited rank bets allowed
- * - 1–2 Card Hand bets: max 2 rank bets allowed
- * - 3+ Card Hand bets: all rank bets locked
+ * BETTING CONSTRAINTS (Updated 2026-05-06):
+ * - 0 Card Hand bets: rank board fully locked
+ * - 1 Card Hand bet: exactly 1 rank bet allowed
+ * - 2 Card Hand bets: up to 2 rank bets allowed
+ * - 3+ Card Hand bets: kill switch fires — all side markets locked
+ * - Rank bet total cannot exceed hand bet total
+ * - Color/River unlock: rank total must EXACTLY EQUAL hand total
+ * - Color max = hand + rank total; River max = hand + rank + color total
  * - All Hand Rank bets are fixed-odds — no progressives
+ * - One Pair isolation rule REMOVED (2026-05-06) — One Pair is a standard rank bet
  * - Minimum qualifying rank: One Pair
  * - Maximum qualifying rank: Four of a Kind (Straight Flush removed 2026-04-14)
  *
