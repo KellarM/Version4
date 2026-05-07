@@ -50,7 +50,7 @@ export default function RegulatoryComplianceReport({ onClose }) {
   async function loadJobs() {
     setLoading(true);
     try {
-      const res = await base44.functions.manageSimulationJob({ action: 'list' });
+      const res = await base44.functions.invoke('manageSimulationJob', { action: 'list' });
       setJobs(res.jobs || []);
       // Auto-select most complete job
       const best = (res.jobs||[]).sort((a,b)=>(b.bets_complete||0)-(a.bets_complete||0))[0];
@@ -63,7 +63,7 @@ export default function RegulatoryComplianceReport({ onClose }) {
     setSelectedJob(job);
     setJobDetail(null);
     try {
-      const res = await base44.functions.manageSimulationJob({ action:'status', job_id: job.id });
+      const res = await base44.functions.invoke('manageSimulationJob', { action:'status', job_id: job.id });
       setJobDetail(res);
     } catch(e) { console.error(e); }
   }
