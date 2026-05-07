@@ -105,13 +105,13 @@ function ModulePanel({ module }) {
     setLoading(true);
     try {
       const res = await base44.functions.invoke('manageSimulationJob', { action: 'list' });
-      const existing = res.jobs?.find(j => j.module_id === module.id);
+      const existing = (res.data?.jobs || []).find(j => j.module_id === module.id);
       if (existing) {
-        setJob(existing);
+        setJob(statusRes.data?.job || existing);
         // Load bet results
         const statusRes = await base44.functions.invoke('manageSimulationJob', { action: 'status', job_id: existing.id });
         const resultMap = {};
-        for (const r of (statusRes.results || [])) {
+        for (const r of (statusRes.data?.results || [])) {
           resultMap[r.bet_key] = r;
         }
         setResults(resultMap);
@@ -154,7 +154,7 @@ function ModulePanel({ module }) {
           standard: module.standard,
           payouts_snapshot: JSON.stringify(payouts),
         });
-        currentJob = res.job;
+        currentJob = res.data.job;
         setJob(currentJob);
       } catch (e) {
         console.error('Failed to create job:', e);
@@ -224,13 +224,13 @@ function ModulePanel({ module }) {
             module_id: module.id,
           });
 
-          betResultId = res.bet_result_id;
-          complete = res.complete;
-          lastResult = res;
+          betResultId = res.data?.bet_result_id;
+          complete = res.data?.complete;
+          lastResult = res.data;
 
           // Update progress display
-          if (res.progress) {
-            setCurrentProgress(res.progress.done / res.progress.total);
+          if (res.data?.progress) {
+            setCurrentProgress(res.data.progress.done / res.data.progress.total);
           }
 
           // Update local results with latest partial data
@@ -239,11 +239,11 @@ function ModulePanel({ module }) {
             [bet.betKey]: {
               ...prev[bet.betKey],
               id: betResultId,
-              rtp: res.rtp,
-              wins: res.wins,
-              actual_rounds: res.actualRounds,
-              win_frequency: res.winFrequency,
-              passed: res.passed,
+              rtp: res.data?.rtp,
+              wins: res.data?.wins,
+              actual_rounds: res.data?.actualRounds,
+              win_frequency: res.data?.winFrequency,
+              passed: res.data?.passed,
               checkpoint_data: complete ? null : 'pending',
             },
           }));
