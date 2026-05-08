@@ -126,7 +126,8 @@ function buildRoundCSV(rounds) {
 export default function Observer({
   isOpen, onClose,
   observeOn, onObserveToggle,
-  roundCount, onRoundCountChange
+  roundCount, onRoundCountChange,
+  onRoundSettledRef  // assigned by RapidFireGame so Observer can receive round data
 }) {
   const [securityOn, setSecurityOn]           = useState(false);
   const [analysis, setAnalysis]               = useState(null);
@@ -143,6 +144,22 @@ export default function Observer({
   const [expandExploit, setExpandExploit]     = useState(false);
   const [tab, setTab]                         = useState('security');
   const chatEndRef                            = useRef(null);
+  const prevKeyRef                            = useRef(null);
+
+  // Register our round-save handler into the ref exposed by RapidFireGame
+  useEffect(() => {
+    if (!onRoundSettledRef) return;
+    onRoundSettledRef.current = (roundData) => {
+      if (!observeOn) return;
+      if (prevKeyRef.current === roundData.observerKey) return;
+      prevKeyRef.current = roundData.observerKey;
+      console.log('[Observer] onRoundSettled handler called, roundId:', roundData.roundId);
+      base44.functions.invoke('observerAnalysis', { action: 'saveRound', roundData })
+        .then((res) => { console.log('[Observer] saved:', res); onRoundCountChange(prev => prev + 1); })
+        .catch(err => console.error('[Observer] save error:', err));
+    };
+    return () => { if (onRoundSettledRef) onRoundSettledRef.current = null; };
+  }, [observeOn, onRoundSettledRef, onRoundCountChange]);
 
   // Load DB round count on first open
   useEffect(() => {

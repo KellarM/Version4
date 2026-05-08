@@ -111,18 +111,10 @@ export default function RapidFireGame() {
   const [observeOn, setObserveOn] = useState(false);
   const [observerRoundCount, setObserverRoundCount] = useState(0);
   const prevObserverRoundRef = useRef(null);
+  const onRoundSettledRef = useRef(null);  // Observer registers its handler here
 
-  // ── Observer: record round whenever observeOn + new round data ────────────
-  useEffect(() => {
-    console.log('[Observer useEffect]', { observeOn, hasData: !!observerRoundData, key: observerRoundData?.observerKey });
-    if (!observeOn || !observerRoundData) return;
-    if (prevObserverRoundRef.current?.observerKey === observerRoundData.observerKey) return;
-    prevObserverRoundRef.current = { observerKey: observerRoundData.observerKey };
-    console.log('[Observer] Saving round to DB:', observerRoundData.roundId);
-    base44.functions.invoke('observerAnalysis', { action: 'saveRound', roundData: observerRoundData })
-      .then((res) => { console.log('[Observer] Save result:', res); setObserverRoundCount(prev => prev + 1); })
-      .catch(err => console.error('[Observer] Save error:', err));
-  }, [observerRoundData, observeOn]);
+  // ── Observer: round data is dispatched via onRoundSettledRef to Observer component ──
+  // (saving logic lives in Observer.jsx to avoid stale closure issues)
   // ─────────────────────────────────────────────────────────────────────────
   
   const [showGameTiming, setShowGameTiming] = useState(false);
@@ -1268,8 +1260,7 @@ export default function RapidFireGame() {
     const activePlayerPayout = playerWinnings[activePlayer] || 0;
     const activeBal = balances[activePlayer] ?? 0;
     const observerKey = Date.now() + '_' + Math.random();
-    console.log('[Observer] settle() called, setting round data, key:', observerKey, 'observeOn will be checked in useEffect');
-    setObserverRoundData({
+    const roundData = {
       roundId,
       observerKey,
       sessionId: 'live_' + Date.now(),
@@ -1293,7 +1284,9 @@ export default function RapidFireGame() {
       redsCount,
       blacksCount: finalComm.length - redsCount,
       riverCard: finalComm.length > 0 ? finalComm[finalComm.length-1]?.rank + SUITS[finalComm[finalComm.length-1]?.suit] : null,
-    });
+    };
+    console.log('[Observer] settle() dispatching round via ref, roundId:', roundId, 'handler present:', !!onRoundSettledRef.current);
+    if (onRoundSettledRef.current) onRoundSettledRef.current(roundData);
     // ─────────────────────────────────────────────────────────────────────────
 
     setHistory((prev) => [{
@@ -1504,6 +1497,7 @@ export default function RapidFireGame() {
         onClose={() => setShowObserver(false)}
         observeOn={observeOn}
         onObserveToggle={setObserveOn}
+        onRoundSettledRef={onRoundSettledRef}
         roundCount={observerRoundCount}
         onRoundCountChange={setObserverRoundCount}
       />
