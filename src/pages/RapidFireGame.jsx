@@ -169,6 +169,7 @@ export default function RapidFireGame() {
   const [countdownActive, setCountdownActive] = useState(false);
   const timerActiveRef = useRef(false);
   const handleDealRiverRef = useRef(null);
+  const settleRef = useRef(null);
 
   // Game progress persistence
   useEffect(() => {
@@ -1027,7 +1028,7 @@ export default function RapidFireGame() {
     timerActiveRef.current = true;
     setCountdownActive(false);
     setTimeout(() => {
-      settle(newComm, leader, winRB, winLH, leaderHand, leaderResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets);
+      settleRef.current && settleRef.current(newComm, leader, winRB, winLH, leaderHand, leaderResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets);
     }, timing.riverReveal * 1000);
   }, [gamePhase, deck, deckIndex, communityCards, handBets, redBlackBets, rankBets, lowHighBets, timing, stopTimer]);
 
@@ -1306,6 +1307,7 @@ export default function RapidFireGame() {
     timerActiveRef.current = true;
     setCountdownActive(false);
   };
+  settleRef.current = settle;
 
   const handleResetGame = () => {
     setBalances(Array(10).fill(STARTING_BALANCE));
