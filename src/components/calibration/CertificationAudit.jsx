@@ -294,11 +294,25 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
           localStorage.setItem(getStorageKeys(module.id).progress, String(dbData.progress));
         } catch {}
         onResultsChangeRef.current?.(module.id, dbData.results);
+
+        // Check if there's an orphaned redo checkpoint (interrupted redo after a refresh).
+        // If a checkpoint exists for a bet that already has a result, the row-level
+        // "Resume Redo" button will surface it automatically — just expand the panel.
+        const cp = loadCheckpoint(module.id);
+        if (cp && cp.betKey && cp.totalRounds > 0 && cp.totalRounds < module.rounds) {
+          // A partial run was interrupted — auto-expand so the user sees the Resume button
+          setExpanded(true);
+        }
       } else {
         // No DB data — check localStorage and migrate it up
         const local = loadFromStorage(module.id);
         if (Object.keys(local.results).length > 0) {
           migrateLocalStorageToDb(module.id);
+        }
+        // Also check for an orphaned checkpoint on a fresh-run interruption
+        const cp = loadCheckpoint(module.id);
+        if (cp && cp.betKey && cp.totalRounds > 0) {
+          setExpanded(true);
         }
       }
     };
@@ -751,10 +765,28 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
                           const key = `${bet.betType}:${bet.betKey}`;
                           const r = results[key];
                           const isRunning = running && currentBet === bet.label;
+                          // Check for orphaned checkpoint on this pending bet (e.g. page refreshed mid-run)
+                          const pendingCheckpoint = (() => {
+                            const cp = loadCheckpoint(module.id);
+                            return cp && cp.betKey === key && cp.totalRounds > 0 && cp.totalRounds < module.rounds ? cp : null;
+                          })();
+
                           if (!r && !isRunning) return (
                             <tr key={key} className="border-b border-slate-700/30">
                               <td className="py-1.5 px-3 text-gray-500">{bet.label}</td>
-                              <td colSpan="8" className="py-1.5 px-3 text-gray-700 italic">pending</td>
+                              <td colSpan="7" className="py-1.5 px-3 text-gray-700 italic">pending</td>
+                              <td className="py-1.5 px-3 text-center">
+                                {pendingCheckpoint && !running && !redoingKey && (
+                                  <button
+                                    onClick={() => redoSingleBet(bet, pendingCheckpoint)}
+                                    title={`Resume from ${pendingCheckpoint.totalRounds?.toLocaleString()} / ${module.rounds.toLocaleString()} rounds`}
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-900/50 text-yellow-300 border border-yellow-600/50 hover:bg-yellow-700/50 hover:text-white transition-all cursor-pointer whitespace-nowrap"
+                                  >
+                                    <SkipForward className="w-3 h-3" />
+                                    Resume ({Math.round((pendingCheckpoint.totalRounds / module.rounds) * 100)}%)
+                                  </button>
+                                )}
+                              </td>
                             </tr>
                           );
                           if (!r && isRunning) return (
@@ -769,11 +801,12 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
                           const status = rtpV >= module.rtpLow && rtpV <= module.rtpHigh ? 'pass' : 'fail';
                           const livePayout = getLivePayout(bet.betType, bet.betKey);
                           const isRedoing = redoingKey === key;
-                          // Check if there's a saved redo checkpoint for this specific bet
+                          // Check if there's a saved checkpoint for this specific bet (covers both redo interruptions AND fresh-run interruptions)
                           const redoCheckpoint = (() => {
                             const cp = loadCheckpoint(module.id);
                             return cp && cp.betKey === key ? cp : null;
                           })();
+                          // Show Resume button if: not currently running anything, a checkpoint exists for this bet with partial progress
                           const canContinueRedo = !running && !redoingKey && redoCheckpoint && redoCheckpoint.totalRounds > 0 && redoCheckpoint.totalRounds < module.rounds;
                           return (
                            <motion.tr
