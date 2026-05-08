@@ -1,13 +1,12 @@
 // ============================================================
 // OBSERVER — Live Game Intelligence System
-// Phase 1: Silent Observer (accumulates round data to DB)
-// Phase 2: Security Agent (drift analysis, exploit detection)
-// Phase 3: Partner Assist (conversational tuning advisor)
+// observeOn / roundCount are LIFTED to RapidFireGame so they
+// persist even when this panel is closed.
 // ============================================================
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Eye, EyeOff, ShieldCheck, X, Play, Send,
+  Eye, EyeOff, X, Play, Send,
   ChevronDown, ChevronRight, RefreshCw,
   Download, Trash2, FileText, FileJson
 } from 'lucide-react';
@@ -76,7 +75,7 @@ function buildCSVSummary(analysis) {
     ['--- RECOMMENDATIONS ---'],
     ...(analysis.recommendations || []).map(r => [r]),
     [],
-    ['--- TOP BET POSITIONS (Player Patterns) ---'],
+    ['--- TOP BET POSITIONS ---'],
     ['Position', 'Usage Rate'],
     ...(analysis.topBetPositions || []).map(b => [b.position, b.usageRate]),
     [],
@@ -116,64 +115,46 @@ function buildRoundCSV(rounds) {
 }
 
 // ─────────────────────────────────────────────────────────────
-export default function Observer({ onClose, roundData }) {
-  const [observeOn, setObserveOn]         = useState(false);
-  const [securityOn, setSecurityOn]       = useState(false);
-  const [roundCount, setRoundCount]       = useState(0);
-  const [analysis, setAnalysis]           = useState(null);
-  const [analyzing, setAnalyzing]         = useState(false);
-  const [clearing, setClearing]           = useState(false);
-  const [exporting, setExporting]         = useState(false);
+// Props:
+//   isOpen          — whether the panel is visible
+//   onClose         — close handler
+//   observeOn       — lifted state from RapidFireGame
+//   onObserveToggle — setter for observeOn
+//   roundCount      — lifted count from RapidFireGame (DB-confirmed saves)
+//   onRoundCountChange — setter (used by clear)
+// ─────────────────────────────────────────────────────────────
+export default function Observer({
+  isOpen, onClose,
+  observeOn, onObserveToggle,
+  roundCount, onRoundCountChange
+}) {
+  const [securityOn, setSecurityOn]           = useState(false);
+  const [analysis, setAnalysis]               = useState(null);
+  const [analyzing, setAnalyzing]             = useState(false);
+  const [clearing, setClearing]               = useState(false);
+  const [exporting, setExporting]             = useState(false);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
-  const [chatHistory, setChatHistory]     = useState([
-    { role: 'observer', text: "I'm watching. Turn on OBSERVE to start collecting live round data. I need 250 rounds before Security mode unlocks." }
+  const [chatHistory, setChatHistory]         = useState([
+    { role: 'observer', text: "I'm watching. Turn on OBSERVE to start collecting live round data. I need 250 rounds before Security mode unlocks.\n\nYou can close this panel and play freely — I'll keep recording in the background as long as OBSERVE is on." }
   ]);
-  const [chatInput, setChatInput]         = useState('');
-  const [chatLoading, setChatLoading]     = useState(false);
-  const [expandDrift, setExpandDrift]     = useState(false);
-  const [expandExploit, setExpandExploit] = useState(false);
-  const [tab, setTab]                     = useState('security');
-  const chatEndRef                        = useRef(null);
-  const prevRoundRef                      = useRef(null);
+  const [chatInput, setChatInput]             = useState('');
+  const [chatLoading, setChatLoading]         = useState(false);
+  const [expandDrift, setExpandDrift]         = useState(false);
+  const [expandExploit, setExpandExploit]     = useState(false);
+  const [tab, setTab]                         = useState('security');
+  const chatEndRef                            = useRef(null);
 
-  // Load round count on mount
+  // Load DB round count on first open
   useEffect(() => {
+    if (!isOpen) return;
     base44.functions.invoke('observerAnalysis', { action: 'status' })
-      .then(res => setRoundCount(res?.data?.roundsLoaded || 0))
+      .then(res => {
+        const dbCount = res?.data?.roundsLoaded || 0;
+        // Use whichever is higher — DB count or local count
+        if (dbCount > roundCount) onRoundCountChange(dbCount);
+      })
       .catch(() => {});
-  }, []);
-
-  // Record each new settled round
-  useEffect(() => {
-    if (!observeOn || !roundData) return;
-    if (prevRoundRef.current?.roundId === roundData.roundId) return;
-    prevRoundRef.current = roundData;
-
-    base44.entities.ObserverRound.create({
-      session_id: roundData.sessionId || 'live',
-      round_number: roundData.roundId,
-      community_cards: roundData.communityCards?.map(c => c?.rank + c?.suit) || [],
-      winner_hand_ids: roundData.winnerHandIds || [],
-      winning_rank: roundData.winningRank || null,
-      winning_colors: roundData.winningColors || [],
-      winning_low_high: roundData.winningLowHigh || null,
-      is_board_win: roundData.isBoardWin || false,
-      hand_bets: roundData.handBets || {},
-      rank_bets: roundData.rankBets || {},
-      color_bets: roundData.colorBets || {},
-      low_high_bet: roundData.lowHighBet || null,
-      kill_switch_active: roundData.killSwitchActive || false,
-      hand_bet_count: roundData.handBetCount || 0,
-      total_bet: roundData.totalBet || 0,
-      total_payout: roundData.totalPayout || 0,
-      net_result: roundData.netResult || 0,
-      balance_before: roundData.balanceBefore || 0,
-      balance_after: roundData.balanceAfter || 0,
-      reds_count: roundData.redsCount || 0,
-      blacks_count: roundData.blacksCount || 0,
-      river_card: roundData.riverCard || null,
-    }).then(() => setRoundCount(prev => prev + 1)).catch(console.error);
-  }, [roundData, observeOn]);
+  }, [isOpen]);
 
   // Scroll chat
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatHistory]);
@@ -216,36 +197,24 @@ export default function Observer({ onClose, roundData }) {
     }
   }, [chatInput, chatLoading]);
 
-  // ── EXPORT REPORT (CSV summary + raw rounds) ─────────────────
+  // Export
   const exportReport = useCallback(async (format) => {
     setExporting(true);
     try {
-      const ts = new Date().toISOString().slice(0,10);
-
+      const ts = new Date().toISOString().slice(0, 10);
       if (format === 'summary-csv') {
         if (!analysis) { alert('Run analysis first before exporting the report.'); setExporting(false); return; }
-        const csv = buildCSVSummary(analysis);
-        downloadBlob(new Blob([csv], { type: 'text/csv' }), `Observer_SecurityReport_${ts}.csv`);
+        downloadBlob(new Blob([buildCSVSummary(analysis)], { type: 'text/csv' }), `Observer_SecurityReport_${ts}.csv`);
       }
-
       if (format === 'rounds-csv') {
-        // Fetch all rounds from backend
         const res = await base44.functions.invoke('observerAnalysis', { action: 'export' });
         const rounds = res?.data?.rawRounds || [];
         if (!rounds.length) { alert('No round data to export.'); setExporting(false); return; }
-        const csv = buildRoundCSV(rounds);
-        downloadBlob(new Blob([csv], { type: 'text/csv' }), `Observer_RawRounds_${ts}.csv`);
+        downloadBlob(new Blob([buildRoundCSV(rounds)], { type: 'text/csv' }), `Observer_RawRounds_${ts}.csv`);
       }
-
       if (format === 'json') {
         const res = await base44.functions.invoke('observerAnalysis', { action: 'export' });
-        const rounds = res?.data?.rawRounds || [];
-        const payload = {
-          exported_at: new Date().toISOString(),
-          rounds_count: rounds.length,
-          analysis: analysis || null,
-          rounds,
-        };
+        const payload = { exported_at: new Date().toISOString(), rounds_count: res?.data?.rawRounds?.length || 0, analysis: analysis || null, rounds: res?.data?.rawRounds || [] };
         downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `Observer_FullData_${ts}.json`);
       }
     } catch (err) {
@@ -255,36 +224,33 @@ export default function Observer({ onClose, roundData }) {
     }
   }, [analysis]);
 
-  // ── CLEAR DATA ────────────────────────────────────────────────
+  // Clear
   const clearData = useCallback(async () => {
     setClearing(true);
     setShowConfirmClear(false);
     try {
       const res = await base44.functions.invoke('observerAnalysis', { action: 'clearRounds' });
       const deleted = res?.data?.deleted || 0;
-      setRoundCount(0);
+      onRoundCountChange(0);
       setAnalysis(null);
-      setChatHistory(prev => [...prev, {
-        role: 'observer',
-        text: `🗑 Cleared ${deleted} rounds from the database. Starting fresh.`
-      }]);
+      setChatHistory(prev => [...prev, { role: 'observer', text: `🗑 Cleared ${deleted} rounds from the database. Starting fresh.` }]);
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'observer', text: 'Clear failed: ' + (err.message || 'Unknown error') }]);
     } finally {
       setClearing(false);
     }
-  }, []);
+  }, [onRoundCountChange]);
 
   const progressPct = Math.min(100, (roundCount / 250) * 100);
   const isReady = roundCount >= 250;
 
+  // Always render — just hide when not open so state persists
+  if (!isOpen) return null;
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3"
-    >
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3">
       <motion.div
-        initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+        initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.2 }}
         className="bg-slate-900 border border-cyan-700/40 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl shadow-black/80"
       >
@@ -296,7 +262,9 @@ export default function Observer({ onClose, roundData }) {
             </div>
             <div>
               <h2 className="text-white font-bold text-base">Observer</h2>
-              <p className="text-cyan-400/60 text-xs">Live game intelligence — watch, learn, protect</p>
+              <p className="text-cyan-400/60 text-xs">
+                {observeOn ? '● Recording live rounds — close this panel and play freely' : 'Live game intelligence — watch, learn, protect'}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800">
@@ -306,19 +274,19 @@ export default function Observer({ onClose, roundData }) {
 
         {/* Control strip */}
         <div className="flex items-center gap-5 px-5 py-3 border-b border-slate-800 flex-shrink-0 flex-wrap gap-y-2">
-          <Toggle on={observeOn} onToggle={() => setObserveOn(v => !v)} color="blue" label="OBSERVE" />
+          <Toggle on={observeOn} onToggle={() => onObserveToggle(v => !v)} color="blue" label="OBSERVE" />
           <Toggle
             on={securityOn} onToggle={() => setSecurityOn(v => !v)} color="red" disabled={!isReady}
-            label={isReady ? 'SECURITY' : `SECURITY (${250 - roundCount} more rounds)`}
+            label={isReady ? 'SECURITY' : `SECURITY (need ${250 - roundCount} more rounds)`}
           />
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto">
             <span className={`text-xs font-bold ${observeOn ? 'text-cyan-400' : 'text-gray-600'}`}>
               {observeOn ? '● LIVE' : '○ OFF'}
             </span>
           </div>
         </div>
 
-        {/* Progress + actions bar */}
+        {/* Progress + clear */}
         <div className="px-5 py-3 border-b border-slate-800 flex-shrink-0 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-gray-500 uppercase tracking-wider">Rounds Observed</span>
@@ -326,28 +294,25 @@ export default function Observer({ onClose, roundData }) {
               <span className={`text-xs font-bold ${isReady ? 'text-green-400' : 'text-cyan-400'}`}>
                 {roundCount.toLocaleString()} {isReady ? '✓ Ready' : '/ 250 min'}
               </span>
-              {/* Clear button */}
-              <button
-                onClick={() => setShowConfirmClear(true)}
-                disabled={clearing || roundCount === 0}
-                title="Clear all observed rounds"
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800 hover:bg-red-900/30 border border-slate-700 hover:border-red-700/50 text-gray-500 hover:text-red-400 transition-all text-[10px] font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
-              >
+              <button onClick={() => setShowConfirmClear(true)} disabled={clearing || roundCount === 0}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800 hover:bg-red-900/30 border border-slate-700 hover:border-red-700/50 text-gray-500 hover:text-red-400 transition-all text-[10px] font-semibold disabled:opacity-30 disabled:cursor-not-allowed">
                 {clearing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                 Clear
               </button>
             </div>
           </div>
           <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <motion.div
-              className={`h-full rounded-full ${isReady ? 'bg-green-500' : 'bg-cyan-500'}`}
-              initial={{ width: 0 }} animate={{ width: progressPct + '%' }} transition={{ duration: 0.5 }}
-            />
+            <motion.div className={`h-full rounded-full ${isReady ? 'bg-green-500' : 'bg-cyan-500'}`}
+              initial={{ width: 0 }} animate={{ width: progressPct + '%' }} transition={{ duration: 0.5 }} />
           </div>
-          {observeOn && <p className="text-[10px] text-cyan-500/70">● Observing — play rounds to accumulate data</p>}
+          {observeOn && (
+            <p className="text-[10px] text-cyan-500/70">
+              ● Close this panel and play — Observer will keep recording in the background
+            </p>
+          )}
         </div>
 
-        {/* Confirm clear dialog */}
+        {/* Confirm clear */}
         <AnimatePresence>
           {showConfirmClear && (
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
@@ -356,12 +321,8 @@ export default function Observer({ onClose, roundData }) {
                 ⚠️ Delete all {roundCount.toLocaleString()} observed rounds? This cannot be undone.
               </p>
               <div className="flex gap-2">
-                <button onClick={clearData} className="px-3 py-1.5 rounded-lg bg-red-700 hover:bg-red-600 text-white text-xs font-bold transition-all">
-                  Yes, clear all data
-                </button>
-                <button onClick={() => setShowConfirmClear(false)} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs font-semibold transition-all">
-                  Cancel
-                </button>
+                <button onClick={clearData} className="px-3 py-1.5 rounded-lg bg-red-700 hover:bg-red-600 text-white text-xs font-bold">Yes, clear all data</button>
+                <button onClick={() => setShowConfirmClear(false)} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs font-semibold">Cancel</button>
               </div>
             </motion.div>
           )}
@@ -377,33 +338,29 @@ export default function Observer({ onClose, roundData }) {
           ))}
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto">
 
-          {/* ── SECURITY TAB ────────────────────────────────── */}
+          {/* SECURITY TAB */}
           {tab === 'security' && (
             <div className="p-5 space-y-4">
-              {/* Run + Export row */}
               <div className="flex items-center gap-2 flex-wrap">
                 <button onClick={runAnalysis} disabled={analyzing || roundCount < 50}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all">
                   {analyzing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
                   {analyzing ? 'Analyzing…' : 'Run Analysis'}
                 </button>
-
-                {/* Export dropdown */}
                 {roundCount >= 50 && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-gray-600">Export:</span>
-                    <button onClick={() => exportReport('summary-csv')} disabled={exporting || !analysis} title="Export security report as CSV"
+                    <button onClick={() => exportReport('summary-csv')} disabled={exporting || !analysis}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-emerald-900/30 border border-slate-700 hover:border-emerald-700/50 text-gray-400 hover:text-emerald-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-[10px] font-semibold">
                       <FileText className="w-3 h-3" /> Report CSV
                     </button>
-                    <button onClick={() => exportReport('rounds-csv')} disabled={exporting} title="Export all raw rounds as CSV"
+                    <button onClick={() => exportReport('rounds-csv')} disabled={exporting}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-emerald-900/30 border border-slate-700 hover:border-emerald-700/50 text-gray-400 hover:text-emerald-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-[10px] font-semibold">
                       <Download className="w-3 h-3" /> Rounds CSV
                     </button>
-                    <button onClick={() => exportReport('json')} disabled={exporting} title="Export full dataset as JSON"
+                    <button onClick={() => exportReport('json')} disabled={exporting}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-blue-900/30 border border-slate-700 hover:border-blue-700/50 text-gray-400 hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-[10px] font-semibold">
                       <FileJson className="w-3 h-3" /> Full JSON
                     </button>
@@ -420,8 +377,6 @@ export default function Observer({ onClose, roundData }) {
 
               {analysis && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-
-                  {/* Summary stats */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
                       { label: 'Rounds', value: analysis.roundsAnalyzed?.toLocaleString() },
@@ -436,7 +391,6 @@ export default function Observer({ onClose, roundData }) {
                     ))}
                   </div>
 
-                  {/* Recommendations */}
                   {analysis.recommendations?.length > 0 && (
                     <div className="space-y-1.5">
                       <div className="text-[10px] text-gray-500 uppercase tracking-wider">Recommendations</div>
@@ -452,11 +406,9 @@ export default function Observer({ onClose, roundData }) {
                     </div>
                   )}
 
-                  {/* Drift flags */}
                   {analysis.driftFlags?.length > 0 && (
                     <div>
-                      <button onClick={() => setExpandDrift(v => !v)}
-                        className="flex items-center gap-2 text-[10px] text-gray-500 uppercase tracking-wider w-full mb-1.5">
+                      <button onClick={() => setExpandDrift(v => !v)} className="flex items-center gap-2 text-[10px] text-gray-500 uppercase tracking-wider w-full mb-1.5">
                         {expandDrift ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                         Drift Flags ({analysis.driftFlags.length})
                       </button>
@@ -478,11 +430,9 @@ export default function Observer({ onClose, roundData }) {
                     </div>
                   )}
 
-                  {/* Exploit candidates */}
                   {analysis.exploitCandidates?.length > 0 && (
                     <div>
-                      <button onClick={() => setExpandExploit(v => !v)}
-                        className="flex items-center gap-2 text-[10px] text-orange-500 uppercase tracking-wider w-full mb-1.5">
+                      <button onClick={() => setExpandExploit(v => !v)} className="flex items-center gap-2 text-[10px] text-orange-500 uppercase tracking-wider w-full mb-1.5">
                         {expandExploit ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                         ⚠️ Exploit Candidates ({analysis.exploitCandidates.length})
                       </button>
@@ -495,9 +445,7 @@ export default function Observer({ onClose, roundData }) {
                                   <span className={`text-[9px] px-1 py-0.5 rounded font-bold ${e.severity==='HIGH'?'bg-red-900/60 text-red-300':'bg-orange-900/60 text-orange-300'}`}>{e.severity}</span>
                                   <span className="text-orange-200 font-semibold">{e.position}</span>
                                 </div>
-                                <div className="text-gray-400">
-                                  Observed: <span className="text-white">{e.observedFreq}</span> · Expected: <span className="text-white">{e.theoreticalFreq}</span> · Over by: <span className="text-orange-400 font-bold">{e.overFrequency}</span>
-                                </div>
+                                <div className="text-gray-400">Observed: <span className="text-white">{e.observedFreq}</span> · Expected: <span className="text-white">{e.theoreticalFreq}</span> · Over by: <span className="text-orange-400 font-bold">{e.overFrequency}</span></div>
                               </div>
                             ))}
                           </motion.div>
@@ -506,7 +454,6 @@ export default function Observer({ onClose, roundData }) {
                     </div>
                   )}
 
-                  {/* Top bet positions */}
                   {analysis.topBetPositions?.length > 0 && (
                     <div>
                       <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">Most Bet Positions (Player Patterns)</div>
@@ -526,10 +473,10 @@ export default function Observer({ onClose, roundData }) {
             </div>
           )}
 
-          {/* ── CHAT TAB ─────────────────────────────────────── */}
+          {/* CHAT TAB */}
           {tab === 'chat' && (
             <div className="flex flex-col" style={{ minHeight: 300 }}>
-              <div className="flex-1 overflow-y-auto p-4 space-y-2" style={{ maxHeight: 400 }}>
+              <div className="flex-1 overflow-y-auto p-4 space-y-2" style={{ maxHeight: 380 }}>
                 {chatHistory.map((m, i) => <ChatMsg key={i} role={m.role} text={m.text} />)}
                 {chatLoading && (
                   <div className="flex justify-start">
@@ -541,8 +488,7 @@ export default function Observer({ onClose, roundData }) {
                 <div ref={chatEndRef} />
               </div>
               <div className="border-t border-slate-800 p-3 flex gap-2 flex-shrink-0">
-                <input
-                  value={chatInput} onChange={e => setChatInput(e.target.value)}
+                <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendChat()}
                   placeholder={roundCount < 50 ? 'Need 50+ rounds to ask questions…' : 'Ask about RTP, exploits, payouts, kill-switch…'}
                   disabled={roundCount < 50 || chatLoading}
@@ -557,6 +503,6 @@ export default function Observer({ onClose, roundData }) {
           )}
         </div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
