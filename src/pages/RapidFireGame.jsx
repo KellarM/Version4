@@ -115,8 +115,8 @@ export default function RapidFireGame() {
   // ── Observer: record round whenever observeOn + new round data ────────────
   useEffect(() => {
     if (!observeOn || !observerRoundData) return;
-    if (prevObserverRoundRef.current?.roundId === observerRoundData.roundId) return;
-    prevObserverRoundRef.current = observerRoundData;
+    if (prevObserverRoundRef.current?.observerKey === observerRoundData.observerKey) return;
+    prevObserverRoundRef.current = { observerKey: observerRoundData.observerKey };
     base44.entities.ObserverRound.create({
       session_id: observerRoundData.sessionId || 'live',
       round_number: observerRoundData.roundId,
@@ -1284,8 +1284,10 @@ export default function RapidFireGame() {
       (activePlayerLowHighBet?.amount || 0);
     const activePlayerPayout = playerWinnings[activePlayer] || 0;
     const activeBal = balances[activePlayer] ?? 0;
+    const observerKey = Date.now() + '_' + Math.random();
     setObserverRoundData({
       roundId,
+      observerKey,
       sessionId: 'live_' + Date.now(),
       communityCards: finalComm.map(c => ({ rank: c.rank, suit: SUITS[c.suit] })),
       winnerHandIds: leader?.handIds || [],
