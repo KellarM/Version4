@@ -1,0 +1,13 @@
+{
+  "name": "ObserverSession",
+  "type": "object",
+  "properties": {
+    "session_id": { "type": "string", "description": "Unique session identifier" },
+    "total_rounds": { "type": "number", "description": "Total rounds recorded in this session" },
+    "observe_active": { "type": "boolean", "description": "Whether observer is active" },
+    "security_active": { "type": "boolean", "description": "Whether security diagnostics are running" },
+    "last_analysis": { "type": "object", "description": "Last analysis result" },
+    "last_analysis_at": { "type": "string", "description": "ISO timestamp of last analysis" },
+    "notes": { "type": "string", "description": "Session notes" }
+  }
+}

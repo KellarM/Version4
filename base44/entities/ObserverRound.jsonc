@@ -1,0 +1,28 @@
+{
+  "name": "ObserverRound",
+  "type": "object",
+  "properties": {
+    "session_id": { "type": "string", "description": "Session identifier" },
+    "round_number": { "type": "number", "description": "Sequential round number" },
+    "community_cards": { "type": "array", "items": { "type": "string" }, "description": "5 community card strings e.g. ['As','Kh']" },
+    "winner_hand_ids": { "type": "array", "items": { "type": "number" }, "description": "Winning hand IDs (1-10)" },
+    "winning_rank": { "type": "string", "description": "Best poker rank e.g. Full House" },
+    "winning_colors": { "type": "array", "items": { "type": "string" }, "description": "Winning color outcomes e.g. ['3R']" },
+    "winning_low_high": { "type": "string", "description": "LOW or HIGH" },
+    "is_board_win": { "type": "boolean", "description": "True if community board won" },
+    "hand_bets": { "type": "object", "description": "Hand bets placed this round" },
+    "rank_bets": { "type": "object", "description": "Rank bets placed this round" },
+    "color_bets": { "type": "object", "description": "Color bets placed this round" },
+    "low_high_bet": { "type": "object", "description": "Low/high bet details" },
+    "kill_switch_active": { "type": "boolean", "description": "Whether kill switch fired (3+ hands)" },
+    "hand_bet_count": { "type": "number", "description": "Number of hand bets placed" },
+    "total_bet": { "type": "number", "description": "Total amount wagered" },
+    "total_payout": { "type": "number", "description": "Total amount paid out" },
+    "net_result": { "type": "number", "description": "Net result (payout - bet)" },
+    "balance_before": { "type": "number", "description": "Player balance before round" },
+    "balance_after": { "type": "number", "description": "Player balance after round" },
+    "reds_count": { "type": "number", "description": "Number of red community cards" },
+    "blacks_count": { "type": "number", "description": "Number of black community cards" },
+    "river_card": { "type": "string", "description": "River card string" }
+  }
+}
