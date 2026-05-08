@@ -12,7 +12,7 @@
 export const PER_HAND_RANK_PAYOUTS = {
   // Hand 1: A♦ / 10♥
   1: {
-    'Full House':      2.86,
+    'Full House':      2.85,
     'Two Pair':        3.30,
     'Straight':        3.31,
     'Flush':           5.55,
