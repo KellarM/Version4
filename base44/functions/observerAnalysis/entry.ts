@@ -38,6 +38,46 @@ export default async function handler(req: Request) {
     return Response.json({ success: true, deleted });
   }
 
+  // ── SAVE A SINGLE ROUND ─────────────────────────────────────
+  if (action === 'saveRound') {
+    const { roundData } = body;
+    if (!roundData) return Response.json({ error: 'No roundData provided' }, { status: 400 });
+    const resp = await fetch(`${base44Url}/apps/${appId}/entities/ObserverRound`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        session_id: roundData.sessionId || 'live',
+        round_number: roundData.roundId,
+        community_cards: (roundData.communityCards || []).map((c: any) => c?.rank + c?.suit),
+        winner_hand_ids: roundData.winnerHandIds || [],
+        winning_rank: roundData.winningRank || null,
+        winning_colors: roundData.winningColors || [],
+        winning_low_high: roundData.winningLowHigh || null,
+        is_board_win: roundData.isBoardWin || false,
+        hand_bets: roundData.handBets || {},
+        rank_bets: roundData.rankBets || {},
+        color_bets: roundData.colorBets || {},
+        low_high_bet: roundData.lowHighBet || null,
+        kill_switch_active: roundData.killSwitchActive || false,
+        hand_bet_count: roundData.handBetCount || 0,
+        total_bet: roundData.totalBet || 0,
+        total_payout: roundData.totalPayout || 0,
+        net_result: roundData.netResult || 0,
+        balance_before: roundData.balanceBefore || 0,
+        balance_after: roundData.balanceAfter || 0,
+        reds_count: roundData.redsCount || 0,
+        blacks_count: roundData.blacksCount || 0,
+        river_card: roundData.riverCard || null,
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.text();
+      return Response.json({ error: err }, { status: 500 });
+    }
+    const created = await resp.json();
+    return Response.json({ success: true, id: created.id });
+  }
+
   // ── LOAD ROUNDS ──────────────────────────────────────────────
   let rounds: any[] = [];
   try {

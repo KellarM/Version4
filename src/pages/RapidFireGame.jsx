@@ -117,30 +117,9 @@ export default function RapidFireGame() {
     if (!observeOn || !observerRoundData) return;
     if (prevObserverRoundRef.current?.observerKey === observerRoundData.observerKey) return;
     prevObserverRoundRef.current = { observerKey: observerRoundData.observerKey };
-    base44.entities.ObserverRound.create({
-      session_id: observerRoundData.sessionId || 'live',
-      round_number: observerRoundData.roundId,
-      community_cards: observerRoundData.communityCards?.map(c => c?.rank + c?.suit) || [],
-      winner_hand_ids: observerRoundData.winnerHandIds || [],
-      winning_rank: observerRoundData.winningRank || null,
-      winning_colors: observerRoundData.winningColors || [],
-      winning_low_high: observerRoundData.winningLowHigh || null,
-      is_board_win: observerRoundData.isBoardWin || false,
-      hand_bets: observerRoundData.handBets || {},
-      rank_bets: observerRoundData.rankBets || {},
-      color_bets: observerRoundData.colorBets || {},
-      low_high_bet: observerRoundData.lowHighBet || null,
-      kill_switch_active: observerRoundData.killSwitchActive || false,
-      hand_bet_count: observerRoundData.handBetCount || 0,
-      total_bet: observerRoundData.totalBet || 0,
-      total_payout: observerRoundData.totalPayout || 0,
-      net_result: observerRoundData.netResult || 0,
-      balance_before: observerRoundData.balanceBefore || 0,
-      balance_after: observerRoundData.balanceAfter || 0,
-      reds_count: observerRoundData.redsCount || 0,
-      blacks_count: observerRoundData.blacksCount || 0,
-      river_card: observerRoundData.riverCard || null,
-    }).then(() => setObserverRoundCount(prev => prev + 1)).catch(console.error);
+    base44.functions.invoke('observerAnalysis', { action: 'saveRound', roundData: observerRoundData })
+      .then(() => setObserverRoundCount(prev => prev + 1))
+      .catch(console.error);
   }, [observerRoundData, observeOn]);
   // ─────────────────────────────────────────────────────────────────────────
   
