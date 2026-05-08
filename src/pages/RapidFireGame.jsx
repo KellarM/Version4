@@ -36,6 +36,7 @@ import MollySimulator from '@/components/game/MollySimulator';
 import ArchetypeBattle from '@/components/game/ArchetypeBattle';
 import ExploitHunter from '@/components/game/IndividualStrategyTest';
 import KillSwitchStrategyTest from '@/components/game/KillSwitchStrategyTest';
+import Observer from '@/components/game/Observer';
 import RegulatoryComplianceReport from '@/components/game/TwoHandRankTest';
 
 import GameTimingModal from '@/components/game/GameTimingModal';
@@ -104,6 +105,8 @@ export default function RapidFireGame() {
   const [showExploitHunter, setShowExploitHunter] = useState(false);
   const [showComplianceReport, setShowComplianceReport] = useState(false);
   const [showKsStrategyTest, setShowKsStrategyTest] = useState(false);
+  const [showObserver, setShowObserver] = useState(false);
+  const [observerRoundData, setObserverRoundData] = useState(null);
   
   const [showGameTiming, setShowGameTiming] = useState(false);
   const [toolbarVisible, setToolbarVisible] = useState(false);
@@ -1233,6 +1236,44 @@ export default function RapidFireGame() {
     FIXED_HANDS.find((h) => h.id === leader.handIds[1]) :
     null;
 
+    // ── Observer data capture ────────────────────────────────────────────────
+    const redsCount = finalComm.filter(c => cardColor(c) === 'red').length;
+    const activePlayerHandBets = snapHandBets[activePlayer] || {};
+    const activePlayerColorBets = snapRedBlackBets[activePlayer] || {};
+    const activePlayerRankBets = snapRankBets[activePlayer] || {};
+    const activePlayerLowHighBet = snapLowHighBets[activePlayer] || null;
+    const activePlayerTotalBet = Object.values(activePlayerHandBets).reduce((s, v) => s + v, 0) +
+      Object.values(activePlayerColorBets).reduce((s, v) => s + v, 0) +
+      Object.values(activePlayerRankBets).reduce((s, v) => s + v, 0) +
+      (activePlayerLowHighBet?.amount || 0);
+    const activePlayerPayout = playerWinnings[activePlayer] || 0;
+    const activeBal = balances[activePlayer] ?? 0;
+    setObserverRoundData({
+      roundId,
+      sessionId: 'live_' + Date.now(),
+      communityCards: finalComm.map(c => ({ rank: c.rank, suit: SUITS[c.suit] })),
+      winnerHandIds: leader?.handIds || [],
+      winningRank: handResult?.name || null,
+      winningColors: winRB || [],
+      winningLowHigh: winLH || null,
+      isBoardWin: leader?.communityBoardWin || false,
+      handBets: activePlayerHandBets,
+      rankBets: activePlayerRankBets,
+      colorBets: activePlayerColorBets,
+      lowHighBet: activePlayerLowHighBet,
+      killSwitchActive: isKillSwitchActive(Object.keys(activePlayerHandBets).length),
+      handBetCount: Object.keys(activePlayerHandBets).filter(k => (activePlayerHandBets[k] || 0) > 0).length,
+      totalBet: activePlayerTotalBet,
+      totalPayout: activePlayerPayout,
+      netResult: activePlayerPayout - activePlayerTotalBet,
+      balanceBefore: activeBal,
+      balanceAfter: Math.max(0, activeBal + activePlayerPayout),
+      redsCount,
+      blacksCount: finalComm.length - redsCount,
+      riverCard: finalComm.length > 0 ? finalComm[finalComm.length-1]?.rank + SUITS[finalComm[finalComm.length-1]?.suit] : null,
+    });
+    // ─────────────────────────────────────────────────────────────────────────
+
     setHistory((prev) => [{
       roundId,
       isBoardWin,
@@ -1431,6 +1472,13 @@ export default function RapidFireGame() {
       <AnimatePresence>
         {showKsStrategyTest &&
         <KillSwitchStrategyTest onClose={() => setShowKsStrategyTest(false)} />
+        }
+      </AnimatePresence>
+
+      {/* Observer */}
+      <AnimatePresence>
+        {showObserver &&
+        <Observer onClose={() => setShowObserver(false)} roundData={observerRoundData} />
         }
       </AnimatePresence>
 
@@ -1640,7 +1688,7 @@ export default function RapidFireGame() {
             )}
 
             {/* Tools */}
-            <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenMollySimulator={() => setShowMollySimulator(true)} onOpenArchetypeBattle={() => setShowArchetypeBattle(true)} onOpenExploitHunter={() => setShowExploitHunter(true)} onOpenComplianceReport={() => setShowComplianceReport(true)} onOpenKsStrategyTest={() => setShowKsStrategyTest(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
+            <ToolsMenu onOpenStats={() => setShowStatsPanel(true)} onOpenMollySimulator={() => setShowMollySimulator(true)} onOpenArchetypeBattle={() => setShowArchetypeBattle(true)} onOpenExploitHunter={() => setShowExploitHunter(true)} onOpenComplianceReport={() => setShowComplianceReport(true)} onOpenKsStrategyTest={() => setShowKsStrategyTest(true)} onOpenObserver={() => setShowObserver(true)} onOpenGameTiming={() => setShowGameTiming(true)} toolsVisible={toolbarVisible} />
 
             {/* Game Rules — far right */}
             <div className="border-l border-yellow-700/20 pl-2 flex-shrink-0">
