@@ -281,25 +281,24 @@ function ModulePanel({ module, bets, onResultsChange, onExportCertificate }) {
   const onResultsChangeRef = useRef(onResultsChange);
   useEffect(() => { onResultsChangeRef.current = onResultsChange; }, [onResultsChange]);
 
-  // On mount: migrate localStorage → DB, then load from DB if localStorage is empty
+  // On mount: always load from DB (source of truth), fall back to localStorage
   useEffect(() => {
     const init = async () => {
-      const local = loadFromStorage(module.id);
-      if (Object.keys(local.results).length > 0) {
-        // Migrate existing local data to DB silently
-        migrateLocalStorageToDb(module.id);
+      const dbData = await loadFromDb(module.id);
+      if (dbData && Object.keys(dbData.results).length > 0) {
+        // DB is the source of truth — always restore from it
+        setResults(dbData.results);
+        setProgress(dbData.progress);
+        try {
+          localStorage.setItem(getStorageKeys(module.id).results, JSON.stringify(dbData.results));
+          localStorage.setItem(getStorageKeys(module.id).progress, String(dbData.progress));
+        } catch {}
+        onResultsChangeRef.current?.(module.id, dbData.results);
       } else {
-        // localStorage empty — try loading from DB
-        const dbData = await loadFromDb(module.id);
-        if (dbData && Object.keys(dbData.results).length > 0) {
-          setResults(dbData.results);
-          setProgress(dbData.progress);
-          // Restore to localStorage
-          try {
-            localStorage.setItem(getStorageKeys(module.id).results, JSON.stringify(dbData.results));
-            localStorage.setItem(getStorageKeys(module.id).progress, String(dbData.progress));
-          } catch {}
-          onResultsChangeRef.current?.(module.id, dbData.results);
+        // No DB data — check localStorage and migrate it up
+        const local = loadFromStorage(module.id);
+        if (Object.keys(local.results).length > 0) {
+          migrateLocalStorageToDb(module.id);
         }
       }
     };
