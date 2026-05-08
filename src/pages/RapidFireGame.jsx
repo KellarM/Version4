@@ -114,12 +114,14 @@ export default function RapidFireGame() {
 
   // ── Observer: record round whenever observeOn + new round data ────────────
   useEffect(() => {
+    console.log('[Observer useEffect]', { observeOn, hasData: !!observerRoundData, key: observerRoundData?.observerKey });
     if (!observeOn || !observerRoundData) return;
     if (prevObserverRoundRef.current?.observerKey === observerRoundData.observerKey) return;
     prevObserverRoundRef.current = { observerKey: observerRoundData.observerKey };
+    console.log('[Observer] Saving round to DB:', observerRoundData.roundId);
     base44.functions.invoke('observerAnalysis', { action: 'saveRound', roundData: observerRoundData })
-      .then(() => setObserverRoundCount(prev => prev + 1))
-      .catch(console.error);
+      .then((res) => { console.log('[Observer] Save result:', res); setObserverRoundCount(prev => prev + 1); })
+      .catch(err => console.error('[Observer] Save error:', err));
   }, [observerRoundData, observeOn]);
   // ─────────────────────────────────────────────────────────────────────────
   
@@ -1028,6 +1030,7 @@ export default function RapidFireGame() {
     timerActiveRef.current = true;
     setCountdownActive(false);
     setTimeout(() => {
+      console.log('[Observer] setTimeout fired, settleRef.current:', !!settleRef.current);
       settleRef.current && settleRef.current(newComm, leader, winRB, winLH, leaderHand, leaderResult, snapHandBets, snapRedBlackBets, snapRankBets, snapLowHighBets);
     }, timing.riverReveal * 1000);
   }, [gamePhase, deck, deckIndex, communityCards, handBets, redBlackBets, rankBets, lowHighBets, timing, stopTimer]);
@@ -1265,6 +1268,7 @@ export default function RapidFireGame() {
     const activePlayerPayout = playerWinnings[activePlayer] || 0;
     const activeBal = balances[activePlayer] ?? 0;
     const observerKey = Date.now() + '_' + Math.random();
+    console.log('[Observer] settle() called, setting round data, key:', observerKey, 'observeOn will be checked in useEffect');
     setObserverRoundData({
       roundId,
       observerKey,
