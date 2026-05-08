@@ -1,80 +1,126 @@
-import base44 from '../../../src/api/base44Client';
-
+// observerAnalysis — live game observer engine v3 ts:1778213869
 const THEORETICAL: any = {
   handWinFreq: { 1: 0.0284, 2: 0.1042, 3: 0.0381, 4: 0.0521, 5: 0.0612, 6: 0.0743, 7: 0.1042, 8: 0.0743, 9: 0.0892, 10: 0.0284, board: 0.1820 },
   rankFreq: { 'High Card': 0.1741, 'One Pair': 0.4384, 'Two Pair': 0.2356, 'Three of a Kind': 0.0481, 'Straight': 0.0462, 'Flush': 0.0303, 'Full House': 0.0256, 'Four of a Kind': 0.0024, 'Straight Flush': 0.00139, 'Royal Flush': 0.000032 },
   colorFreq: { '3R': 0.3125, '3B': 0.3125, '4R': 0.1563, '4B': 0.1563, '5R': 0.0313, '5B': 0.0313 },
   lowHighFreq: { LOW: 0.4615, HIGH: 0.5385 }
 };
-const HAND_NAMES = ['A♦10♥','K♣K♠','Q♣J♠','Q♠10♠','J♣9♣','8♦6♦','7♦7♠','4♥2♥','3♣3♥','A♥5♦'];
-const pct = (n: number) => (n * 100).toFixed(2) + '%';
-const diff = (obs: number, theo: number) => ((obs - theo) * 100).toFixed(2);
-const driftLevel = (obs: number, theo: number): string => { const d = Math.abs(obs - theo); return d >= 0.06 ? 'critical' : d >= 0.03 ? 'warning' : 'ok'; };
+const HAND_NAMES = ['A\u266410\u2665','K\u2663K\u2660','Q\u2663J\u2660','Q\u266010\u2660','J\u26639\u2663','8\u26666\u2666','7\u26667\u2660','4\u22652\u2665','3\u26633\u2665','A\u22655\u2666'];
+const pct = (x: number) => (x * 100).toFixed(2) + '%';
+const ddiff = (o: number, t: number) => ((o - t) * 100).toFixed(2);
+const dL = (o: number, t: number) => Math.abs(o-t) >= 0.06 ? 'critical' : Math.abs(o-t) >= 0.03 ? 'warning' : 'ok';
 
 export default async function handler(req: Request) {
-  const { action, question } = await req.json();
-  const rounds: any[] = (await base44.asServiceRole.entities.ObserverRound.list({ limit: 5000 })) || [];
-  const n = rounds.length;
-  if (n < 50 && action !== 'status') return Response.json({ error: 'Insufficient data', roundsLoaded: n, needed: 50 });
-  if (action === 'status') return Response.json({ roundsLoaded: n, ready: n >= 250 });
+  const body = await req.json().catch(() => ({}));
+  const { action = 'analyze', question = '' } = body;
 
-  const handWins: any = { board: 0 };
-  for (let i = 1; i <= 10; i++) handWins[i] = 0;
-  const rankCounts: any = {}, colorCounts: any = { '3R':0,'3B':0,'4R':0,'4B':0,'5R':0,'5B':0 }, lhCounts: any = { LOW:0, HIGH:0 }, betUsage: any = {};
-  let ksRounds = 0, totalBet = 0, totalPayout = 0;
+  const base44Url = Deno.env.get('BASE44_API_URL') || 'https://api.base44.com';
+  const appId = Deno.env.get('BASE44_APP_ID');
+  const apiKey = Deno.env.get('BASE44_SERVICE_API_KEY');
+  const headers = { 'x-api-key': apiKey || '', 'Content-Type': 'application/json' };
 
-  for (const r of rounds) {
-    if (r.is_board_win) handWins['board']++;
-    else (r.winner_hand_ids||[]).forEach((h: number) => { handWins[h] = (handWins[h]||0)+1; });
-    if (r.winning_rank) rankCounts[r.winning_rank] = (rankCounts[r.winning_rank]||0)+1;
-    (r.winning_colors||[]).forEach((c: string) => { if (colorCounts[c]!==undefined) colorCounts[c]++; });
-    if (r.winning_low_high) lhCounts[r.winning_low_high]++;
-    if (r.kill_switch_active) ksRounds++;
-    totalBet += r.total_bet||0; totalPayout += r.total_payout||0;
-    ['hand_bets','color_bets','rank_bets'].forEach(field => { if (r[field]) Object.keys(r[field]).forEach(k => { betUsage[`${field.replace('_bets','')}_${k}`]=(betUsage[`${field.replace('_bets','')}_${k}`]||0)+1; }); });
-    if (r.low_high_bet?.type) betUsage[`lh_${r.low_high_bet.type}`]=(betUsage[`lh_${r.low_high_bet.type}`]||0)+1;
+  // ── CLEAR ALL ROUNDS ─────────────────────────────────────────
+  if (action === 'clearRounds') {
+    let deleted = 0;
+    let page = 0;
+    while (true) {
+      const resp = await fetch(`${base44Url}/apps/${appId}/entities/ObserverRound?limit=200&skip=${page * 200}`, { headers });
+      if (!resp.ok) break;
+      const batch: any[] = await resp.json();
+      if (!batch.length) break;
+      await Promise.all(batch.map(r =>
+        fetch(`${base44Url}/apps/${appId}/entities/ObserverRound/${r.id}`, { method: 'DELETE', headers })
+      ));
+      deleted += batch.length;
+      if (batch.length < 200) break;
+      page++;
+    }
+    return Response.json({ success: true, deleted });
   }
 
-  const driftFlags: any[] = [];
-  const handDrift = Object.entries(handWins).map(([hid, wins]: any) => {
-    const obs=wins/n, theo=THEORETICAL.handWinFreq[hid]||0, level=driftLevel(obs,theo);
-    const name=hid==='board'?'Board Win':`Hand ${hid} (${HAND_NAMES[Number(hid)-1]})`;
-    if (level!=='ok') driftFlags.push({ category:'Hand Win Frequency', position:name, obs:pct(obs), theo:pct(theo), drift:diff(obs,theo)+'pp', level });
-    return { hid, name, obs, theo, level, wins };
+  // ── LOAD ROUNDS ──────────────────────────────────────────────
+  let rounds: any[] = [];
+  try {
+    const resp = await fetch(`${base44Url}/apps/${appId}/entities/ObserverRound?limit=5000`, { headers });
+    if (resp.ok) rounds = await resp.json();
+  } catch(_) {}
+  const n = rounds.length;
+
+  if (action === 'status') return Response.json({ roundsLoaded: n, ready: n >= 250 });
+  if (n < 50) return Response.json({ error: 'Insufficient data', roundsLoaded: n, needed: 50 });
+
+  // ── CRUNCH DATA ──────────────────────────────────────────────
+  const hW: any = { board: 0 };
+  for (let i = 1; i <= 10; i++) hW[i] = 0;
+  const rC: any = {}, cC: any = {'3R':0,'3B':0,'4R':0,'4B':0,'5R':0,'5B':0}, lC: any = {LOW:0,HIGH:0}, bU: any = {};
+  let ks = 0, tb = 0, tp = 0;
+
+  for (const r of rounds) {
+    if (r.is_board_win) hW.board++;
+    else (r.winner_hand_ids || []).forEach((h: number) => { hW[h] = (hW[h] || 0) + 1; });
+    if (r.winning_rank) rC[r.winning_rank] = (rC[r.winning_rank] || 0) + 1;
+    (r.winning_colors || []).forEach((c: string) => { if (cC[c] !== undefined) cC[c]++; });
+    if (r.winning_low_high) lC[r.winning_low_high]++;
+    if (r.kill_switch_active) ks++;
+    tb += r.total_bet || 0; tp += r.total_payout || 0;
+    if (r.hand_bets) Object.keys(r.hand_bets).forEach((k: string) => { bU['hand_'+k] = (bU['hand_'+k]||0)+1; });
+    if (r.color_bets) Object.keys(r.color_bets).forEach((k: string) => { bU['color_'+k] = (bU['color_'+k]||0)+1; });
+    if (r.rank_bets) Object.keys(r.rank_bets).forEach((k: string) => { bU['rank_'+k] = (bU['rank_'+k]||0)+1; });
+    if (r.low_high_bet?.type) bU['lh_'+r.low_high_bet.type] = (bU['lh_'+r.low_high_bet.type]||0)+1;
+  }
+
+  const df: any[] = [];
+  const hD = Object.entries(hW).map(([id, w]: any) => {
+    const o = w/n, t = THEORETICAL.handWinFreq[id]||0, lv = dL(o,t);
+    const nm = id==='board' ? 'Board Win' : `Hand ${id} (${HAND_NAMES[Number(id)-1]})`;
+    if (lv !== 'ok') df.push({ category:'Hand Win', position:nm, obs:pct(o), theo:pct(t), drift:ddiff(o,t)+'pp', level:lv });
+    return { hid:id, name:nm, obs:o, theo:t, level:lv, wins:w };
   });
-  Object.entries(rankCounts).forEach(([rank,count]: any) => { const obs=count/n,theo=THEORETICAL.rankFreq[rank]||0,level=driftLevel(obs,theo); if(level!=='ok') driftFlags.push({category:'Rank Frequency',position:rank,obs:pct(obs),theo:pct(theo),drift:diff(obs,theo)+'pp',level}); });
-  Object.entries(colorCounts).forEach(([key,count]: any) => { const obs=count/n,theo=THEORETICAL.colorFreq[key]||0,level=driftLevel(obs,theo); if(level!=='ok') driftFlags.push({category:'Color Board',position:key,obs:pct(obs),theo:pct(theo),drift:diff(obs,theo)+'pp',level}); });
-  ['LOW','HIGH'].forEach(t => { const obs=lhCounts[t]/n,theo=THEORETICAL.lowHighFreq[t],level=driftLevel(obs,theo); if(level!=='ok') driftFlags.push({category:'River Low/High',position:t,obs:pct(obs),theo:pct(theo),drift:diff(obs,theo)+'pp',level}); });
+  Object.entries(rC).forEach(([r,c]:any) => { const o=c/n,t=THEORETICAL.rankFreq[r]||0,lv=dL(o,t); if(lv!=='ok') df.push({category:'Rank',position:r,obs:pct(o),theo:pct(t),drift:ddiff(o,t)+'pp',level:lv}); });
+  Object.entries(cC).forEach(([k,c]:any) => { const o=c/n,t=THEORETICAL.colorFreq[k]||0,lv=dL(o,t); if(lv!=='ok') df.push({category:'Color',position:k,obs:pct(o),theo:pct(t),drift:ddiff(o,t)+'pp',level:lv}); });
+  ['LOW','HIGH'].forEach(t => { const o=lC[t]/n,th=THEORETICAL.lowHighFreq[t],lv=dL(o,th); if(lv!=='ok') df.push({category:'River',position:t,obs:pct(o),theo:pct(th),drift:ddiff(o,th)+'pp',level:lv}); });
 
-  const exploits = handDrift.filter(h=>h.obs>(h.theo+0.04)&&h.wins>=5).sort((a,b)=>(b.obs-b.theo)-(a.obs-a.theo)).map(h=>({position:h.name,observedFreq:pct(h.obs),theoreticalFreq:pct(h.theo),overFrequency:diff(h.obs,h.theo)+'pp',severity:h.obs-h.theo>=0.08?'HIGH':'MEDIUM'}));
-  const topBets = Object.entries(betUsage).sort((a:any,b:any)=>b[1]-a[1]).slice(0,8).map(([pos,count]:any)=>({position:pos,usageRate:pct(count/n)}));
-  const ksRate = ksRounds/n;
-  const rtp = totalBet>0?(totalPayout/totalBet)*100:null;
-  const he = rtp!==null?(100-rtp).toFixed(2)+'%':null;
-  const crit = driftFlags.filter(f=>f.level==='critical'), warn = driftFlags.filter(f=>f.level==='warning');
+  const ex = hD.filter(h=>h.obs>(h.theo+0.04)&&h.wins>=5).sort((a,b)=>(b.obs-b.theo)-(a.obs-a.theo)).map(h=>({ position:h.name, observedFreq:pct(h.obs), theoreticalFreq:pct(h.theo), overFrequency:ddiff(h.obs,h.theo)+'pp', severity:h.obs-h.theo>=0.08?'HIGH':'MEDIUM' }));
+  const tb2 = Object.entries(bU).sort((a:any,b:any)=>b[1]-a[1]).slice(0,8).map(([p,c]:any) => ({ position:p, usageRate:pct(c/n) }));
+  const ksr = ks/n, rtp = tb>0?(tp/tb)*100:null, he = rtp?(100-rtp).toFixed(2)+'%':null;
+  const cr = df.filter(f=>f.level==='critical'), wr = df.filter(f=>f.level==='warning');
   const recs: string[] = [];
-  if (!crit.length&&!warn.length) recs.push('✅ All frequencies within expected variance. No calibration needed.');
-  crit.forEach(f=>recs.push(`🔴 CRITICAL: ${f.position} drifting ${f.drift} from theory.`));
-  warn.forEach(f=>recs.push(`🟡 WARNING: ${f.position} showing ${f.drift} drift. Monitor 100+ more rounds.`));
-  if (exploits.length) recs.push(`⚠️ ${exploits.length} exploit candidate(s) detected.`);
-  if (rtp!==null) { const r=parseFloat(rtp.toFixed(2)); recs.push(r>97?`🔴 RTP ${r.toFixed(2)}% above 97% ceiling.`:r<88?`🔴 RTP ${r.toFixed(2)}% unusually low.`:`✅ RTP ${r.toFixed(2)}% — within range.`); }
+  if (!cr.length&&!wr.length) recs.push('All frequencies within variance. No calibration needed.');
+  cr.forEach(f => recs.push('CRITICAL: '+f.position+' drifting '+f.drift+' from theory.'));
+  wr.forEach(f => recs.push('WARNING: '+f.position+' showing '+f.drift+' drift.'));
+  if (ex.length) recs.push(ex.length+' exploit candidate(s) detected.');
+  if (rtp) { const r=+rtp.toFixed(2); recs.push(r>97?'RTP '+r.toFixed(2)+'% above 97% ceiling.':r<88?'RTP '+r.toFixed(2)+'% unusually low.':'RTP '+r.toFixed(2)+'% within range.'); }
 
-  let answer: string|null = null;
-  if (action==='ask'&&question) {
-    const q=question.toLowerCase();
-    if (q.includes('rtp')||q.includes('house edge')||q.includes('return')) {
-      answer=rtp!==null?`Based on ${n} observed rounds: running at ${parseFloat(rtp.toFixed(2)).toFixed(2)}% RTP (house edge: ${he}). ${parseFloat(rtp.toFixed(2))>96?`Above 96% target — check highest-payout hand positions for drift first.`:parseFloat(rtp.toFixed(2))<90?`Below healthy floor target — verify payout calculations, especially tie-split logic.`:`Healthy range for casino floor operation.`}`:`No bet data yet — need rounds with actual bets placed.`;
-    } else if (q.includes('exploit')||q.includes('weakness')||q.includes('vulnerab')||q.includes('attack')) {
-      answer=exploits.length===0?`No exploit candidates in ${n} rounds. No position running more than 4pp over expected. ${n<500?'Still a small sample — keep observing.':'Solid sample — this is a good sign.'}`:`${exploits.length} exploit target(s): ${exploits.map(e=>`${e.position} (+${e.overFrequency})`).join(', ')}. Run the simulation to quantify how much edge a targeted player extracts.`;
+  // ── PARTNER ASSIST ───────────────────────────────────────────
+  let ans: string|null = null;
+  if (action==='ask' && question) {
+    const q = question.toLowerCase();
+    if (q.includes('rtp')||q.includes('house edge')) {
+      ans = rtp ? `Based on ${n} rounds: ${rtp.toFixed(2)}% RTP (house edge: ${he}). ${rtp>96?'Above 96% target — check high-payout hands for drift.':rtp<90?'Below healthy floor — verify tie-split logic.':'Healthy range.'}` : 'No bet data yet.';
+    } else if (q.includes('exploit')||q.includes('weakness')) {
+      ans = ex.length===0 ? `No exploit candidates in ${n} rounds. ${n<500?'Small sample — keep observing.':'Good sign.'}` : `${ex.length} target(s): ${ex.map((e:any)=>e.position+' (+'+e.overFrequency+')').join(', ')}. Run simulation to quantify edge.`;
     } else if (q.includes('kill')||q.includes('switch')) {
-      answer=`Kill-switch fired in ${(ksRate*100).toFixed(1)}% of rounds (${ksRounds}/${n}). ${ksRate>0.4?'Notably high — 3+ hand play is frequent. Check that losing side boards isn\'t creating dead-round feeling.':ksRate<0.05?'Very low — not being stress-tested much in live play yet.':'Normal range for mixed play.'}`;
-    } else if (q.includes('payout')||q.includes('calibrat')||q.includes('adjust')||q.includes('lower')||q.includes('raise')) {
-      const top=driftFlags.sort((a,b)=>Math.abs(parseFloat(b.drift))-Math.abs(parseFloat(a.drift))).slice(0,3);
-      answer=top.length===0?`All positions within variance — wouldn't touch payouts yet. Run to 500+ rounds first. Good data in, good data out.`:`Top drift positions: ${top.map(d=>`${d.position} (${d.drift})`).join(', ')}. Calibration candidates — but need 500+ rounds for confidence. ${n<300?`At ${n} rounds. Keep observing.`:`At ${n} rounds — approaching reliable baseline.`}`;
+      ans = `Kill-switch: ${(ksr*100).toFixed(1)}% of rounds (${ks}/${n}). ${ksr>0.4?'High — 3+ hand play frequent.':ksr<0.05?'Low — not stress-tested yet.':'Normal range.'}`;
+    } else if (q.includes('payout')||q.includes('calibrat')||q.includes('adjust')) {
+      const top = df.sort((a,b)=>Math.abs(+b.drift)-Math.abs(+a.drift)).slice(0,3);
+      ans = top.length===0 ? `All within variance. Good data in, good data out. Run to 500+ rounds first.` : `Top drift: ${top.map((d:any)=>d.position+' ('+d.drift+')').join(', ')}. Need 500+ rounds for confidence. At ${n} now.`;
     } else {
-      answer=`${n} rounds observed.\n• RTP: ${rtp!==null?parseFloat(rtp.toFixed(2)).toFixed(2)+'%':'pending'}\n• Kill-switch rate: ${(ksRate*100).toFixed(1)}%\n• Drift flags: ${driftFlags.length} (${crit.length} critical, ${warn.length} warning)\n• Exploit candidates: ${exploits.length}\n${driftFlags.length>0?`Top drift: ${driftFlags[0]?.position} at ${driftFlags[0]?.drift}.`:'All frequencies clean.'}\n\nAsk about RTP, exploits, kill-switch, or payout calibration for specific analysis.`;
+      ans = `${n} rounds observed.\nRTP: ${rtp?rtp.toFixed(2)+'%':'pending'}\nKill-switch: ${(ksr*100).toFixed(1)}%\nDrift flags: ${df.length} (${cr.length} critical, ${wr.length} warning)\nExploits: ${ex.length}\nAsk about RTP, exploits, kill-switch, or payout calibration.`;
     }
   }
 
-  return Response.json({ roundsAnalyzed:n, readyForSecurity:n>=250, observedRTP:rtp!==null?parseFloat(rtp.toFixed(2)):null, houseEdge:he, killSwitchRate:pct(ksRate), driftFlags, exploitCandidates:exploits, recommendations:recs, topBetPositions:topBets, handDrift:handDrift.map(h=>({...h,obs:pct(h.obs),theo:pct(h.theo)})), partnerAnswer:answer });
+  return Response.json({
+    roundsAnalyzed: n,
+    readyForSecurity: n>=250,
+    observedRTP: rtp?+rtp.toFixed(2):null,
+    houseEdge: he,
+    killSwitchRate: pct(ksr),
+    driftFlags: df,
+    exploitCandidates: ex,
+    recommendations: recs,
+    topBetPositions: tb2,
+    handDrift: hD.map(h=>({...h,obs:pct(h.obs),theo:pct(h.theo)})),
+    rawRounds: action === 'export' ? rounds : undefined,
+    partnerAnswer: ans
+  });
 }
