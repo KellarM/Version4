@@ -12,6 +12,21 @@ import {
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
+// ── localStorage round store ──────────────────────────────────
+const LS_KEY = 'rfth_observer_rounds';
+function lsGetRounds() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
+  catch { return []; }
+}
+function lsSaveRound(r) {
+  const arr = lsGetRounds(); arr.push(r);
+  try { localStorage.setItem(LS_KEY, JSON.stringify(arr)); } catch {}
+}
+function lsClearRounds() { try { localStorage.removeItem(LS_KEY); } catch {} }
+function lsCount() { return lsGetRounds().length; }
+// ─────────────────────────────────────────────────────────────
+
+
 // ── Pill toggle ───────────────────────────────────────────────
 function Toggle({ on, onToggle, color = 'blue', disabled = false, label }) {
   const track = { blue: on ? 'bg-blue-600' : 'bg-slate-700', red: on ? 'bg-red-600' : 'bg-slate-700' }[color];
@@ -153,10 +168,33 @@ export default function Observer({
       if (!observeOn) return;
       if (prevKeyRef.current === roundData.observerKey) return;
       prevKeyRef.current = roundData.observerKey;
-      console.log('[Observer] onRoundSettled handler called, roundId:', roundData.roundId);
-      base44.functions.invoke('observerAnalysis', { action: 'saveRound', roundData })
-        .then((res) => { console.log('[Observer] saved:', res); onRoundCountChange(prev => prev + 1); })
-        .catch(err => console.error('[Observer] save error:', err));
+      console.log('[Observer] saving round locally, roundId:', roundData.roundId);
+      lsSaveRound({
+        session_id: String(roundData.sessionId || 'live'),
+        round_number: roundData.roundId,
+        community_cards: (roundData.communityCards || []).map(c => (c?.rank ?? '') + (c?.suit ?? '')),
+        winner_hand_ids: roundData.winnerHandIds || [],
+        winning_rank: roundData.winningRank || null,
+        winning_colors: roundData.winningColors || [],
+        winning_low_high: roundData.winningLowHigh || null,
+        is_board_win: Boolean(roundData.isBoardWin),
+        hand_bets: roundData.handBets || {},
+        rank_bets: roundData.rankBets || {},
+        color_bets: roundData.colorBets || {},
+        low_high_bet: roundData.lowHighBet || null,
+        kill_switch_active: Boolean(roundData.killSwitchActive),
+        hand_bet_count: Number(roundData.handBetCount) || 0,
+        total_bet: Number(roundData.totalBet) || 0,
+        total_payout: Number(roundData.totalPayout) || 0,
+        net_result: Number(roundData.netResult) || 0,
+        balance_before: Number(roundData.balanceBefore) || 0,
+        balance_after: Number(roundData.balanceAfter) || 0,
+        reds_count: Number(roundData.redsCount) || 0,
+        blacks_count: Number(roundData.blacksCount) || 0,
+        river_card: roundData.riverCard ? String(roundData.riverCard) : null,
+      });
+      onRoundCountChange(prev => prev + 1);
+      console.log('[Observer] round saved locally, total:', lsCount());
     };
     return () => { if (onRoundSettledRef) onRoundSettledRef.current = null; };
   }, [observeOn, onRoundSettledRef, onRoundCountChange]);
@@ -164,13 +202,9 @@ export default function Observer({
   // Load DB round count on first open
   useEffect(() => {
     if (!isOpen) return;
-    base44.functions.invoke('observerAnalysis', { action: 'status' })
-      .then(res => {
-        const dbCount = res?.data?.roundsLoaded || 0;
-        // Use whichever is higher — DB count or local count
-        if (dbCount > roundCount) onRoundCountChange(dbCount);
-      })
-      .catch(() => {});
+    // Restore round count from localStorage on open
+    const localCount = lsCount();
+    if (localCount > roundCount) onRoundCountChange(localCount);
   }, [isOpen]);
 
   // Scroll chat
@@ -180,7 +214,8 @@ export default function Observer({
   const runAnalysis = useCallback(async () => {
     setAnalyzing(true);
     try {
-      const res = await base44.functions.invoke('observerAnalysis', { action: 'analyze' });
+      const rounds = lsGetRounds();
+      const res = await base44.functions.invoke('observerAnalysis', { action: 'analyze', rounds });
       setAnalysis(res?.data || null);
       if (res?.data?.recommendations?.length) {
         setChatHistory(prev => [...prev, {
@@ -205,7 +240,8 @@ export default function Observer({
     setChatHistory(prev => [...prev, { role: 'user', text: q }]);
     setChatLoading(true);
     try {
-      const res = await base44.functions.invoke('observerAnalysis', { action: 'ask', question: q });
+      const rounds = lsGetRounds();
+      const res = await base44.functions.invoke('observerAnalysis', { action: 'ask', question: q, rounds });
       setChatHistory(prev => [...prev, { role: 'observer', text: res?.data?.partnerAnswer || res?.data?.error || 'No response.' }]);
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'observer', text: 'Error: ' + (err.message || 'Failed') }]);
@@ -224,14 +260,13 @@ export default function Observer({
         downloadBlob(new Blob([buildCSVSummary(analysis)], { type: 'text/csv' }), `Observer_SecurityReport_${ts}.csv`);
       }
       if (format === 'rounds-csv') {
-        const res = await base44.functions.invoke('observerAnalysis', { action: 'export' });
-        const rounds = res?.data?.rawRounds || [];
+        const rounds = lsGetRounds();
         if (!rounds.length) { alert('No round data to export.'); setExporting(false); return; }
         downloadBlob(new Blob([buildRoundCSV(rounds)], { type: 'text/csv' }), `Observer_RawRounds_${ts}.csv`);
       }
       if (format === 'json') {
-        const res = await base44.functions.invoke('observerAnalysis', { action: 'export' });
-        const payload = { exported_at: new Date().toISOString(), rounds_count: res?.data?.rawRounds?.length || 0, analysis: analysis || null, rounds: res?.data?.rawRounds || [] };
+        const rounds = lsGetRounds();
+        const payload = { exported_at: new Date().toISOString(), rounds_count: rounds.length, analysis: analysis || null, rounds };
         downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `Observer_FullData_${ts}.json`);
       }
     } catch (err) {
@@ -246,11 +281,11 @@ export default function Observer({
     setClearing(true);
     setShowConfirmClear(false);
     try {
-      const res = await base44.functions.invoke('observerAnalysis', { action: 'clearRounds' });
-      const deleted = res?.data?.deleted || 0;
+      const deleted = lsCount();
+      lsClearRounds();
       onRoundCountChange(0);
       setAnalysis(null);
-      setChatHistory(prev => [...prev, { role: 'observer', text: `🗑 Cleared ${deleted} rounds from the database. Starting fresh.` }]);
+      setChatHistory(prev => [...prev, { role: 'observer', text: `🗑 Cleared ${deleted} rounds from local storage. Starting fresh.` }]);
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'observer', text: 'Clear failed: ' + (err.message || 'Unknown error') }]);
     } finally {
