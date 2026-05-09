@@ -1545,8 +1545,8 @@ export default function RapidFireGame() {
           <DetailedPayoutDisplay winInfo={lastWinInfo} playerCount={playerCount} />
 
           {/* 10 Fixed Hands Grid */}
-          <div className="flex-1 min-h-0 w-full overflow-hidden">
-            <div className="grid grid-cols-5 gap-1.5 h-full" style={{ gridTemplateRows: 'repeat(2, 1fr)' }}>
+          <div className="flex-1 min-h-0 w-full flex flex-col justify-center overflow-hidden">
+            <div className="grid grid-cols-5 gap-1.5">
               {FIXED_HANDS.map((hand) =>
               <FixedHandCard
                 key={hand.id}

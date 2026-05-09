@@ -52,8 +52,8 @@ export default function FixedHandCard({
 
   return (
     <motion.div
-      className={`relative rounded-xl border-[3px] cursor-pointer transition-colors duration-200 select-none flex flex-col h-full w-full ${borderCls}`}
-      style={{ padding: '1.5%' }}
+      className={`relative rounded-xl border-[3px] cursor-pointer transition-colors duration-200 select-none flex flex-col ${borderCls}`}
+      style={{ padding: '4px 6px' }}
       animate={isLeading && !isWinner ? { scale: [1, 1.02, 1] } : { scale: 1 }}
       transition={{ duration: 0.5, repeat: isLeading && !isWinner ? Infinity : 0, repeatDelay: 1.5 }}
       onMouseDown={(e) => {
@@ -101,7 +101,7 @@ export default function FixedHandCard({
           color: '#e8b84b',
           fontFamily: 'Oswald, sans-serif',
           fontWeight: 700,
-          fontSize: 'clamp(0.55rem, 1.1vw, 0.95rem)',
+          fontSize: 'clamp(0.6rem, 1.3vh, 0.9rem)',
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
           textShadow: '0 0 2px #000, 1px 1px 2px #000, -1px -1px 2px #000, 2px 2px 0 #000',
@@ -109,10 +109,10 @@ export default function FixedHandCard({
         }}>{hand.payout}:1</span>
       </div>
 
-      {/* Cards — scale to fill the available vertical space of the cell */}
+      {/* Cards — fixed vh-based height so they stay proportional at all zoom levels */}
       <div
-        className="flex gap-[3%] justify-center card-felt-shadow flex-1 items-center min-h-0 w-full"
-        style={{ padding: '0 4%' }}
+        className="flex gap-1 justify-center card-felt-shadow flex-1 items-center min-h-0 w-full overflow-hidden"
+        style={{ padding: '2% 6%' }}
       >
         {hand.cards.map((card, i) => {
           const imgUrl = getCardImageUrl(card);
@@ -123,15 +123,14 @@ export default function FixedHandCard({
                 src={imgUrl}
                 alt={`${card.rank} of ${card.suit}`}
                 style={{
-                  flex: '1 1 0',
-                  minWidth: 0,
-                  height: '100%',
-                  maxHeight: '100%',
+                  height: 'clamp(3rem, 6.5vh, 5rem)',
+                  width: 'auto',
                   aspectRatio: '5 / 7',
                   objectFit: 'cover',
                   borderRadius: '6%',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
                   display: 'block',
+                  flexShrink: 0,
                 }}
               />
             )
@@ -147,7 +146,7 @@ export default function FixedHandCard({
       {/* Current eval — always occupies the same space to prevent layout shift */}
       <div
         className={`text-center font-semibold leading-none truncate flex-shrink-0 ${isLeading || isWinner ? 'text-yellow-300' : 'text-yellow-100/60'}`}
-        style={{ fontSize: 'clamp(0.5rem, 0.85vw, 0.75rem)', padding: '1% 0 2%' }}
+        style={{ fontSize: 'clamp(0.5rem, 1vh, 0.7rem)', padding: '1% 0 2%' }}
       >
         {currentEval && currentEval.name !== 'No Hand' && currentEval.name !== 'High Card'
           ? currentEval.name
