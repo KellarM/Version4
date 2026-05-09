@@ -52,7 +52,8 @@ export default function FixedHandCard({
 
   return (
     <motion.div
-      className={`relative rounded-xl p-1.5 border-[3px] cursor-pointer transition-colors duration-200 select-none flex flex-col justify-between ${borderCls}`}
+      className={`relative rounded-xl border-[3px] cursor-pointer transition-colors duration-200 select-none flex flex-col h-full w-full ${borderCls}`}
+      style={{ padding: '1.5%' }}
       animate={isLeading && !isWinner ? { scale: [1, 1.02, 1] } : { scale: 1 }}
       transition={{ duration: 0.5, repeat: isLeading && !isWinner ? Infinity : 0, repeatDelay: 1.5 }}
       onMouseDown={(e) => {
@@ -94,25 +95,46 @@ export default function FixedHandCard({
         </div>
       }
 
-      {/* Payout — top center */}
-      <div className="mb-1 flex items-center justify-center">
+      {/* Payout — top center, scales with cell width */}
+      <div className="flex items-center justify-center flex-shrink-0" style={{ padding: '2% 0 1%' }}>
         <span style={{
           color: '#e8b84b',
           fontFamily: 'Oswald, sans-serif',
           fontWeight: 700,
-          fontSize: '0.85rem',
+          fontSize: 'clamp(0.55rem, 1.1vw, 0.95rem)',
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
           textShadow: '0 0 2px #000, 1px 1px 2px #000, -1px -1px 2px #000, 2px 2px 0 #000',
+          whiteSpace: 'nowrap',
         }}>{hand.payout}:1</span>
       </div>
 
-      {/* Cards */}
-      <div className="flex gap-0.5 justify-center card-felt-shadow flex-1 items-center" style={{ transform: 'scale(0.9)', transformOrigin: 'center center' }}>
+      {/* Cards — scale to fill the available vertical space of the cell */}
+      <div
+        className="flex gap-[3%] justify-center card-felt-shadow flex-1 items-center min-h-0 w-full"
+        style={{ padding: '0 4%' }}
+      >
         {hand.cards.map((card, i) => {
           const imgUrl = getCardImageUrl(card);
           return imgUrl
-            ? <img key={i} src={imgUrl} alt={`${card.rank} of ${card.suit}`} className="w-[3.9rem] h-[5.5rem] rounded-lg shadow-lg object-cover" />
+            ? (
+              <img
+                key={i}
+                src={imgUrl}
+                alt={`${card.rank} of ${card.suit}`}
+                style={{
+                  flex: '1 1 0',
+                  minWidth: 0,
+                  height: '100%',
+                  maxHeight: '100%',
+                  aspectRatio: '5 / 7',
+                  objectFit: 'cover',
+                  borderRadius: '6%',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                  display: 'block',
+                }}
+              />
+            )
             : <PlayingCard key={i} card={card} size="sm" glow={isLeading || isWinner} />;
         })}
       </div>
@@ -123,11 +145,13 @@ export default function FixedHandCard({
       </div>
 
       {/* Current eval — always occupies the same space to prevent layout shift */}
-      <div className={`text-center text-xs font-semibold leading-none mt-0.5 truncate
-          ${isLeading || isWinner ? 'text-yellow-300' : 'text-yellow-100/60'}`}>
+      <div
+        className={`text-center font-semibold leading-none truncate flex-shrink-0 ${isLeading || isWinner ? 'text-yellow-300' : 'text-yellow-100/60'}`}
+        style={{ fontSize: 'clamp(0.5rem, 0.85vw, 0.75rem)', padding: '1% 0 2%' }}
+      >
         {currentEval && currentEval.name !== 'No Hand' && currentEval.name !== 'High Card'
           ? currentEval.name
-          : '\u00A0'}
+          : ' '}
       </div>
 
 
