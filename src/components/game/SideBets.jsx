@@ -123,14 +123,14 @@ export default function SideBets({
           } catch (_) {}
         }}
         whileTap={canBetRB ? { scale: 0.95 } : {}}
-        style={{ ...blockStyle, borderRadius: '8px', position: 'relative', overflow: 'visible' }}
+        style={{ ...blockStyle, borderRadius: '8px', position: 'relative', overflow: 'hidden' }}
         className={`relative flex-1 transition-all duration-300 ${canBetRB ? 'hover:brightness-110 lp-magnetic' : ''}`}
       >
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0 pointer-events-none z-0">
-          <span style={{ ...goldEmbossText, fontSize: '1.25rem', fontWeight: 900, lineHeight: 1 }}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0 pointer-events-none z-0 overflow-hidden" style={{ padding: '2px' }}>
+          <span style={{ ...goldEmbossText, fontSize: 'clamp(0.75rem, 1.8vh, 1.1rem)', fontWeight: 900, lineHeight: 1, whiteSpace: 'nowrap' }}>
             {opt.number}
           </span>
-          <span style={{ ...goldEmbossText, fontSize: '0.72rem', fontWeight: 800, lineHeight: 1.1 }}>
+          <span style={{ ...goldEmbossText, fontSize: 'clamp(0.55rem, 1.2vh, 0.68rem)', fontWeight: 800, lineHeight: 1.1, whiteSpace: 'nowrap' }}>
             {opt.payout}
           </span>
         </div>
