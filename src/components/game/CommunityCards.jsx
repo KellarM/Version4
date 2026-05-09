@@ -5,8 +5,8 @@ const CARD_W = 56;
 const CARD_H = 80;
 const GAP = 6;
 const GROUP_GAP = 14;
-const LABEL_H = 16;
-const LABEL_TOP_GAP = 4;
+const LABEL_H = 18;
+const LABEL_TOP_GAP = 6;
 
 function CardSlot({ card, index, active }) {
   return (

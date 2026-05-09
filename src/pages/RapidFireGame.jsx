@@ -1508,9 +1508,9 @@ export default function RapidFireGame() {
           <div
             className="slot-border-dormant"
             style={{
-              height: '118px',
-              minHeight: '118px',
-              maxHeight: '118px',
+              height: '152px',
+              minHeight: '152px',
+              maxHeight: '152px',
               width: '100%',
               flexShrink: 0,
               display: 'flex',
@@ -1519,8 +1519,8 @@ export default function RapidFireGame() {
               gap: '1rem',
               paddingLeft: '1rem',
               paddingRight: '1rem',
-              paddingTop: '4px',
-              paddingBottom: '4px',
+              paddingTop: '8px',
+              paddingBottom: '8px',
               borderRadius: '0.75rem',
               border: '3px solid',
               background: 'rgba(0,0,0,0.35)',
@@ -1545,8 +1545,8 @@ export default function RapidFireGame() {
           <DetailedPayoutDisplay winInfo={lastWinInfo} playerCount={playerCount} />
 
           {/* 10 Fixed Hands Grid */}
-          <div className="flex-1 min-h-0 w-full flex flex-col justify-center overflow-hidden">
-            <div className="grid grid-cols-5 gap-1.5">
+          <div className="flex-1 min-h-0 w-full">
+            <div className="grid grid-cols-5 gap-1.5 h-full auto-rows-fr">
               {FIXED_HANDS.map((hand) =>
               <FixedHandCard
                 key={hand.id}
