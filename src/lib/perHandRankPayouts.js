@@ -119,7 +119,9 @@ export function getAvailableRanksForHand(handId) {
 }
 
 /**
- * Given a set of active hand IDs, return the union of available ranks.
+ * DEPRECATED (2026-05-09): No longer used in live game logic.
+ * Kept for simulation tool compatibility.
+ * Under the new Open Win Rule, all ranks are available regardless of hand selection.
  */
 export function getUnionRanksForHands(handIds) {
   const union = new Set();
@@ -132,30 +134,10 @@ export function getUnionRanksForHands(handIds) {
 }
 
 /**
- * Given a rank and a set of active hand IDs, determine the display odds string.
- * - 0 hands selected: null (no odds shown, locked)
- * - 1 hand selected: the specific odds for that hand (or null if not available)
- * - 2 hands selected: "MIXED" if both hands have that rank, or the specific odds if only one has it
- * - 3+ hands selected: null (kill switch, all locked)
+ * DEPRECATED (2026-05-09): Rank odds are no longer shown on the board.
+ * Under the Open Win Rule, odds are revealed at settlement in the win display,
+ * tied to the actual winning hand. This function is kept for reference only.
  */
 export function getRankDisplayOdds(rankName, activeHandIds) {
-  if (!activeHandIds || activeHandIds.length === 0 || activeHandIds.length >= 3) {
-    return null;
-  }
-
-  if (activeHandIds.length === 1) {
-    const payout = getPerHandRankPayout(activeHandIds[0], rankName);
-    return payout !== null ? `${payout}:1` : null;
-  }
-
-  // 2 hands
-  const available = activeHandIds.filter(id => getPerHandRankPayout(id, rankName) !== null);
-  if (available.length === 0) return null;
-  if (available.length === 1) {
-    // Only one of the two hands can achieve this rank — show that hand's odds
-    const payout = getPerHandRankPayout(available[0], rankName);
-    return payout !== null ? `${payout}:1` : null;
-  }
-  // Both hands have this rank with different odds
-  return 'MIXED';
+  return null; // Odds not shown on board — revealed at settlement
 }

@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
-import { getRankDisplayOdds } from '@/lib/perHandRankPayouts';
 import Chip from './Chip';
 
 export const RANK_BET_OPTIONS = [
@@ -50,18 +49,15 @@ function LockIcon({ dim = false, onGold = false }) {
 
 function RankSlot({
   opt, rankBets, allRankBets, playerCount, canBet,
-  isWinner, isLeading, isKillLocked, isMathLocked, isSlotLocked,
+  isWinner, isLeading, isKillLocked, isSlotLocked,
   onRankBet, onRemoveRankBet, onMoveRankBet, gamePhase, unlockedRanks, killSwitchActive,
   noHandBets, activePlayerId, activeHandIds,
 }) {
   const bet = rankBets[opt.key] || 0;
   const unlockPulse = useUnlockPulse(opt.key, unlockedRanks);
 
-  // Dynamic odds display based on selected hands
-  const displayOdds = getRankDisplayOdds(opt.key, activeHandIds || []);
-
   const hardLocked = noHandBets || isKillLocked;
-  const fullyLocked = hardLocked || isMathLocked || isSlotLocked;
+  const fullyLocked = hardLocked || isSlotLocked;
 
   const chipsHere = [];
   for (let i = 0; i < (playerCount || 1); i++) {
@@ -136,13 +132,12 @@ function RankSlot({
         if (gamePhase === 'betting' && bet > 0) onRemoveRankBet(opt.key);
       }}
       onDragOver={(e) => {
-        // Allow drop if: not kill-locked, not math-locked, and either slot is free OR already has a bet here
-        if (gamePhase === 'betting' && !hardLocked && !isMathLocked) { e.preventDefault(); e.stopPropagation(); }
+        if (gamePhase === 'betting' && !hardLocked) { e.preventDefault(); e.stopPropagation(); }
       }}
       onDrop={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (gamePhase !== 'betting' || hardLocked || isMathLocked) return;
+        if (gamePhase !== 'betting' || hardLocked) return;
         const data = e.dataTransfer.getData('text/plain');
         if (!data) return;
         try {
@@ -154,7 +149,7 @@ function RankSlot({
         } catch (_) {}
       }}
       whileTap={canBet && !fullyLocked ? { scale: 0.96 } : {}}
-      style={{ ...buttonStyle, pointerEvents: (hardLocked || (isMathLocked && bet === 0)) ? 'none' : 'auto', overflow: 'visible' }}
+      style={{ ...buttonStyle, pointerEvents: hardLocked ? 'none' : 'auto', overflow: 'visible' }}
       className={`relative w-full h-full rounded-lg border transition-all duration-300
         ${slotCls}
         ${canBet && !fullyLocked ? 'lp-magnetic' : ''}
@@ -193,12 +188,7 @@ function RankSlot({
             <LockIcon dim={hardLocked} onGold={true} />
           )}
         </div>
-        <span
-          className={`text-right whitespace-nowrap ${displayOdds === 'MIXED' ? 'text-yellow-300/80' : oddsColor}`}
-          style={{ fontSize: displayOdds === 'MIXED' ? '0.65rem' : '0.8rem', fontWeight: 900, lineHeight: 1, flex: 1 }}
-        >
-          {displayOdds || ''}
-        </span>
+        {/* Odds shown in win display only — not on board */}
       </div>
 
       {/* Chip overlay — absolute, floats over text, pointer-events none so clicks pass through */}
@@ -277,7 +267,7 @@ export default function RankBets({
   onAttemptLockedRank, onHoverRankRow,
 }) {
   const canBet = gamePhase === 'betting' && !disabled && !killSwitchActive;
-  const hasMathFilter = unlockedRanks && unlockedRanks.size > 0;
+  // hasMathFilter removed: all ranks available when kill-switch is off
   const noHandBets = !handBetCount || handBetCount === 0;
 
   return (
@@ -314,13 +304,13 @@ export default function RankBets({
           const slotLimitReached = maxRankSlots > 0 && !rankBets[opt.key] && currentRankSlots >= maxRankSlots;
           const isKillLocked = !!killSwitchActive;
           const isSlotLocked = slotLimitReached;
-          const isMathLocked = hasMathFilter && !unlockedRanks.has(opt.key) && bet === 0 && gamePhase === 'betting';
+          const isMathLocked = false; // Removed: all ranks open regardless of hand selection
 
           return (
             <div
               key={opt.key}
               className="relative flex-1 min-h-0"
-              onMouseEnter={() => onHoverRankRow && !isMathLocked && !noHandBets && onHoverRankRow(opt.key)}
+              onMouseEnter={() => onHoverRankRow && !noHandBets && onHoverRankRow(opt.key)}
               onMouseLeave={() => onHoverRankRow && onHoverRankRow(null)}
             >
               <RankSlot
@@ -333,7 +323,6 @@ export default function RankBets({
                 isLeading={isLeading}
                 isKillLocked={isKillLocked}
                 isSlotLocked={isSlotLocked}
-                isMathLocked={isMathLocked}
                 noHandBets={noHandBets}
                 onRankBet={onRankBet}
                 onRemoveRankBet={onRemoveRankBet}

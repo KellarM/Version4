@@ -139,7 +139,7 @@ export default function GameRulesModal() {
 
                 {/* Rank Betting */}
                 <Section title="Rank Betting — Payouts">
-                  <p className="text-gray-400 text-xs mb-3">Bet on what poker rank the winning hand will achieve. Odds are unique to each card hand — select a hand to see its specific odds. One Pair is the minimum qualifying rank.</p>
+                  <p className="text-gray-400 text-xs mb-3">Bet on what poker rank will win the round — it doesn't matter which hand wins, as long as the winning hand achieves the rank you bet. Odds are revealed in the win display and are tied to the actual winning hand. One Pair is the minimum qualifying rank.</p>
                   <div className="space-y-1.5">
                     {RANK_BETS.map(r => (
                       <div key={r.name} className="flex justify-between items-center bg-slate-800/60 rounded-lg px-3 py-1.5">
@@ -155,7 +155,7 @@ export default function GameRulesModal() {
                 {/* Dependent Payouts */}
                 <Section title="Winning">
                   <Rule label="Hand bets">pay if the hand you backed forms the highest 5-card poker rank from its 7 available cards (2 pocket + 5 community) and beats all 9 other hands at the table.</Rule>
-                  <Rule label="Rank bets">pay if the specific Card Hand you backed wins the round, AND that winning hand's highest 5-card poker rank (from its 7 available cards) matches your rank bet.</Rule>
+                  <Rule label="Rank bets">pay if ANY hand wins the round by the rank you bet — you do not need to have bet on the winning hand. Payout odds are tied to the actual winning hand's per-hand rank table, revealed at settlement.</Rule>
                   <Rule label="Color bets">pay based on the total number of Red or Black cards in the 5 community cards. If 5 Red appear — 5R, 4R, and 3R all win. If 4 Red appear — 4R and 3R win. If 3 Red appear — only 3R wins. The same rules apply for Black cards.</Rule>
                   <Rule label="River (Low/High) bets">pay based solely on the 5th community card — Low wins if it is a 2–7, High wins if it is an 8–A, regardless of which hand wins.</Rule>
                   <Rule label="Community Board Win">If the 5-card Community Board is stronger than all 10 carded hands at showdown, all Hand bets lose. Rank Board, Color Board, and River bets remain active and pay based on the board's final composition.</Rule>

@@ -66,14 +66,7 @@ const ALERT_CONFIGS = {
     body: 'You have reached the maximum bet for this round.',
     sub: 'The Snowball Caps limit total bets per tier. Start a new round to reset.',
   },
-  impossible: {
-    gradient: 'from-gray-800 to-gray-900',
-    border: 'border-yellow-900/60',
-    text: 'text-yellow-200/80',
-    title: 'Mathematically Impossible',
-    body: 'This rank has 0% probability given your current hand selection.',
-    sub: 'Add a pocket pair hand (K/K, 7/7, or 3/3) to unlock Four of a Kind.',
-  },
+  // 'impossible' alert removed (2026-05-09): all ranks are now available regardless of hand selection
   color_needs_rank: {
     gradient: 'from-amber-700 to-amber-800',
     border: 'border-amber-400',

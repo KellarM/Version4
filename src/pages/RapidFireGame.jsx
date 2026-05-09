@@ -8,7 +8,6 @@ import {
   checkRankCap, checkColorCap, checkRiverCap,
   getTotalHandBets, getTotalRankBets, getTotalColorBets, hasRankBet,
   calculateTiePayout,
-  getUnlockedRanksForPlayer,
   isSideBetGateOpen } from
 '@/lib/gameEngine';
 import { COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT, calculatePayout } from '@/lib/payoutConstants';
@@ -257,9 +256,8 @@ export default function RapidFireGame() {
   'lp-hand-placed' :
   'lp-dormant';
 
-  // Mathematical Path: rank slots locked when they have zero probability across active hands
+  // All 7 rank slots are available when kill-switch is off (any rank can win regardless of hand selection)
   const activeHandIds = Object.keys(pHandBets).map(Number);
-  const unlockedRanks = getUnlockedRanksForPlayer(activeHandIds);
 
   // Max rank slots: 1 hand = 1 slot, 2 hands = 2 slots (only when 1–2 hands selected)
   const maxRankSlots = handBetCount === 1 ? 1 : handBetCount === 2 ? 2 : 0;
@@ -406,16 +404,6 @@ export default function RapidFireGame() {
     let rankRefund = 0;
     let updatedRankBets = { ...(rankBets[pid] || {}) };
 
-    // Remove ranks that are now mathematically impossible
-    const remainingHandIds = Object.keys(updatedHandBets).map(Number);
-    const nowUnlocked = getUnlockedRanksForPlayer(remainingHandIds);
-    for (const rankKey of Object.keys(updatedRankBets)) {
-      if (!nowUnlocked.has(rankKey)) {
-        rankRefund += updatedRankBets[rankKey];
-        delete updatedRankBets[rankKey];
-      }
-    }
-
     // Remove excess rank slots
     while (Object.keys(updatedRankBets).length > slotsAllowed) {
       const keyToRemove = Object.keys(updatedRankBets)[Object.keys(updatedRankBets).length - 1];
@@ -526,13 +514,6 @@ export default function RapidFireGame() {
     // Must have at least 1 hand bet to place rank bets
     if (Object.keys(handBets[pid] || {}).length === 0) {
       setRankAlertType('no_hands');
-      setShowRankLimitAlert(true);
-      return;
-    }
-
-    // Mathematical Path: block rank bets with zero probability across active hands
-    if (unlockedRanks.size > 0 && !unlockedRanks.has(key)) {
-      setRankAlertType('impossible');
       setShowRankLimitAlert(true);
       return;
     }
@@ -746,14 +727,6 @@ export default function RapidFireGame() {
         let rankRefund = 0;
         let updatedRankBets = { ...(rankBets[dragPid] || {}) };
 
-        const remainingHandIds = Object.keys(remainingHandBets).map(Number);
-        const nowUnlocked = getUnlockedRanksForPlayer(remainingHandIds);
-        for (const rankKey of Object.keys(updatedRankBets)) {
-          if (!nowUnlocked.has(rankKey)) {
-            rankRefund += updatedRankBets[rankKey];
-            delete updatedRankBets[rankKey];
-          }
-        }
         while (Object.keys(updatedRankBets).length > slotsAllowed) {
           const keyToRemove = Object.keys(updatedRankBets)[Object.keys(updatedRankBets).length - 1];
           rankRefund += updatedRankBets[keyToRemove];
@@ -810,16 +783,6 @@ export default function RapidFireGame() {
 
       let rankRefund = 0;
       let updatedRankBets = { ...(rankBets[dragPid] || {}) };
-
-      // Remove ranks that are mathematically impossible with new hand set
-      const remainingHandIds = Object.keys(updatedHandBets).map(Number);
-      const nowUnlocked = getUnlockedRanksForPlayer(remainingHandIds);
-      for (const rankKey of Object.keys(updatedRankBets)) {
-        if (nowUnlocked.size > 0 && !nowUnlocked.has(rankKey)) {
-          rankRefund += updatedRankBets[rankKey];
-          delete updatedRankBets[rankKey];
-        }
-      }
 
       // Trim excess rank slots (e.g. moved 2 hands onto 1, now only 1 slot allowed)
       while (Object.keys(updatedRankBets).length > slotsAllowed) {
@@ -1102,23 +1065,27 @@ export default function RapidFireGame() {
 
       // River hedge is not a real bet type — ignore any flag
 
-      // Rank bets — Winner-Take-All rule:
-      // A rank bet pays ONLY if the specific hand the player bet on is the actual round winner
-      // AND that winning hand's best rank matches the player's rank bet.
-      // A rank match on a non-winning hand (or on a winning hand the player didn't bet) = loss.
-      if (leader && Object.keys(prk).length > 0) {
-        const playerBetHandIds = Object.keys(ph).map(Number);
-        const playerWinningHandIds = leader.handIds.filter((id) => playerBetHandIds.includes(id));
+      // Rank bets — Open Win Rule (v2, 2026-05-09):
+      // A rank bet pays if ANY hand wins the round by the player's rank bet.
+      // The player does NOT need to have bet on the winning hand.
+      // Payout odds are tied to the ACTUAL winning hand's per-hand rank odds.
+      if (leader && !leader.communityBoardWin && Object.keys(prk).length > 0) {
+        // Find the actual winning hand and its rank
+        let actualWinnerHandId = null;
+        let actualWinnerRankName = null;
+        for (const wid of leader.handIds) {
+          const hand = FIXED_HANDS.find((h) => h.id === wid);
+          if (!hand) continue;
+          const result = evaluateBestHand(hand.cards, finalComm);
+          if (result) { actualWinnerHandId = wid; actualWinnerRankName = result.name; break; }
+        }
 
-        for (const [rankKey, rankBetAmt] of Object.entries(prk)) {
-          if (rankBetAmt <= 0) continue;
-          // Find the first winning hand that both the player bet on AND achieves this rank
-          for (const wid of playerWinningHandIds) {
-            const hand = FIXED_HANDS.find((h) => h.id === wid);
-            if (!hand) continue;
-            const result = evaluateBestHand(hand.cards, finalComm);
-            if (result && result.name === rankKey) {
-              const ratio = getPerHandRankPayout(wid, rankKey);
+        if (actualWinnerRankName) {
+          for (const [rankKey, rankBetAmt] of Object.entries(prk)) {
+            if (rankBetAmt <= 0) continue;
+            if (rankKey === actualWinnerRankName) {
+              // Pay at the actual winning hand's per-hand rank odds
+              const ratio = getPerHandRankPayout(actualWinnerHandId, rankKey);
               if (ratio !== null) {
                 const payout = calculatePayout(rankBetAmt, ratio);
                 w += payout;
@@ -1129,7 +1096,6 @@ export default function RapidFireGame() {
                   payout
                 });
               }
-              break; // only pay once per rank bet
             }
           }
         }
@@ -1736,7 +1702,7 @@ export default function RapidFireGame() {
               handBetCount={handBetCount}
               maxRankSlots={maxRankSlots}
               rankBetCount={rankBetCount}
-              unlockedRanks={unlockedRanks}
+              unlockedRanks={new Set()}
               activePlayerId={pid}
               activeHandIds={activeHandIds}
               onAttemptLockedRank={(type) => {

@@ -324,7 +324,9 @@ export { HAND_RANK_PAYOUTS } from '@/lib/payoutConstants';
 // MATHEMATICAL PATH — Hand-Rank Probability Matrix
 // ============================================================
 // Authoritative static matrix. Each hand ID maps to an object where each
-// rank key holds 1 (possible) or 0 (impossible / locked) for betting purposes.
+// rank key holds 1 (achievable) or 0 (not achievable) for this hand's card combination.
+// NOTE: Under the Open Win Rule (v2), rank bet LOCKS based on this matrix are removed.
+// This matrix is retained for simulation/audit tools only.
 //
 // Hand mapping (ID → cards → label):
 //   1  A♦ 10♥  Hand A   6  8♦ 6♦   Hand G
@@ -350,8 +352,9 @@ export const HAND_RANK_MATRIX = Object.freeze({
   9:  Object.freeze({ 'Four of a Kind': 1, 'Full House': 1, 'Flush': 0, 'Straight': 1, 'Three of a Kind': 1, 'Two Pair': 0, 'One Pair': 0 }),  // J (3♣ 3♥)
 });
 
-// Returns the Set of rank names that are mathematically reachable (value > 0)
-// across the union of the player's currently-betted hand IDs.
+// DEPRECATED (2026-05-09): Rank bets are no longer locked to hand-specific rank availability.
+// All 7 rank bet slots are open whenever at least 1 hand bet is placed (kill-switch aside).
+// This function is kept for simulation tool compatibility only — do not use in live game logic.
 export function getUnlockedRanksForPlayer(activeBettedHandIds) {
   if (!activeBettedHandIds || activeBettedHandIds.length === 0) return new Set();
   const reachable = new Set();
@@ -503,48 +506,49 @@ export function runUnifiedRound(board) {
 }
 
 // ============================================================
-// DEPENDENT RANK WIN RESOLVER
+// RANK WIN RESOLVER — v2 (2026-05-09)
 // ============================================================
-// CRITICAL RULE: A Rank bet only pays when ALL of the following are true:
-//   1. The player placed a Hand bet on at least one hand that won the round.
-//   2. That specific winning hand's best poker result matches the rank the player bet on.
-//
-// This is NOT a global "board rank" check.
-// It is a per-player, per-hand, per-rank validation.
+// NEW RULE: A Rank bet pays when ANY hand wins the round by the rank the player bet.
+// The player does NOT need to have bet on the winning hand.
+// The player DOES need at least 1 hand bet (gating rule — unchanged).
+// Payout odds are tied to the ACTUAL winning hand (resolved in RapidFireGame.jsx).
 //
 // Parameters:
-//   playerHandBets  – { [handId]: amount }  for the player being settled
+//   playerHandBets  – { [handId]: amount }  — must be non-empty (player must have a hand bet)
 //   playerRankBets  – { [rankName]: amount } for the player being settled
 //   winnerHandIds   – array of hand IDs that won the round (from findLeadingHand)
 //   communityCards  – the 5 final community cards
 //
-// Returns: array of rank key strings whose bets should pay out
+// Returns: { payingRanks: string[], winningHandId: number|null }
+//   payingRanks  – rank keys whose bets pay out
+//   winningHandId – the actual winning hand ID (for payout lookup)
 export function resolveRankBetWin(playerHandBets, playerRankBets, winnerHandIds, communityCards) {
-  if (!winnerHandIds || winnerHandIds.length === 0) return [];
-  if (!playerRankBets || Object.keys(playerRankBets).length === 0) return [];
-  if (!playerHandBets || Object.keys(playerHandBets).length === 0) return [];
+  if (!winnerHandIds || winnerHandIds.length === 0) return { payingRanks: [], winningHandId: null };
+  if (!playerRankBets || Object.keys(playerRankBets).length === 0) return { payingRanks: [], winningHandId: null };
+  if (!playerHandBets || Object.keys(playerHandBets).length === 0) return { payingRanks: [], winningHandId: null };
 
-  // Which winning hand IDs did this player actually bet on?
-  const playerBetHandIds = Object.keys(playerHandBets).map(Number);
-  const playerWinningHandIds = winnerHandIds.filter(id => playerBetHandIds.includes(id));
-
-  if (playerWinningHandIds.length === 0) return [];
-
-  // Determine the poker rank of each hand the player bet on that won
-  const winningRanksForPlayer = new Set();
-  for (const wid of playerWinningHandIds) {
+  // Find the actual winning hand and its rank
+  let winningHandId = null;
+  let winningRankName = null;
+  for (const wid of winnerHandIds) {
     const hand = FIXED_HANDS.find(h => h.id === wid);
     if (!hand) continue;
     const result = evaluateBestHand(hand.cards, communityCards);
-    if (result) winningRanksForPlayer.add(result.name);
+    if (result) {
+      winningHandId = wid;
+      winningRankName = result.name;
+      break;
+    }
   }
 
-  // A rank bet pays only if its key is in the set above
+  if (!winningRankName) return { payingRanks: [], winningHandId: null };
+
+  // A rank bet pays if the actual winner's rank matches what the player bet
   const payingRanks = [];
   for (const [rankKey, amount] of Object.entries(playerRankBets)) {
-    if (amount > 0 && winningRanksForPlayer.has(rankKey)) {
+    if (amount > 0 && rankKey === winningRankName) {
       payingRanks.push(rankKey);
     }
   }
-  return payingRanks;
+  return { payingRanks, winningHandId };
 }
