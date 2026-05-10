@@ -374,14 +374,14 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                   </div>
                 </div>
 
-                {/* ── Row 2: 2×2 quadrant grid ── */}
+                {/* ── Row 2: 2×2 quadrant grid — top row 60%, bottom row 40% ── */}
                 <div
                   style={{
                     flex: 1,
                     minHeight: 0,
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
-                    gridTemplateRows: '1fr 1fr',
+                    gridTemplateRows: '3fr 2fr',
                     gap: '6px',
                     padding: '6px',
                   }}
@@ -397,7 +397,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                   style={{
                     flexShrink: 0,
                     borderTop: `1px solid ${accent}44`,
-                    padding: '6px 12px',
+                    padding: '8px 12px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -411,10 +411,10 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                     { label: 'Total Win',     value: `$${totalWin.toFixed(2)}`,         color: payout.netWin >= 0 ? '#4ade80' : '#f87171' },
                   ].map(({ label, value, color }) => (
                     <div key={label} style={{ textAlign: 'center', flex: 1 }}>
-                      <div style={{ fontSize: '0.55rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                         {label}
                       </div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 900, color, fontFamily: 'Oswald,sans-serif', ...blackOutline, whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 900, color, fontFamily: 'Oswald,sans-serif', ...blackOutline, whiteSpace: 'nowrap' }}>
                         {value}
                       </div>
                     </div>
