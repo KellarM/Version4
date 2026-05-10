@@ -210,20 +210,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
               {/* Red accent bottom bar */}
               <div style={{ position:'absolute', bottom:0, left:0, right:0, height:4, background:'linear-gradient(90deg,#7f1d1d,#ef4444,#7f1d1d)', flexShrink:0 }} />
 
-              {/* Animated close button */}
-              <motion.button
-                onClick={() => setCurrentPlayerIndex(-1)}
-                animate={{ scale: [1, 1.15, 1], opacity: [1, 0.6, 1] }}
-                transition={{ duration: 0.6, repeat: Infinity }}
-                style={{
-                  position: 'absolute', top: 12, right: 12,
-                  background: '#eab308', border: '2px solid #fde68a',
-                  borderRadius: '8px', padding: '6px', cursor: 'pointer',
-                  zIndex: 10,
-                }}
-              >
-                <X className="w-5 h-5 text-black" strokeWidth={3} />
-              </motion.button>
+
 
               {/* Corner flame accents */}
               <div style={{ position:'absolute', top:16, left:20, fontSize:'1.4rem', opacity:0.25, userSelect:'none' }}>🔥</div>
@@ -337,20 +324,7 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                 {/* Accent top bar */}
                 <div style={{ height: 3, background: accent, flexShrink: 0 }} />
 
-                {/* Close button */}
-                <motion.button
-                  onClick={handleNext}
-                  animate={{ scale: [1, 1.15, 1], opacity: [1, 0.6, 1] }}
-                  transition={{ duration: 0.6, repeat: Infinity }}
-                  style={{
-                    position: 'absolute', top: 10, right: 10, zIndex: 10,
-                    background: '#eab308', border: '2px solid #fde68a',
-                    borderRadius: '8px', padding: '5px', cursor: 'pointer',
-                  }}
-                  title="Next"
-                >
-                  <X className="w-5 h-5 text-black" strokeWidth={3} />
-                </motion.button>
+
 
                 {/* ── Row 1: Player header ── */}
                 <div
