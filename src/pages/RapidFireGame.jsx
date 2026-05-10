@@ -1028,7 +1028,8 @@ export default function RapidFireGame() {
               label: `Hand ${wid}`,
               bet,
               odds: oddsLabel,
-              payout
+              payout,
+              boardType: 'card'
             });
           }
         });
@@ -1045,7 +1046,8 @@ export default function RapidFireGame() {
             label: key,
             bet,
             odds: `${ratio}:1`,
-            payout
+            payout,
+            boardType: 'color'
           });
         }
       });
@@ -1058,7 +1060,8 @@ export default function RapidFireGame() {
           label: plh.type,
           bet: plh.amount,
           odds: `${LOW_HIGH_PAYOUT}:1`,
-          payout
+          payout,
+          boardType: 'river'
         });
         if (i === activePlayer) triggerRiverWin();
       }
@@ -1093,7 +1096,8 @@ export default function RapidFireGame() {
                   label: rankKey,
                   bet: rankBetAmt,
                   odds: `${ratio}:1`,
-                  payout
+                  payout,
+                  boardType: 'rank'
                 });
               }
             }

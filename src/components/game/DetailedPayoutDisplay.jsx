@@ -1,27 +1,157 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { HAND_RANK_PAYOUTS as RANK_PAYOUT_MAP, COLOR_BOARD_PAYOUTS, LOW_HIGH_PAYOUT } from '@/lib/payoutConstants';
-import { cardDisplay, SUITS, FIXED_HANDS } from '@/lib/gameEngine';
+import { FIXED_HANDS, SUITS } from '@/lib/gameEngine';
+
+// ─── helpers ────────────────────────────────────────────────────────────────
 
 const PLAYER_COLORS = [
-  { bg: 'from-yellow-600 to-yellow-700', border: 'border-yellow-400', text: 'text-yellow-100' },
-  { bg: 'from-blue-600 to-blue-700', border: 'border-blue-400', text: 'text-blue-100' },
-  { bg: 'from-pink-600 to-pink-700', border: 'border-pink-400', text: 'text-pink-100' },
-  { bg: 'from-green-600 to-green-700', border: 'border-green-400', text: 'text-green-100' },
-  { bg: 'from-orange-600 to-orange-700', border: 'border-orange-400', text: 'text-orange-100' },
+  { accent: '#eab308' },  // P1 yellow
+  { accent: '#3b82f6' },  // P2 blue
+  { accent: '#ec4899' },  // P3 pink
+  { accent: '#22c55e' },  // P4 green
+  { accent: '#f97316' },  // P5 orange
+  { accent: '#a855f7' },  // P6 purple
+  { accent: '#06b6d4' },  // P7 cyan
+  { accent: '#f43f5e' },  // P8 rose
+  { accent: '#84cc16' },  // P9 lime
+  { accent: '#14b8a6' },  // P10 teal
 ];
+
+const gold = {
+  color: 'transparent',
+  background: 'linear-gradient(180deg,#ffe566 0%,#c9960a 45%,#ffe566 80%,#a07005 100%)',
+  WebkitBackgroundClip: 'text',
+  backgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.8))',
+};
+
+const blackOutline = {
+  textShadow: '-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000',
+};
+
+function getCardLabel(label) {
+  const m = label.match(/Hand (\d+)/);
+  if (!m) return label;
+  const hand = FIXED_HANDS.find(h => h.id === parseInt(m[1]));
+  if (!hand) return label;
+  return `${hand.cards[0].rank}${SUITS[hand.cards[0].suit]} / ${hand.cards[1].rank}${SUITS[hand.cards[1].suit]}`;
+}
+
+// ─── Quadrant ────────────────────────────────────────────────────────────────
+// A fixed-height cell that shows wins for one board type, or a "no bet" state.
+
+function Quadrant({ title, wins, accentColor }) {
+  const hasBet  = wins.length > 0;
+
+  return (
+    <div
+      style={{
+        background: 'rgba(0,0,0,0.35)',
+        border: `1.5px solid ${hasBet ? accentColor : 'rgba(255,255,255,0.1)'}`,
+        borderRadius: '10px',
+        padding: '6px 8px',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        height: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* Title */}
+      <div
+        style={{
+          fontSize: '0.6rem',
+          fontFamily: 'Oswald, sans-serif',
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          color: hasBet ? accentColor : 'rgba(255,255,255,0.25)',
+          marginBottom: '4px',
+          flexShrink: 0,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {title}
+      </div>
+
+      {!hasBet ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>No bet</span>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
+          {wins.map((win, idx) => {
+            const profit = win.payout - win.bet;
+            return (
+              <div
+                key={idx}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  borderRadius: '6px',
+                  padding: '3px 6px',
+                  flex: '1 1 0',
+                  minHeight: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Row 1: label + bet/odds */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 4 }}>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 900,
+                    color: '#fff',
+                    ...blackOutline,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '50%',
+                  }}>
+                    {win.boardType === 'card' ? getCardLabel(win.label) : win.label}
+                  </span>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff', ...blackOutline, whiteSpace: 'nowrap' }}>
+                      Bet: ${win.bet.toFixed(2)}
+                    </div>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff', ...blackOutline, whiteSpace: 'nowrap' }}>
+                      Odds: {win.odds}
+                    </div>
+                  </div>
+                </div>
+                {/* Row 2: payout calc */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#fde68a', whiteSpace: 'nowrap' }}>
+                    ${profit.toFixed(2)} + ${win.bet.toFixed(2)}
+                  </span>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 900, color: accentColor, whiteSpace: 'nowrap' }}>
+                    = ${win.payout.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
 
-  useEffect(() => {
-    setCurrentPlayerIndex(0);
-  }, [winInfo]);
+  useEffect(() => { setCurrentPlayerIndex(0); }, [winInfo]);
 
   if (!winInfo || !winInfo.playerPayouts) return null;
 
-  const hasAnyWins = winInfo.playerPayouts?.some(p => p.wins.length > 0);
+  const hasAnyWins = winInfo.playerPayouts.some(p => p.wins.length > 0);
 
   const getNextWinningPlayer = (startIdx) => {
     for (let i = startIdx; i < winInfo.playerPayouts.length; i++) {
@@ -32,150 +162,184 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
 
   const nextWinnerIdx = getNextWinningPlayer(currentPlayerIndex);
 
-  const getHandSymbol = (label) => {
-    const handMatch = label.match(/Hand (\d+)/);
-    if (!handMatch) return label;
-    const handId = parseInt(handMatch[1]);
-    const hand = FIXED_HANDS.find(h => h.id === handId);
-    if (!hand) return label;
-    return `${hand.cards[0].rank}${SUITS[hand.cards[0].suit]} / ${hand.cards[1].rank}${SUITS[hand.cards[1].suit]}`;
-  };
-
   const handleNext = () => {
     const nextIdx = getNextWinningPlayer(currentPlayerIndex + 1);
-    if (nextIdx !== -1) {
-      setCurrentPlayerIndex(nextIdx);
-    } else {
-      setCurrentPlayerIndex(-1);
-    }
+    setCurrentPlayerIndex(nextIdx !== -1 ? nextIdx : -1);
   };
 
-  if (!hasAnyWins || (hasAnyWins && nextWinnerIdx === -1 && currentPlayerIndex !== -1)) {
-    if (!hasAnyWins) {
-      return (
-        <AnimatePresence>
-          {currentPlayerIndex !== -1 && (
-            <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center p-4">
-              <motion.div
-                key="no-win"
-                initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="border-2 border-slate-500 rounded-2xl p-8 shadow-2xl min-w-[400px] pointer-events-auto relative text-center"
-                style={{ background: 'transparent' }}
+  // ── No win modal ──
+  if (!hasAnyWins) {
+    return (
+      <AnimatePresence>
+        {currentPlayerIndex !== -1 && (
+          <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center p-4">
+            <motion.div
+              key="no-win"
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              className="pointer-events-auto relative rounded-2xl text-center"
+              style={{
+                width: '380px',
+                padding: '32px 24px',
+                background: 'linear-gradient(135deg,rgba(80,20,20,0.97) 0%,rgba(40,10,10,0.99) 100%)',
+                border: '2px solid rgba(202,138,4,0.5)',
+                boxShadow: '0 0 40px rgba(0,0,0,0.8)',
+              }}
+            >
+              <motion.button
+                onClick={() => setCurrentPlayerIndex(-1)}
+                animate={{ scale: [1, 1.15, 1], opacity: [1, 0.6, 1] }}
+                transition={{ duration: 0.6, repeat: Infinity }}
+                style={{
+                  position: 'absolute', top: 12, right: 12,
+                  background: '#eab308', border: '2px solid #fde68a',
+                  borderRadius: '8px', padding: '6px', cursor: 'pointer',
+                }}
               >
-                <motion.button
-                  onClick={() => setCurrentPlayerIndex(-1)}
-                  animate={{ scale: [1, 1.15, 1], opacity: [1, 0.6, 1] }}
-                  transition={{ duration: 0.6, repeat: Infinity }}
-                  className="absolute top-4 right-4 p-2 rounded-lg bg-yellow-400 border-2 border-yellow-300 shadow-lg shadow-yellow-400/60"
-                >
-                  <X className="w-7 h-7 text-black font-black" strokeWidth={3} />
-                </motion.button>
-                <img src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/2667063a3_image.png" alt="Rapid Fire Texas Hold'em" className="w-20 h-auto mx-auto mb-3" />
-                <div className="text-2xl font-black text-yellow-400 mb-2" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }}>NO WIN</div>
-                <div className="text-red-500 font-bold text-sm" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>Better luck next round!</div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-      );
-    }
+                <X className="w-6 h-6 text-black" strokeWidth={3} />
+              </motion.button>
+              <img
+                src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/2667063a3_image.png"
+                alt="logo" style={{ width: 64, height: 'auto', margin: '0 auto 12px' }}
+              />
+              <div style={{ ...gold, fontSize: '1.5rem', fontWeight: 900, fontFamily: 'Oswald,sans-serif' }}>
+                NO WIN
+              </div>
+              <div style={{ color: '#ef4444', fontWeight: 700, fontSize: '0.85rem', marginTop: 6, ...blackOutline }}>
+                Better luck next round!
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    );
   }
 
+  // ── Win modal ──
   return (
     <AnimatePresence>
-      {winInfo && hasAnyWins && nextWinnerIdx !== -1 && (
+      {hasAnyWins && nextWinnerIdx !== -1 && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center p-4">
           {(() => {
-            const playerId = nextWinnerIdx;
-            const payout = winInfo.playerPayouts[playerId];
-            const color = PLAYER_COLORS[playerId % PLAYER_COLORS.length];
+            const pid     = nextWinnerIdx;
+            const payout  = winInfo.playerPayouts[pid];
+            const accent  = PLAYER_COLORS[pid % PLAYER_COLORS.length].accent;
+
+            const cardWins  = payout.wins.filter(w => w.boardType === 'card');
+            const colorWins = payout.wins.filter(w => w.boardType === 'color');
+            const rankWins  = payout.wins.filter(w => w.boardType === 'rank');
+            const riverWins = payout.wins.filter(w => w.boardType === 'river');
+
+            const totalWin = payout.totalBet + payout.netWin;
 
             return (
               <motion.div
-                key={`player-${playerId}`}
-                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                key={`player-${pid}`}
+                initial={{ opacity: 0, scale: 0.85, y: 16 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className={`border-2 ${color.border} rounded-2xl p-6 shadow-2xl w-[480px] max-w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden pointer-events-auto relative`}
-                style={{ background: 'linear-gradient(135deg, #f6d860 0%, #e8c22a 40%, #fbbf24 100%)' }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                className="pointer-events-auto relative"
+                style={{
+                  width: '500px',
+                  maxWidth: '96vw',
+                  // Fixed height — never changes regardless of win count
+                  height: '420px',
+                  background: 'linear-gradient(135deg,rgba(60,20,5,0.98) 0%,rgba(25,8,2,0.99) 100%)',
+                  border: `2px solid ${accent}`,
+                  borderRadius: '16px',
+                  boxShadow: `0 0 50px rgba(0,0,0,0.85), 0 0 20px ${accent}33`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
               >
-                {/* Close Button */}
+                {/* Accent top bar */}
+                <div style={{ height: 3, background: accent, flexShrink: 0 }} />
+
+                {/* Close button */}
                 <motion.button
                   onClick={handleNext}
                   animate={{ scale: [1, 1.15, 1], opacity: [1, 0.6, 1] }}
                   transition={{ duration: 0.6, repeat: Infinity }}
-                  className="absolute top-4 right-4 p-2 rounded-lg bg-yellow-400 border-2 border-yellow-300 shadow-lg shadow-yellow-400/60"
-                  title="Next winner"
+                  style={{
+                    position: 'absolute', top: 10, right: 10, zIndex: 10,
+                    background: '#eab308', border: '2px solid #fde68a',
+                    borderRadius: '8px', padding: '5px', cursor: 'pointer',
+                  }}
+                  title="Next"
                 >
-                  <X className="w-7 h-7 text-black font-black" strokeWidth={3} />
+                  <X className="w-5 h-5 text-black" strokeWidth={3} />
                 </motion.button>
 
-                {/* Header */}
-                <div className="text-center mb-4">
+                {/* ── Row 1: Player header ── */}
+                <div
+                  style={{
+                    flexShrink: 0,
+                    textAlign: 'center',
+                    padding: '8px 48px 6px',
+                    borderBottom: `1px solid ${accent}44`,
+                  }}
+                >
                   {playerCount > 1 && (
-                    <div className="text-sm font-black text-black mb-1">PLAYER {playerId + 1}</div>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 900, color: accent, letterSpacing: '0.12em', fontFamily: 'Oswald,sans-serif' }}>
+                      PLAYER {pid + 1}
+                    </div>
                   )}
-                  <div className="text-2xl font-black text-black">YOU WIN!</div>
-                  <div className="text-xl font-black text-black mt-1">WINNER</div>
-                </div>
-
-                {/* Winning bets breakdown */}
-                <div className="space-y-2 mb-4 pr-2 pointer-events-auto">
-                  {payout.wins.map((win, idx) => {
-                    const profit = win.payout - win.bet;
-                    return (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 + idx * 0.1 }}
-                        className="rounded-lg p-3 border border-black/20"
-                        style={{ background: 'rgba(0,0,0,0.08)' }}
-                        >
-                        <div className="flex justify-between items-start mb-2 gap-2">
-                          <div className="font-black text-lg text-black">{getHandSymbol(win.label)}</div>
-                          <div className="text-right">
-                            <div className="text-lg font-black text-black">Bet: ${win.bet.toFixed(2)}</div>
-                            <div className="text-lg font-black text-black">Odds: {win.odds}</div>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center text-lg gap-2">
-                          <span className="font-black text-black">${profit.toFixed(2)} + BET OF ${win.bet.toFixed(2)}</span>
-                          <span className="font-black text-black">= ${win.payout.toFixed(2)}</span>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-
-                {/* Totals */}
-                <div className="border-t border-black/30 pt-3 space-y-2">
-                  <div className="flex justify-between text-lg font-black gap-2">
-                    <span className="text-black">Total Wagered</span>
-                    <span className="text-black">${payout.totalBet.toFixed(2)}</span>
+                  <div style={{ ...gold, fontSize: '1.3rem', fontWeight: 900, fontFamily: 'Oswald,sans-serif', lineHeight: 1 }}>
+                    YOU WIN!
                   </div>
-                  <div className="flex justify-between text-lg font-black gap-2">
-                    <span className="text-black">Net Win</span>
-                    <span className={payout.netWin >= 0 ? "text-green-700 font-black" : "text-red-700 font-black"}>
-                      ${payout.netWin.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-lg font-black gap-2">
-                    <span className="text-black">Total Win</span>
-                    <span className={payout.netWin >= 0 ? "text-green-700 font-black" : "text-red-700 font-black"}>
-                      ${(payout.totalBet + payout.netWin).toFixed(2)}
-                    </span>
+                  <div style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 700, ...blackOutline, letterSpacing: '0.08em' }}>
+                    WINNER
                   </div>
                 </div>
 
-                {/* Visual indicator */}
-                <motion.div
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 0.6, repeat: Infinity }}
-                  className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl ${payout.netWin >= 0 ? 'bg-yellow-500' : 'bg-red-600'}`}
-                />
+                {/* ── Row 2: 2×2 quadrant grid ── */}
+                <div
+                  style={{
+                    flex: 1,
+                    minHeight: 0,
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gridTemplateRows: '1fr 1fr',
+                    gap: '6px',
+                    padding: '6px',
+                  }}
+                >
+                  <Quadrant title="Card Board Win"  wins={cardWins}  accentColor={accent} />
+                  <Quadrant title="Color Board Win"  wins={colorWins} accentColor={accent} />
+                  <Quadrant title="Rank Board Win"   wins={rankWins}  accentColor={accent} />
+                  <Quadrant title="River Board Win"  wins={riverWins} accentColor={accent} />
+                </div>
+
+                {/* ── Row 3: Totals bar ── */}
+                <div
+                  style={{
+                    flexShrink: 0,
+                    borderTop: `1px solid ${accent}44`,
+                    padding: '6px 12px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 8,
+                    background: 'rgba(0,0,0,0.3)',
+                  }}
+                >
+                  {[
+                    { label: 'Total Wagered', value: `$${payout.totalBet.toFixed(2)}`, color: '#fff' },
+                    { label: 'Net Win',       value: `$${payout.netWin.toFixed(2)}`,   color: payout.netWin >= 0 ? '#4ade80' : '#f87171' },
+                    { label: 'Total Win',     value: `$${totalWin.toFixed(2)}`,         color: payout.netWin >= 0 ? '#4ade80' : '#f87171' },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} style={{ textAlign: 'center', flex: 1 }}>
+                      <div style={{ fontSize: '0.55rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                        {label}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 900, color, fontFamily: 'Oswald,sans-serif', ...blackOutline, whiteSpace: 'nowrap' }}>
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             );
           })()}
