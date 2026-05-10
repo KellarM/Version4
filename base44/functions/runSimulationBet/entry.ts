@@ -293,21 +293,12 @@ Deno.serve(async (req) => {
           profit = BET * (handPayouts?.[targetHandIdx] ?? 0);
         }
       } else if (betType === 'perHandRank') {
-        // v2 rule: rank pays if ANY hand wins by the bet rank; odds = actual winner's per-hand rank odds
-        if (!isBoardWin) {
-          for (let h = 0; h < 10; h++) {
-            if (winners[h] === 1) {
-              perHandRankHandWins++;
-              const winnerRankCat = rankCatFromStrength(strengths[h]);
-              if (winnerRankCat === perHandRankCat) {
-                won = true;
-                const colonIdx = betKey.indexOf(':');
-                const rankName = betKey.slice(colonIdx + 1);
-                const actualPhr = perHandRankPayouts?.[h + 1] ?? perHandRankPayouts?.[String(h + 1)];
-                profit = BET * (actualPhr?.[rankName] ?? perHandRankPayout);
-              }
-              break;
-            }
+        if (!isBoardWin && winners[perHandRankHandIdx] === 1) {
+          perHandRankHandWins++;
+          const myRankCat = rankCatFromStrength(strengths[perHandRankHandIdx]);
+          if (myRankCat === perHandRankCat) {
+            won = true;
+            profit = BET * perHandRankPayout;
           }
         }
       } else if (betType === 'color') {

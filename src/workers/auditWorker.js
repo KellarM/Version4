@@ -320,23 +320,13 @@ function evalWinFromBoard(b0, b1, b2, b3, b4, betType, betKey, params, handPayou
     oddsUsed = handPayouts[targetHandIdx];
     if (!isBoardWinMic && winners[targetHandIdx] === 1) won = true;
   } else if (betType === 'perHandRank') {
-    // v2 rule: rank pays if ANY hand wins by the bet rank; odds = actual winner's per-hand rank odds
     const colonIdx = betKey.indexOf(':');
     const rankName = betKey.slice(colonIdx + 1);
-    if (!isBoardWinMic) {
-      for (let h = 0; h < 10; h++) {
-        if (winners[h] === 1) {
-          const winnerRankCat = rankCatFromStrength(strengths[h]);
-          if (winnerRankCat === perHandRankCat) {
-            won = true;
-            // Odds = actual winning hand's per-hand rank payout
-            oddsUsed = (perHandRankPayouts && perHandRankPayouts[h + 1]) ? perHandRankPayouts[h + 1][rankName] ?? null : null;
-            break;
-          }
-        }
-      }
+    oddsUsed = (perHandRankPayouts && perHandRankPayouts[perHandRankHandIdx + 1]) ? perHandRankPayouts[perHandRankHandIdx + 1][rankName] ?? null : null;
+    if (!isBoardWinMic && winners[perHandRankHandIdx] === 1) {
+      const myRankCat = rankCatFromStrength(strengths[perHandRankHandIdx]);
+      if (myRankCat === perHandRankCat) won = true;
     }
-    if (!won) oddsUsed = (perHandRankPayouts && perHandRankPayouts[perHandRankHandIdx + 1]) ? perHandRankPayouts[perHandRankHandIdx + 1][rankName] ?? null : null;
   } else if (betType === 'rank') {
     oddsUsed = rankPayouts[betKey] ?? null;
     for (let h = 0; h < 10; h++) {
@@ -476,20 +466,12 @@ function handleRun(payload) {
         profit = BET * handPayouts[targetHandIdx];
       }
     } else if (betType === 'perHandRank') {
-      // v2 rule: rank pays if ANY hand wins by the bet rank; odds = actual winner's per-hand rank odds
-      if (!isBoardWin) {
-        for (let h = 0; h < 10; h++) {
-          if (winners[h] === 1) {
-            perHandRankHandWins++; // any hand won — track for denominator
-            const winnerRankCat = rankCatFromStrength(strengths[h]);
-            if (winnerRankCat === perHandRankCat) {
-              won = true;
-              // Use actual winning hand's payout
-              const actualPhr = perHandRankPayouts ? perHandRankPayouts[h + 1] : null;
-              profit = BET * (actualPhr ? (actualPhr[betKey.slice(betKey.indexOf(':')+1)] ?? perHandRankPayout) : perHandRankPayout);
-            }
-            break; // only one winner per round
-          }
+      if (!isBoardWin && winners[perHandRankHandIdx] === 1) {
+        perHandRankHandWins++; // this card hand won the round
+        const myRankCat = rankCatFromStrength(strengths[perHandRankHandIdx]);
+        if (myRankCat === perHandRankCat) {
+          won = true;
+          profit = BET * perHandRankPayout;
         }
       }
     } else if (betType === 'rank') {
