@@ -172,21 +172,45 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
     return (
       <AnimatePresence>
         {currentPlayerIndex !== -1 && (
-          <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center p-4">
+          // Full-screen dim backdrop
+          <motion.div
+            key="no-win-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto"
+            style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(3px)' }}
+            onClick={() => setCurrentPlayerIndex(-1)}
+          >
+            {/* Modal panel — same 500×420 footprint as the win modal */}
             <motion.div
               key="no-win"
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.85, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.85 }}
-              className="pointer-events-auto relative rounded-2xl text-center"
+              onClick={e => e.stopPropagation()}
               style={{
-                width: '380px',
-                padding: '32px 24px',
-                background: 'linear-gradient(135deg,rgba(80,20,20,0.97) 0%,rgba(40,10,10,0.99) 100%)',
-                border: '2px solid rgba(202,138,4,0.5)',
-                boxShadow: '0 0 40px rgba(0,0,0,0.8)',
+                width: '500px',
+                maxWidth: '96vw',
+                height: '420px',
+                background: 'linear-gradient(135deg,rgba(10,4,4,0.99) 0%,rgba(40,8,8,0.99) 50%,rgba(10,4,4,0.99) 100%)',
+                border: '2px solid #7f1d1d',
+                borderRadius: '16px',
+                boxShadow: '0 0 60px rgba(180,0,0,0.4), 0 0 120px rgba(0,0,0,0.9)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                overflow: 'hidden',
               }}
             >
+              {/* Red accent top bar */}
+              <div style={{ position:'absolute', top:0, left:0, right:0, height:4, background:'linear-gradient(90deg,#7f1d1d,#ef4444,#7f1d1d)', flexShrink:0 }} />
+              {/* Red accent bottom bar */}
+              <div style={{ position:'absolute', bottom:0, left:0, right:0, height:4, background:'linear-gradient(90deg,#7f1d1d,#ef4444,#7f1d1d)', flexShrink:0 }} />
+
+              {/* Animated close button */}
               <motion.button
                 onClick={() => setCurrentPlayerIndex(-1)}
                 animate={{ scale: [1, 1.15, 1], opacity: [1, 0.6, 1] }}
@@ -195,22 +219,78 @@ export default function DetailedPayoutDisplay({ winInfo, playerCount = 1 }) {
                   position: 'absolute', top: 12, right: 12,
                   background: '#eab308', border: '2px solid #fde68a',
                   borderRadius: '8px', padding: '6px', cursor: 'pointer',
+                  zIndex: 10,
                 }}
               >
-                <X className="w-6 h-6 text-black" strokeWidth={3} />
+                <X className="w-5 h-5 text-black" strokeWidth={3} />
               </motion.button>
+
+              {/* Corner flame accents */}
+              <div style={{ position:'absolute', top:16, left:20, fontSize:'1.4rem', opacity:0.25, userSelect:'none' }}>🔥</div>
+              <div style={{ position:'absolute', top:16, right:52, fontSize:'1.4rem', opacity:0.25, userSelect:'none' }}>🔥</div>
+              <div style={{ position:'absolute', bottom:16, left:20, fontSize:'1.4rem', opacity:0.25, userSelect:'none' }}>🔥</div>
+              <div style={{ position:'absolute', bottom:16, right:20, fontSize:'1.4rem', opacity:0.25, userSelect:'none' }}>🔥</div>
+
+              {/* Logo */}
               <img
                 src="https://media.base44.com/images/public/69f3a45ad82dff5b772d4de2/2667063a3_image.png"
-                alt="logo" style={{ width: 64, height: 'auto', margin: '0 auto 12px' }}
+                alt="Rapid Fire Texas Hold'em"
+                style={{ width: 90, height: 'auto', marginBottom: 20, filter: 'drop-shadow(0 0 12px rgba(239,68,68,0.5))' }}
               />
-              <div style={{ ...gold, fontSize: '1.5rem', fontWeight: 900, fontFamily: 'Oswald,sans-serif' }}>
+
+              {/* NO WIN headline */}
+              <motion.div
+                animate={{ scale: [1, 1.04, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                style={{
+                  fontFamily: 'Oswald, sans-serif',
+                  fontWeight: 900,
+                  fontSize: '3rem',
+                  letterSpacing: '0.06em',
+                  color: '#ef4444',
+                  textShadow: '0 0 30px rgba(239,68,68,0.8), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000',
+                  lineHeight: 1,
+                  marginBottom: 14,
+                }}
+              >
                 NO WIN
+              </motion.div>
+
+              {/* Divider */}
+              <div style={{ width: 200, height: 2, background: 'linear-gradient(90deg,transparent,#ef4444,transparent)', marginBottom: 14 }} />
+
+              {/* Sub-message */}
+              <div style={{
+                fontFamily: 'Oswald, sans-serif',
+                fontWeight: 700,
+                fontSize: '1rem',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.55)',
+                textShadow: '-1px -1px 0 #000,1px 1px 0 #000',
+              }}>
+                Better Luck Next Round
               </div>
-              <div style={{ color: '#ef4444', fontWeight: 700, fontSize: '0.85rem', marginTop: 6, ...blackOutline }}>
-                Better luck next round!
-              </div>
+
+              {/* Total Wagered — so player knows what they lost */}
+              {winInfo.playerPayouts?.[0]?.totalBet > 0 && (
+                <div style={{ marginTop: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>
+                    Amount Wagered
+                  </div>
+                  <div style={{
+                    fontFamily: 'Oswald, sans-serif',
+                    fontSize: '1.4rem',
+                    fontWeight: 900,
+                    color: '#f87171',
+                    textShadow: '-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000',
+                  }}>
+                    -${winInfo.playerPayouts[0].totalBet.toFixed(2)}
+                  </div>
+                </div>
+              )}
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     );
