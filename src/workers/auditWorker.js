@@ -360,8 +360,9 @@ function evalHandRankCat(handIdx, b0, b1, b2, b3, b4) {
 // ── Main RUN handler ──────────────────────────────────────────
 const PROGRESS_UPDATE_INTERVAL = 50_000;
 const CHECKPOINT_INTERVAL = 20_000; // Save partial state every 20K rounds (or card wins in adaptive)
-// Safety cap: never run more than 30M total rounds even in adaptive mode
-const ADAPTIVE_MAX_ROUNDS = 30_000_000;
+// Safety cap: must be large enough for lowest-frequency hand to reach 2M card wins.
+// Hand 1 wins ~1/15 rounds → 2M card wins needs ~30M rounds. Set 100M for headroom.
+const ADAPTIVE_MAX_ROUNDS = 100_000_000;
 
 function handleRun(payload) {
   const {

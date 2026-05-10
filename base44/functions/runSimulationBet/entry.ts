@@ -165,7 +165,9 @@ const RANK_NAMES = [
 // ── Constants ─────────────────────────────────────────────────
 const BET = 100;
 const CHECKPOINT_INTERVAL = 20_000;
-const ADAPTIVE_MAX_ROUNDS = 30_000_000;
+// Must be large enough for lowest-frequency hand to accumulate 2M card wins.
+// Hand 1 wins ~1/15 rounds → 2M card wins needs ~30M total rounds; 100M gives headroom.
+const ADAPTIVE_MAX_ROUNDS = 100_000_000;
 // Max ms we'll run before saving checkpoint and returning partial
 // Deno functions have a timeout — we stay well under it
 const MAX_RUN_MS = 25_000;
