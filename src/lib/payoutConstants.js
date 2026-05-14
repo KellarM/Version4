@@ -59,17 +59,17 @@ export const HAND_RANK_PAYOUTS = {
 // ── COLOR BOARD PAYOUTS ───────────────────────────────────────
 // Win condition: community cards contain >= N cards of that color
 export const COLOR_BOARD_PAYOUTS = {
-  '3R': 0.93,
-  '3B': 0.93,
-  '4R': 4.85,
-  '4B': 4.85,
+  '3R': 0.91,
+  '3B': 0.91,
+  '4R': 4.75,
+  '4B': 4.75,
   '5R': 43.5,
   '5B': 43.5,
 };
 
 // ── LOW / HIGH PAYOUT ─────────────────────────────────────────
 // Win condition: river card rank — LOW = 2–7, HIGH = 8–A
-export const LOW_HIGH_PAYOUT = 0.93;
+export const LOW_HIGH_PAYOUT = 0.91;
 
 /**
  * Calculate total payout from bet and ratio
