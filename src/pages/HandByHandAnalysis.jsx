@@ -66,8 +66,9 @@ const scratch7 = new Array(7);
 // board positions in deck: [1,2,3,5,7]
 const BOARD_IDX = [1,2,3,5,7];
 
+function _sri(max){if(max===0)return 0;let mask=1;while(mask<=max)mask=(mask<<1)|1;const a=new Uint32Array(1);let v;do{if(typeof crypto!=='undefined'&&crypto.getRandomValues){crypto.getRandomValues(a);v=a[0]&mask;}else{return(Math.random()*(max+1))|0;}}while(v>max);return v;}
 function shuffle() {
-  for(let i=31;i>0;i--) { const j=(Math.random()*(i+1))|0; [deck[i],deck[j]]=[deck[j],deck[i]]; }
+  for(let i=31;i>0;i--) { const j=_sri(i); [deck[i],deck[j]]=[deck[j],deck[i]]; }
 }
 
 function best7(h0,h1,c0,c1,c2,c3,c4) {

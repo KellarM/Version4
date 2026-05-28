@@ -102,26 +102,47 @@ export const FIXED_HANDS = [
 // Legacy alias — always points to the frozen CONST definition
 export const DEALER_DECK = CONST.DEALER_DECK;
 
-// ── Fisher-Yates shuffle — always clones CONST.DEALER_DECK, never mutates it ──
+// Crypto-grade random integer [0, max] — casino-standard CSPRNG
+// Uses Web Crypto API (crypto.getRandomValues). Rejection sampling with bitmask
+// eliminates modulo bias. Falls back to Math.random() in non-browser (Node/Jest) only.
+function secureRandInt(max) {
+  if (max === 0) return 0;
+  let mask = 1;
+  while (mask <= max) mask = (mask << 1) | 1;
+  const arr = new Uint32Array(1);
+  let val;
+  do {
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(arr);
+      val = arr[0] & mask;
+    } else {
+      return Math.floor(Math.random() * (max + 1));
+    }
+  } while (val > max);
+  return val;
+}
+
+// ── Crypto Fisher-Yates shuffle ───────────────────────────────────────────────
+// Always clones the input array — never mutates the source (CONST.DEALER_DECK).
 export function shuffleDeck(deck) {
   const d = [...deck];
   for (let i = d.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = secureRandInt(i);
     [d[i], d[j]] = [d[j], d[i]];
   }
   return d;
 }
 
 // ── Secure board generation — canonical entry point for all deal operations ──
-// Returns a fresh 5-card board drawn from CONST.DEALER_DECK every invocation.
-// Clones the deck → Fisher-Yates shuffle → slice first 5.
+// Replicates casino burn protocol:
+//   Burn[0] | Flop[1,2,3] | Burn[4] | Turn[5] | Burn[6] | River[7]
 export function getSecureRandomBoard() {
   const d = [...CONST.DEALER_DECK];
   for (let i = d.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = secureRandInt(i);
     [d[i], d[j]] = [d[j], d[i]];
   }
-  return d.slice(0, 5);
+  return [d[1], d[2], d[3], d[5], d[7]];
 }
 
 const RANK_ORDER = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];

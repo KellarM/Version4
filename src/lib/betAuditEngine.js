@@ -147,10 +147,13 @@ function buildWinnerLabel(winners) {
 }
 
 // ── Shuffle working copy of deck ──────────────────────────────
+// Crypto-grade RNG
+function _secureRandInt(max){if(max===0)return 0;let mask=1;while(mask<=max)mask=(mask<<1)|1;const arr=new Uint32Array(1);let val;do{if(typeof crypto!=='undefined'&&crypto.getRandomValues){crypto.getRandomValues(arr);val=arr[0]&mask;}else{return Math.floor(Math.random()*(max+1));}}while(val>max);return val;}
+
 const deck = [...DECK32];
 function shuffle() {
   for (let i = deck.length-1; i > 0; i--) {
-    const j = (Math.random()*(i+1))|0;
+    const j = _secureRandInt(i);
     [deck[i],deck[j]] = [deck[j],deck[i]];
   }
 }

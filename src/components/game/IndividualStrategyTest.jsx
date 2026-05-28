@@ -21,7 +21,8 @@ function e5(c0,c1,c2,c3,c4){const r=[c0>>2,c1>>2,c2>>2,c3>>2,c4>>2].sort((a,b)=>
 function b7(h0,h1,b0,b1,b2,b3,b4){const all=[h0,h1,b0,b1,b2,b3,b4];let best=-1;for(let i=0;i<3;i++)for(let j=i+1;j<4;j++)for(let k=j+1;k<5;k++)for(let l=k+1;l<6;l++)for(let m=l+1;m<7;m++){const s=e5(all[i],all[j],all[k],all[l],all[m]);if(s>best)best=s;}return best;}
 function rc(s){return Math.floor(s/B5)-1;}
 const RCM={'High Card':-1,'One Pair':0,'Two Pair':1,'Three of a Kind':2,'Straight':3,'Flush':4,'Full House':5,'Four of a Kind':6,'Straight Flush':7,'Royal Flush':8};
-function deal(){const d=[...D32];for(let i=31;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}return[d[1],d[2],d[3],d[5],d[7]];}
+function _sri(max){if(max===0)return 0;let mask=1;while(mask<=max)mask=(mask<<1)|1;const a=new Uint32Array(1);let v;do{if(typeof crypto!=='undefined'&&crypto.getRandomValues){crypto.getRandomValues(a);v=a[0]&mask;}else{return(Math.random()*(max+1))|0;}}while(v>max);return v;}
+function deal(){const d=[...D32];for(let i=31;i>0;i--){const j=_sri(i);[d[i],d[j]]=[d[j],d[i]];}return[d[1],d[2],d[3],d[5],d[7]];}
 function evalWinners(b0,b1,b2,b3,b4){const str=HE.map(h=>b7(h[0],h[1],b0,b1,b2,b3,b4));const best=Math.max(...str);const winners=str.map(s=>s===best?1:0);return{str,winners,count:winners.reduce((a,b)=>a+b,0)};}
 
 // ── Build all 70 positions ────────────────────────────────────

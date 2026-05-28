@@ -71,10 +71,13 @@ Object.freeze(DECK32_MASTER);
 
 let _workDeck = new Int16Array(32);
 
+// Crypto-grade RNG — Web Workers have full access to globalThis.crypto
+function _secureRandInt(max){if(max===0)return 0;let mask=1;while(mask<=max)mask=(mask<<1)|1;const arr=new Uint32Array(1);let val;do{if(typeof crypto!=='undefined'&&crypto.getRandomValues){crypto.getRandomValues(arr);val=arr[0]&mask;}else{return(Math.random()*(max+1))|0;}}while(val>max);return val;}
+
 function shuffleAndDeal() {
   for (let i = 0; i < 32; i++) _workDeck[i] = DECK32_MASTER[i];
   for (let i = 31; i > 0; i--) {
-    const j = (Math.random() * (i + 1)) | 0;
+    const j = _secureRandInt(i);
     const tmp = _workDeck[i]; _workDeck[i] = _workDeck[j]; _workDeck[j] = tmp;
   }
   // Burn[0], Flop[1,2,3], Burn[4], Turn[5], Burn[6], River[7]
